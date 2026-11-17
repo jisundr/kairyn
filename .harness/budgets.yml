@@ -1,0 +1,14 @@
+# Size budgets for markdown files, in estimated tokens (characters / 4).
+# load = when the file is read: always (every session), on-demand (when its
+# read_when matches), runtime (shipped; read when a command or stage runs).
+# First matching pattern wins: list specific patterns before general ones.
+# Tight on purpose. Over budget? Cut, split, or move detail out before raising a limit.
+budgets:
+  - {pattern: CLAUDE.md, max_tokens: 700, load: always}
+  - {pattern: README.md, max_tokens: 900, load: on-demand}
+  - {pattern: .harness/README.md, max_tokens: 900, load: on-demand}
+  - {pattern: ".harness/workflows/*.md", max_tokens: 1000, load: on-demand}
+  - {pattern: "plugin/stages/*.md", max_tokens: 500, load: runtime}
+  - {pattern: "plugin/commands/*.md", max_tokens: 300, load: runtime}
+  - {pattern: "plugin/templates/*.md", max_tokens: 200, load: runtime}
+  - {pattern: "plugin/harness/*.md", max_tokens: 800, load: runtime}   # templates copied into consumer repos

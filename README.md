@@ -13,15 +13,71 @@ An agentic SDLC that grows with your repo.
 /plugin install kairyn@kairyn
 ```
 
+## What you get in your repo
+
+`/kairyn:init` sets up `.kairyn/` (stages, templates, learnings), `docs/tasks/`, and a `.harness/` of short workflow docs with size budgets. It appends a marked block to your `CLAUDE.md` (creating it if needed) that points Claude to those docs on demand. Nothing you already have is overwritten.
+
+`/kairyn:check` verifies the doc headers and size budgets, using only `python3`. `/kairyn:check write` also refreshes the index tables.
+
 ## Layout
 
 ```
 .
 ├── .claude-plugin/marketplace.json   # marketplace entry pointing to ./plugin
 ├── plugin/                           # the kairyn plugin
-│   └── .claude-plugin/plugin.json
+│   ├── .claude-plugin/plugin.json
+│   ├── commands/                     # /kairyn:init, /kairyn:check
+│   ├── scripts/                      # init, verify, and the doc and budget checkers
+│   ├── harness/                      # .harness/ and CLAUDE.md block installed into your repo
+│   ├── stages/                       # stage definitions copied into .kairyn/stages/
+│   │   ├── _template.md              # skeleton for authoring new stages
+│   │   └── REQUIREMENTS.md           # stage 1: request -> scoped requirements
+│   └── templates/STATE.md            # per-task state file
+├── tests/                            # fast tests (pytest)
+├── evals/                            # BDD evals that run real claude sessions
+├── .harness/                         # how we work on kairyn: dev workflows
+├── CLAUDE.md                         # loaded every session; points to .harness on demand
 └── README.md                         # docs live at the root
 ```
+
+## How tasks are stored
+
+Each task gets a folder in your repo, with a `STATE.md` and one file per stage:
+
+```
+docs/tasks/<YYYY-MM-DD>-<slug>/
+├── STATE.md              # front matter = current state, body = log
+└── REQUIREMENTS.md
+```
+
+## Tests and evals
+
+**Tests** are fast, free and give the same result every time:
+
+```bash
+uv run pytest
+```
+
+**Evals** run real `claude` sessions N times and check a pass rate, so they are slow and cost tokens. They are written as BDD scenarios in `evals/features/*.feature`, and each feature declares the plugin files it exercises:
+
+```gherkin
+# depends: plugin/stages/REQUIREMENTS.md, plugin/stages/_template.md
+```
+
+An eval runs only when those files changed since it last passed (recorded locally in `evals/results/passed.json`):
+
+```bash
+uv run pytest -m eval               # only evals whose dependencies changed
+uv run pytest -m eval --all-evals   # everything, e.g. before a release
+```
+
+Every eval run saves its evidence (task folders, judge scores) under `evals/results/<run-id>/`. Settings: `KAIRYN_EVAL_RUNS` (default 10), `KAIRYN_MODEL`, `KAIRYN_JUDGE_MODEL`.
+
+Adding an eval: write the scenario first and watch it fail against the current stage instructions, then change the instructions until it passes. To add one, create `evals/features/<name>.feature` and `evals/test_<name>.py`.
+
+## Contributing
+
+Development workflows (tests, evals, changing a stage, PRs) are documented in [.harness/](.harness/README.md).
 
 ## License
 
