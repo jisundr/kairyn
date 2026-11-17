@@ -30,7 +30,7 @@ Write to `docs/tasks/<YYYY-MM-DD>-<slug>/REQUIREMENTS.md`:
 - [ ] No unresolved open questions remain.
 
 ## State update
-Update `STATE.md` as described in `_template.md`: set `requirements` to `done` in the front matter, advance `stage`, and append a log line summarizing the requirements.
+Update `STATE.md` as described in `_template.md`: set `requirements` to `done` in the front matter, advance `stage` (or set `status: done` if no later stage exists), and append a log line summarizing the requirements.
 
 ## Learnings
 Append anything this run taught about the repo to `.kairyn/learnings.md`.

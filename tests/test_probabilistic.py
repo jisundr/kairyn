@@ -113,8 +113,9 @@ def structural_problems(task: Path | None) -> list[str]:
         return problems + [f"STATE.md front matter invalid: {e}"]
     if data.get("stages", {}).get("requirements") != "done":
         problems.append("stages.requirements != done")
-    if data.get("stage") == "requirements":
-        problems.append("stage was not advanced")
+    # Only stage defined today, so "finished" means status: done (or stage moved on).
+    if data.get("stage") == "requirements" and data.get("status") != "done":
+        problems.append("stage not advanced and status not done")
     if not any(LOG_LINE_RE.match(line) for line in body.splitlines()):
         problems.append("no timestamped [requirements] log line")
     text = req.read_text()
