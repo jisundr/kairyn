@@ -6,7 +6,7 @@ dependencies = ["pytest>=8", "pytest-bdd>=8", "pyyaml>=6"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "evals"]
-pythonpath = ["tests", "evals"]
+pythonpath = ["tests", "evals", "tools"]
 addopts = "-m 'not eval'"
 markers = [
   "eval: runs real `claude` sessions N times and asserts a pass rate (slow, costs tokens). Run with: pytest -m eval",

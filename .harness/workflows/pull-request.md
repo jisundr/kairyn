@@ -1,3 +1,9 @@
+---
+title: Pull request
+summary: "Pre-flight checks, opening and updating a PR, commit conventions and what not to do."
+read_when: "committing, or opening or updating a pull request"
+---
+
 # Pull request
 
 The repo is on GitHub (`jisundr/kairyn`), so changes go through pull requests, not merge requests. Branches are named `feat/<short-description>`.

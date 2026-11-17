@@ -1,3 +1,9 @@
+---
+title: Init
+summary: "How /kairyn:init, init.sh and verify-init.sh work, and the never-overwrite rule."
+read_when: "changing /kairyn:init, init.sh or verify-init.sh"
+---
+
 # Init
 
 `/kairyn:init` (`plugin/commands/init.md`) sets up kairyn in a user's repo. The command itself only runs two scripts, so the result does not depend on the model.

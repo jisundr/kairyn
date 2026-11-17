@@ -1,3 +1,9 @@
+---
+title: Change a stage
+summary: "Eval-first loop for editing a stage, the stage file format and adding a new stage."
+read_when: "editing or adding a stage in plugin/stages/"
+---
+
 # Change a stage
 
 Stage files in `plugin/stages/` are instructions for the model, so changing them is probabilistic work. Use the eval-first loop.

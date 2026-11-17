@@ -1,3 +1,9 @@
+---
+title: Testing and evals
+summary: "Tests versus evals, commands, thresholds, change-based selection and evidence."
+read_when: "running, writing or interpreting tests or evals, or touching evals/"
+---
+
 # Testing and evals
 
 Two layers, kept apart because they behave differently.

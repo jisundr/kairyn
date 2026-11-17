@@ -23,15 +23,17 @@ uv run pytest -m eval               # evals: real claude runs, slow, costs token
 
 ## Read on demand
 
-Open the doc only when the task matches. Do not read them all up front.
+Open a doc only when the task matches. Do not read them all up front. Each starts with a header (title, summary, read_when), so `head -6 <file>` is enough to judge relevance.
 
-| If you are about to... | Read |
+<!-- harness-docs:start -->
+| When you are... | Read |
 |---|---|
-| run, write or interpret tests or evals, or touch `evals/` | `.harness/workflows/testing-and-evals.md` |
-| edit or add a stage in `plugin/stages/` | `.harness/workflows/change-a-stage.md` |
-| change `/kairyn:init`, `init.sh` or `verify-init.sh` | `.harness/workflows/init.md` |
-| change `STATE.md`, task folders or timestamps | `.harness/workflows/task-lifecycle.md` |
-| commit, open or update a PR | `.harness/workflows/pull-request.md` |
-| need the repo layout or principles | `.harness/README.md` |
+| looking for the repo layout or principles | `.harness/README.md` |
+| editing or adding a stage in plugin/stages/ | `.harness/workflows/change-a-stage.md` |
+| changing /kairyn:init, init.sh or verify-init.sh | `.harness/workflows/init.md` |
+| committing, or opening or updating a pull request | `.harness/workflows/pull-request.md` |
+| changing STATE.md, task folders or timestamps | `.harness/workflows/task-lifecycle.md` |
+| running, writing or interpreting tests or evals, or touching evals/ | `.harness/workflows/testing-and-evals.md` |
+<!-- harness-docs:end -->
 
-If you change a workflow, update the matching `.harness` doc in the same commit.
+If you change a workflow, update the matching `.harness` doc in the same commit. After adding or editing a `.harness` doc, run `uv run python tools/harness_docs.py --write`.
