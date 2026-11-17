@@ -35,7 +35,7 @@ Each task gets a folder in your repo, with a `STATE.md` and one file per stage:
 ```
 docs/tasks/<YYYY-MM-DD>-<slug>/
 ├── STATE.md
-└── requirements.md
+└── REQUIREMENTS.md
 ```
 
 ## License

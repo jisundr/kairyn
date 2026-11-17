@@ -19,7 +19,7 @@ purpose: Turn a request into clear, scoped requirements with acceptance criteria
 6. Write acceptance criteria as a checklist a reviewer could verify.
 
 ## Output
-Write to `docs/tasks/<YYYY-MM-DD>-<slug>/requirements.md`:
+Write to `docs/tasks/<YYYY-MM-DD>-<slug>/REQUIREMENTS.md`:
 - Problem statement
 - Scope (in / out)
 - Acceptance criteria

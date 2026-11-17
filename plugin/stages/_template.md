@@ -11,14 +11,14 @@ Each task lives in its own folder: `docs/tasks/<YYYY-MM-DD>-<slug>/`.
 
 ## Inputs
 - `docs/tasks/<YYYY-MM-DD>-<slug>/STATE.md`
-- <outputs of earlier stages this one needs, e.g. `requirements.md`>
+- <outputs of earlier stages this one needs, e.g. `REQUIREMENTS.md`>
 
 ## Steps
 1. <what the agent does>
 2. <...>
 
 ## Output
-Write to `docs/tasks/<YYYY-MM-DD>-<slug>/<stage-name>.md`:
+Write to `docs/tasks/<YYYY-MM-DD>-<slug>/<STAGE-NAME>.md` (stage name in caps):
 - <what the file must contain>
 
 ## Exit criteria

@@ -5,7 +5,7 @@
 - **Status:** in progress
 
 ## Stages
-- [ ] requirements: `requirements.md`
+- [ ] requirements: `REQUIREMENTS.md`
 
 ## Open questions
 - None yet
