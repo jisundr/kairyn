@@ -27,6 +27,7 @@ An agentic SDLC that grows with your repo.
 │   └── templates/STATE.md            # per-task state file
 ├── tests/                            # fast tests (pytest)
 ├── evals/                            # BDD evals that run real claude sessions
+├── .harness/                         # how we work on kairyn: dev workflows
 └── README.md                         # docs live at the root
 ```
 
@@ -64,6 +65,10 @@ uv run pytest -m eval --all-evals   # everything, e.g. before a release
 Every eval run saves its evidence (task folders, judge scores) under `evals/results/<run-id>/`. Settings: `KAIRYN_EVAL_RUNS` (default 10), `KAIRYN_MODEL`, `KAIRYN_JUDGE_MODEL`.
 
 Adding an eval: write the scenario first and watch it fail against the current stage instructions, then change the instructions until it passes. To add one, create `evals/features/<name>.feature` and `evals/test_<name>.py`.
+
+## Contributing
+
+Development workflows (tests, evals, changing a stage, PRs) are documented in [.harness/](.harness/README.md).
 
 ## License
 
