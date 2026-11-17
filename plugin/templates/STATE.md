@@ -5,7 +5,6 @@ stage: requirements
 status: in-progress   # in-progress | blocked | done
 stages:
   requirements: pending   # pending | in-progress | done
-open_questions: 0
 created: <YYYY-MM-DDTHH:MM:SSZ>
 updated: <YYYY-MM-DDTHH:MM:SSZ>
 ---

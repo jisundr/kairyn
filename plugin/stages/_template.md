@@ -28,7 +28,7 @@ Write to `docs/tasks/<YYYY-MM-DD>-<slug>/<STAGE-NAME>.md` (stage name in caps):
 `STATE.md` front matter is the source of truth for task state: read it, not the
 log, to find the current stage. When the stage finishes:
 - Front matter: set this stage to `done` in `stages`, advance `stage`, update
-  `status`, `open_questions` and `updated`.
+  `status` (use `blocked` plus a log line when waiting on the user) and `updated`.
 - Log: append one line `<timestamp> [<stage-name>] <summary of what happened>`.
 
 ## Learnings
