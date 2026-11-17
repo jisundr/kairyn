@@ -2,6 +2,7 @@
 title: Change a stage
 summary: "Eval-first loop for editing a stage, the stage file format and adding a new stage."
 read_when: "editing or adding a stage in plugin/stages/"
+load: on-demand
 ---
 
 # Change a stage

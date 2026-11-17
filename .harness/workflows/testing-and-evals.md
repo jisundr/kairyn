@@ -2,6 +2,7 @@
 title: Testing and evals
 summary: "Tests versus evals, commands, thresholds, change-based selection and evidence."
 read_when: "running, writing or interpreting tests or evals, or touching evals/"
+load: on-demand
 ---
 
 # Testing and evals

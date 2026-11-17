@@ -2,6 +2,7 @@
 title: Init
 summary: "How /kairyn:init, init.sh and verify-init.sh work, and the never-overwrite rule."
 read_when: "changing /kairyn:init, init.sh or verify-init.sh"
+load: on-demand
 ---
 
 # Init

@@ -6,6 +6,7 @@ Every doc starts with front matter:
     title: <name>
     summary: <one line, at most 160 characters>
     read_when: <the task that makes this doc relevant, e.g. "editing a stage">
+    load: <always | on-demand | runtime>   # when it is read; the index lists on-demand docs
     ---
 An agent reads only those lines to decide whether the doc matters. The index
 tables in CLAUDE.md and .harness/README.md are generated from them.
@@ -20,7 +21,9 @@ from pathlib import Path
 
 import yaml
 
-KEYS = ("title", "summary", "read_when")
+from budgets import LOAD_CLASSES
+
+KEYS = ("title", "summary", "read_when", "load")
 MAX_SUMMARY = 160
 START, END = "<!-- harness-docs:start -->", "<!-- harness-docs:end -->"
 
@@ -39,7 +42,7 @@ def read_meta(path: Path) -> dict | None:
 
 def doc_problems(path: Path, meta: dict | None) -> list[str]:
     if meta is None:
-        return [f"{path.name}: missing front matter (title, summary, read_when)"]
+        return [f"{path.name}: missing front matter (title, summary, read_when, load)"]
     problems = []
     for key in KEYS:
         value = meta.get(key)
@@ -47,6 +50,9 @@ def doc_problems(path: Path, meta: dict | None) -> list[str]:
             problems.append(f"{path.name}: front matter needs a non-empty '{key}'")
         elif "\n" in value.strip():
             problems.append(f"{path.name}: '{key}' must be a single line")
+    load = meta.get("load")
+    if isinstance(load, str) and load.strip() and load.strip() not in LOAD_CLASSES:
+        problems.append(f"{path.name}: load must be one of {LOAD_CLASSES}")
     summary = meta.get("summary")
     if isinstance(summary, str) and len(summary.strip()) > MAX_SUMMARY:
         problems.append(f"{path.name}: summary is over {MAX_SUMMARY} characters")
@@ -61,7 +67,8 @@ def collect(root: Path) -> list[tuple[Path, dict | None]]:
 
 
 def _valid(entries):
-    return [(p, m) for p, m in entries if m and not doc_problems(p, m)]
+    """Docs with a good header that an agent should open on demand."""
+    return [(p, m) for p, m in entries if m and not doc_problems(p, m) and m["load"] == "on-demand"]
 
 
 def render_claude_table(entries, root: Path) -> str:

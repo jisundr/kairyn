@@ -14,12 +14,14 @@ from harness_docs import (
     replace_block,
     sync,
 )
+from budgets import budget_for, load_budgets
 from helpers import ROOT
 
 GOOD = """---
 title: Testing and evals
 summary: How to run tests and evals.
 read_when: running or writing tests or evals
+load: on-demand
 ---
 
 # Testing and evals
@@ -37,7 +39,7 @@ def make_doc(path: Path, text: str = GOOD) -> Path:
 def test_read_meta_parses_front_matter(tmp_path):
     meta = read_meta(make_doc(tmp_path / "a.md"))
     assert meta == {"title": "Testing and evals", "summary": "How to run tests and evals.",
-                    "read_when": "running or writing tests or evals"}
+                    "read_when": "running or writing tests or evals", "load": "on-demand"}
 
 
 def test_read_meta_without_front_matter_is_none(tmp_path):
@@ -54,7 +56,7 @@ def test_missing_header_is_a_problem(tmp_path):
     assert any("front matter" in p for p in doc_problems(path, read_meta(path)))
 
 
-@pytest.mark.parametrize("key", ["title", "summary", "read_when"])
+@pytest.mark.parametrize("key", ["title", "summary", "read_when", "load"])
 def test_missing_key_is_a_problem(tmp_path, key):
     text = "\n".join(line for line in GOOD.splitlines() if not line.startswith(f"{key}:")) + "\n"
     path = make_doc(tmp_path / "a.md", text)
@@ -64,6 +66,11 @@ def test_missing_key_is_a_problem(tmp_path, key):
 def test_empty_value_is_a_problem(tmp_path):
     path = make_doc(tmp_path / "a.md", GOOD.replace("summary: How to run tests and evals.", "summary: "))
     assert any("summary" in p for p in doc_problems(path, read_meta(path)))
+
+
+def test_unknown_load_class_is_a_problem(tmp_path):
+    path = make_doc(tmp_path / "a.md", GOOD.replace("load: on-demand", "load: sometimes"))
+    assert any("load" in p for p in doc_problems(path, read_meta(path)))
 
 
 def test_long_summary_is_a_problem(tmp_path):
@@ -85,6 +92,14 @@ def test_collect_puts_readme_first_then_workflows_sorted(tmp_path):
     root, found = entries(tmp_path)
     assert [p.relative_to(root).as_posix() for p, _ in found] == [
         ".harness/README.md", ".harness/workflows/a.md", ".harness/workflows/b.md"]
+
+
+def test_tables_list_only_on_demand_docs(tmp_path):
+    root, _ = entries(tmp_path)
+    make_doc(root / ".harness" / "workflows" / "z.md", GOOD.replace("load: on-demand", "load: runtime").replace("running or writing tests or evals", "never listed"))
+    found = collect(root)
+    assert "never listed" not in render_claude_table(found, root)
+    assert "never listed" not in render_readme_table(found, root)
 
 
 def test_claude_table_lists_read_when_and_path(tmp_path):
@@ -157,3 +172,11 @@ def test_check_reports_doc_with_bad_header(tmp_path):
 
 def test_repo_docs_are_valid_and_indexes_in_sync():
     assert check(ROOT) == [], "run: uv run python tools/harness_docs.py --write"
+
+
+def test_header_load_class_matches_budgets_yml():
+    """One fact, two places: the header an AI reads and the budget config must agree."""
+    budgets = load_budgets(ROOT / ".harness" / "budgets.yml")
+    for path, meta in collect(ROOT):
+        rel = path.relative_to(ROOT).as_posix()
+        assert budget_for(rel, budgets).load == meta["load"], f"{rel}: header and budgets.yml disagree on load class"

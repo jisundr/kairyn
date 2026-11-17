@@ -2,6 +2,7 @@
 title: Harness overview
 summary: "Principles and repo layout for developing kairyn."
 read_when: "looking for the repo layout or principles"
+load: on-demand
 ---
 
 # .harness
@@ -35,8 +36,19 @@ Every doc here starts with a header an agent can read without opening the body:
 title: <name>
 summary: "<one line, at most 160 characters>"
 read_when: "<the task that makes this doc relevant>"
+load: on-demand
 ---
 ```
+
+`load` says when a file is read:
+
+| Class | Meaning |
+|---|---|
+| `always` | loaded every session, so keep it tiny (`CLAUDE.md`) |
+| `on-demand` | read only when the task matches `read_when` (these docs) |
+| `runtime` | shipped in the plugin, read when a command or stage runs |
+
+Classes are set per file pattern in `budgets.yml` and must match each doc's header. Only `on-demand` docs appear in the index tables.
 
 Read only those first lines (`head -6 <file>`) to decide whether a doc matters. The tables above and in `CLAUDE.md` are generated from these headers:
 
@@ -49,19 +61,4 @@ uv run python tools/harness_docs.py --check   # verify headers and indexes
 
 ## Layout
 
-```
-.claude-plugin/marketplace.json   marketplace entry
-plugin/                           the shipped plugin
-  commands/init.md                /kairyn:init
-  scripts/                        init.sh, verify-init.sh (run by the command)
-  stages/                         stage definitions (_template.md, REQUIREMENTS.md)
-  templates/STATE.md              per-task state file
-tests/                            fast tests (pytest)
-evals/                            BDD evals that run real claude sessions
-tools/harness_docs.py             checks doc headers and builds the index tables
-tools/budgets.py                  checks file sizes against budgets.yml
-  features/*.feature              scenarios, each with a `# depends:` header
-  selector.py                     runs an eval only if its dependencies changed
-.harness/                         these docs
-CLAUDE.md                         loaded every session; points here on demand
-```
+See the layout in the root [README](../README.md).

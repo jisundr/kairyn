@@ -2,6 +2,7 @@
 title: Pull request
 summary: "Pre-flight checks, opening and updating a PR, commit conventions and what not to do."
 read_when: "committing, or opening or updating a pull request"
+load: on-demand
 ---
 
 # Pull request

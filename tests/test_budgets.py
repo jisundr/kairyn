@@ -3,10 +3,14 @@ from pathlib import Path
 
 import pytest
 
-from budgets import budget_for, check, estimate_tokens, find_docs, load_budgets, report
+from budgets import LOAD_CLASSES, Budget, budget_for, check, estimate_tokens, find_docs, load_budgets, report
 from helpers import ROOT
 
-BUDGETS = [("CLAUDE.md", 100), ("plugin/stages/*.md", 50), ("*.md", 200)]
+BUDGETS = [
+    Budget("CLAUDE.md", 100, "always"),
+    Budget("plugin/stages/*.md", 50, "runtime"),
+    Budget("*.md", 200, "on-demand"),
+]
 
 
 def write(root: Path, rel: str, text: str) -> None:
@@ -27,23 +31,34 @@ def test_estimate_is_chars_divided_by_four_rounded_up():
 
 def test_load_budgets_reads_pattern_and_limit(tmp_path):
     cfg = tmp_path / "budgets.yml"
-    cfg.write_text("budgets:\n  - {pattern: CLAUDE.md, max_tokens: 700}\n  - {pattern: '*.md', max_tokens: 900}\n")
-    assert load_budgets(cfg) == [("CLAUDE.md", 700), ("*.md", 900)]
+    cfg.write_text("budgets:\n  - {pattern: CLAUDE.md, max_tokens: 700, load: always}\n  - {pattern: '*.md', max_tokens: 900, load: on-demand}\n")
+    assert load_budgets(cfg) == [Budget("CLAUDE.md", 700, "always"), Budget("*.md", 900, "on-demand")]
 
 
 def test_load_budgets_rejects_bad_entries(tmp_path):
     cfg = tmp_path / "budgets.yml"
-    cfg.write_text("budgets:\n  - {pattern: CLAUDE.md}\n")
+    cfg.write_text("budgets:\n  - {pattern: CLAUDE.md, load: always}\n")
     with pytest.raises(ValueError):
         load_budgets(cfg)
+
+
+def test_load_budgets_rejects_unknown_load_class(tmp_path):
+    cfg = tmp_path / "budgets.yml"
+    cfg.write_text("budgets:\n  - {pattern: CLAUDE.md, max_tokens: 700, load: sometimes}\n")
+    with pytest.raises(ValueError, match="load"):
+        load_budgets(cfg)
+
+
+def test_load_classes_are_the_documented_set():
+    assert LOAD_CLASSES == ("always", "on-demand", "runtime")
 
 
 # --- budget_for --------------------------------------------------------------
 
 def test_first_matching_pattern_wins():
-    assert budget_for("CLAUDE.md", BUDGETS) == 100
-    assert budget_for("plugin/stages/X.md", BUDGETS) == 50
-    assert budget_for("other.md", BUDGETS) == 200
+    assert budget_for("CLAUDE.md", BUDGETS) == Budget("CLAUDE.md", 100, "always")
+    assert budget_for("plugin/stages/X.md", BUDGETS).max_tokens == 50
+    assert budget_for("other.md", BUDGETS).load == "on-demand"
 
 
 def test_no_match_returns_none():
@@ -73,7 +88,7 @@ def test_file_over_budget_is_reported_with_numbers(tmp_path):
 
 def test_unbudgeted_file_is_a_problem(tmp_path):
     write(tmp_path, "docs/new.md", "hello")
-    [problem] = check(tmp_path, [("CLAUDE.md", 100)])
+    [problem] = check(tmp_path, [Budget("CLAUDE.md", 100, "always")])
     assert "docs/new.md" in problem and "no budget" in problem
 
 
@@ -81,8 +96,8 @@ def test_report_shows_usage_most_used_first(tmp_path):
     write(tmp_path, "CLAUDE.md", "x" * 200)   # 50 / 100
     write(tmp_path, "a.md", "x" * 360)        # 90 / 200 -> 45%
     lines = report(tmp_path, BUDGETS)
-    assert "CLAUDE.md" in lines[0] and "50/100" in lines[0]
-    assert "a.md" in lines[1] and "90/200" in lines[1]
+    assert "CLAUDE.md" in lines[0] and "50/100" in lines[0] and "always" in lines[0]
+    assert "a.md" in lines[1] and "90/200" in lines[1] and "on-demand" in lines[1]
 
 
 # --- the real repo -----------------------------------------------------------

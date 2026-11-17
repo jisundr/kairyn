@@ -2,6 +2,7 @@
 title: Task lifecycle
 summary: "Task folders, STATE.md fields and log format, and the clock rule for timestamps."
 read_when: "changing STATE.md, task folders or timestamps"
+load: on-demand
 ---
 
 # Task lifecycle
