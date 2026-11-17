@@ -1,0 +1,13 @@
+{
+  "name": "kairyn",
+  "owner": {
+    "name": "jisundr"
+  },
+  "plugins": [
+    {
+      "name": "kairyn",
+      "source": "./plugin",
+      "description": "An agentic SDLC that grows with your repo."
+    }
+  ]
+}

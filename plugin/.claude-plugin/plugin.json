@@ -1,0 +1,11 @@
+{
+  "name": "kairyn",
+  "version": "0.1.0",
+  "description": "An agentic SDLC that grows with your repo.",
+  "author": {
+    "name": "jisundr"
+  },
+  "repository": "https://github.com/jisundr/kairyn",
+  "license": "MIT",
+  "keywords": ["agentic-sdlc", "agent-harness", "self-evolving"]
+}
