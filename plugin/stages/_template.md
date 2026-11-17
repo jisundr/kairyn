@@ -6,19 +6,27 @@ purpose: <one line: what this stage decides or produces>
 
 # Stage: <stage-name>
 
+Each task lives in its own folder: `docs/tasks/<YYYY-MM-DD>-<slug>/`.
+`STATE.md` in that folder tracks which stage the task is in.
+
 ## Inputs
-- <what must exist before this stage starts, e.g. a prior stage's stone>
+- `docs/tasks/<YYYY-MM-DD>-<slug>/STATE.md`
+- <outputs of earlier stages this one needs, e.g. `requirements.md`>
 
 ## Steps
 1. <what the agent does>
 2. <...>
 
-## Output (the stone)
-Write to `.kairyn/stones/<stage-name>/<YYYY-MM-DD>-<slug>.md`:
-- <what the artifact must contain>
+## Output
+Write to `docs/tasks/<YYYY-MM-DD>-<slug>/<stage-name>.md`:
+- <what the file must contain>
 
 ## Exit criteria
 - [ ] <checkable condition that marks this stage done>
+
+## State update
+When the stage finishes, update `STATE.md`: mark this stage done, set the
+current stage to the next one, and record any open questions.
 
 ## Learnings
 Append anything this run taught about the repo (conventions, pitfalls, commands)

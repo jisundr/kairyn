@@ -21,10 +21,21 @@ An agentic SDLC that grows with your repo.
 ├── plugin/                           # the kairyn plugin
 │   ├── .claude-plugin/plugin.json
 │   ├── commands/init.md              # /kairyn:init sets up .kairyn/ in a repo
-│   └── stages/                       # stage definitions copied into .kairyn/stages/
-│       ├── _template.md              # skeleton for authoring new stages
-│       └── define.md                 # stage 1: request -> scoped problem
+│   ├── stages/                       # stage definitions copied into .kairyn/stages/
+│   │   ├── _template.md              # skeleton for authoring new stages
+│   │   └── requirements.md           # stage 1: request -> scoped requirements
+│   └── templates/STATE.md            # per-task state file
 └── README.md                         # docs live at the root
+```
+
+## How tasks are stored
+
+Each task gets a folder in your repo, with a `STATE.md` and one file per stage:
+
+```
+docs/tasks/<YYYY-MM-DD>-<slug>/
+├── STATE.md
+└── requirements.md
 ```
 
 ## License
