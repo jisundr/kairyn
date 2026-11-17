@@ -27,7 +27,7 @@ An agentic SDLC that grows with your repo.
 │   └── templates/STATE.md            # per-task state file
 ├── tests/                            # fast tests (pytest)
 ├── evals/                            # BDD evals that run real claude sessions
-├── tools/                            # harness_docs.py (doc headers, indexes), budgets.py (file sizes)
+├── tools/                            # harness_docs.py (doc headers, indexes), budgets.py (file sizes), budgets_html.py (human report)
 ├── .harness/                         # how we work on kairyn: dev workflows
 ├── CLAUDE.md                         # loaded every session; points to .harness on demand
 └── README.md                         # docs live at the root

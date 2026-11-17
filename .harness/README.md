@@ -25,7 +25,7 @@ How work gets done in this repo: the workflows for developing kairyn itself. Rea
 2. **Tests before code, evals before instructions.** Write the failing test or eval first, then make it pass.
 3. **Evidence over claims.** A passing eval leaves its outputs and scores in `evals/results/`. Don't report a pass you can't point to.
 4. **Never trust the model with the clock or with overwriting user files.** Timestamps come from `date`. Init never overwrites.
-5. **Lean files.** What an AI reads has a size budget (`budgets.yml`, estimated tokens). Tests fail when a file is over or has no budget.
+5. **Lean files.** What an AI reads has a size budget (`budgets.yml`, estimated tokens). Tests fail when a file is over or has no budget. For people, `uv run python tools/budgets_html.py` builds a readable report (`.harness/budgets.html`, git-ignored) from `budgets.yml`.
 
 ## Doc format
 
