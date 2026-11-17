@@ -8,13 +8,15 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
 import yaml
 
-from conftest import PLUGIN, make_good_repo, run_verify, split_front_matter
+from conftest import PLUGIN, ROOT, make_good_repo, run_verify, split_front_matter
 
 pytestmark = pytest.mark.probabilistic
 
@@ -24,7 +26,26 @@ JUDGE_MODEL = os.environ.get("KAIRYN_JUDGE_MODEL", MODEL)
 
 REQUEST = "Add a --dry-run flag to the CLI that prints what would change without writing files."
 TASK_DIR_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(-[a-z0-9]+)*$")
-LOG_LINE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z \[requirements\] \S")
+TS_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+LOG_LINE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z) \[requirements\] \S")
+CLOCK_SLACK = timedelta(seconds=5)
+
+# Evidence for every run is saved here (git-ignored) so a pass can be audited later.
+RESULTS = ROOT / "tests" / "results" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+
+def save_text(name: str, text: str) -> None:
+    path = RESULTS / name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text)
+
+
+def save_tree(name: str, src: Path) -> None:
+    shutil.copytree(src, RESULTS / name, dirs_exist_ok=True)
+
+
+def utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def claude(prompt: str, cwd: Path, *, plugin: bool = False, model: str | None = None, timeout: int = 600) -> str:
@@ -65,6 +86,7 @@ def test_init_reliability(tmp_path):
         repo = new_repo(tmp_path, f"init-{i}")
         claude("/kairyn:init", repo, plugin=True, model=MODEL)
         result = run_verify(repo)
+        save_text(f"init-reliability/run-{i:02d}.txt", f"exit={result.returncode}\n{result.stdout}")
         if result.returncode == 0:
             passes += 1
         else:
@@ -87,17 +109,49 @@ def test_init_is_idempotent(tmp_path):
     assert_rate(passes, RUNS, details)  # overwriting user edits is the worst failure
 
 
-def run_requirements(repo: Path) -> Path | None:
+def run_requirements(repo: Path) -> dict:
+    start = utcnow()
     claude(
         "Follow the stage definition in .kairyn/stages/REQUIREMENTS.md exactly. "
         f"Request: {REQUEST} Do not ask questions; make reasonable assumptions and record them.",
         repo, model=MODEL,
     )
+    end = utcnow()
     tasks = [p for p in (repo / "docs" / "tasks").iterdir() if p.is_dir()]
-    return tasks[0] if len(tasks) == 1 else None
+    return {"task": tasks[0] if len(tasks) == 1 else None, "start": start, "end": end}
 
 
-def structural_problems(task: Path | None) -> list[str]:
+def timestamp_problems(data: dict, body: str, start: datetime, end: datetime) -> list[str]:
+    """Timestamps must come from the real clock, not from the model's memory."""
+    lo, hi = start - CLOCK_SLACK, end + CLOCK_SLACK
+    # YAML parses an unquoted 2026-11-17T06:23:19Z into a datetime; normalise to the Z string.
+    def as_raw(v):
+        if isinstance(v, datetime):
+            v = v.replace(tzinfo=timezone.utc) if v.tzinfo is None else v.astimezone(timezone.utc)
+            return v.strftime(TS_FORMAT)
+        return str(v)
+
+    stamps = {k: as_raw(data.get(k)) for k in ("created", "updated")}
+    for n, line in enumerate(body.splitlines()):
+        m = LOG_LINE_RE.match(line)
+        if m:
+            stamps[f"log line {n}"] = m.group(1)
+    problems = []
+    for label, raw in stamps.items():
+        try:
+            ts = datetime.strptime(raw, TS_FORMAT).replace(tzinfo=timezone.utc)
+        except ValueError:
+            problems.append(f"{label}: bad timestamp {raw!r}")
+            continue
+        if raw.endswith("T00:00:00Z") or raw.endswith("T12:00:00Z"):
+            problems.append(f"{label}: placeholder-looking timestamp {raw}")
+        elif not lo <= ts <= hi:
+            problems.append(f"{label}: {raw} outside run window {start:{TS_FORMAT}}..{end:{TS_FORMAT}}")
+    return problems
+
+
+def structural_problems(run: dict) -> list[str]:
+    task, start, end = run["task"], run["start"], run["end"]
     if task is None:
         return ["expected exactly one task folder"]
     problems = []
@@ -118,6 +172,10 @@ def structural_problems(task: Path | None) -> list[str]:
         problems.append("stage not advanced and status not done")
     if not any(LOG_LINE_RE.match(line) for line in body.splitlines()):
         problems.append("no timestamped [requirements] log line")
+    problems += timestamp_problems(data, body, start, end)
+    run_days = {d.strftime("%Y-%m-%d") for d in (start, end, start.astimezone(), end.astimezone())}
+    if TASK_DIR_RE.match(task.name) and task.name[:10] not in run_days:
+        problems.append(f"task folder date {task.name[:10]} is not today ({sorted(run_days)})")
     text = req.read_text()
     for section in ("problem statement", "scope", "acceptance criteria", "open questions"):
         if section not in text.lower():
@@ -133,15 +191,20 @@ def requirements_runs(tmp_path_factory):
     runs = []
     for i in range(RUNS):
         repo = make_good_repo(new_repo(tmp_path_factory.mktemp(f"req-{i}"), "repo"))
-        runs.append(run_requirements(repo))
+        run = run_requirements(repo)
+        if run["task"] is not None:
+            save_tree(f"requirements/run-{i:02d}/{run['task'].name}", run["task"])
+        save_text(f"requirements/run-{i:02d}/window.txt", f"{run['start']:{TS_FORMAT}} .. {run['end']:{TS_FORMAT}}\n")
+        runs.append(run)
     return runs
 
 
 def test_requirements_structure(requirements_runs):
     """Every run leaves a well-formed task folder, STATE.md and REQUIREMENTS.md."""
     passes, details = 0, []
-    for i, task in enumerate(requirements_runs):
-        problems = structural_problems(task)
+    for i, run in enumerate(requirements_runs):
+        problems = structural_problems(run)
+        save_text(f"requirements/run-{i:02d}/problems.txt", "\n".join(problems) or "none")
         if problems:
             details.append(f"run {i}: {'; '.join(problems)}")
         else:
@@ -166,15 +229,18 @@ REQUIREMENTS.md:
 def test_requirements_quality(requirements_runs, tmp_path):
     """LLM judge: mean score >= 4 and no single criterion below 3."""
     scores = []
-    for task in requirements_runs:
+    for i, run in enumerate(requirements_runs):
+        task = run["task"]
         if task is None or not (task / "REQUIREMENTS.md").exists():
             continue
         out = claude(RUBRIC.format(request=REQUEST, doc=(task / "REQUIREMENTS.md").read_text()),
                      tmp_path, model=JUDGE_MODEL)
         match = re.search(r"\{.*?\}", out, re.S)
+        save_text(f"judge/run-{i:02d}.txt", out)
         if match:
             scores.append(json.loads(match.group()))
     assert len(scores) >= int(RUNS * 0.9), f"only {len(scores)} runs produced a gradable document"
+    save_text("judge/scores.json", json.dumps(scores, indent=2))
     values = [v for s in scores for v in s.values()]
     mean = sum(values) / len(values)
     assert min(values) >= 3, f"a criterion scored below 3: {scores}"

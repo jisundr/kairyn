@@ -11,7 +11,7 @@ purpose: Turn a request into clear, scoped requirements with acceptance criteria
 - `.kairyn/learnings.md`, if present.
 
 ## Steps
-1. Create the task folder `docs/tasks/<YYYY-MM-DD>-<slug>/` and a `STATE.md` from `.kairyn/templates/STATE.md`.
+1. Get the date and a UTC timestamp by running `date` (see `_template.md`, Time). Create the task folder `docs/tasks/<YYYY-MM-DD>-<slug>/` and a `STATE.md` from `.kairyn/templates/STATE.md`.
 2. Restate the request in one paragraph.
 3. Skim the relevant parts of the repo to ground the request in existing code.
 4. List open questions; ask the user only those you cannot resolve from the repo.

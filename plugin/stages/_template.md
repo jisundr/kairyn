@@ -9,6 +9,11 @@ purpose: <one line: what this stage decides or produces>
 Each task lives in its own folder: `docs/tasks/<YYYY-MM-DD>-<slug>/`.
 `STATE.md` in that folder tracks which stage the task is in.
 
+## Time
+Never write dates or timestamps from memory. Get them from the system clock:
+- date for folder names: `date +%Y-%m-%d`
+- timestamps (`created`, `updated`, log lines): `date -u +%Y-%m-%dT%H:%M:%SZ`
+
 ## Inputs
 - `docs/tasks/<YYYY-MM-DD>-<slug>/STATE.md`
 - <outputs of earlier stages this one needs, e.g. `REQUIREMENTS.md`>
