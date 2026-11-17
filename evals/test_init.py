@@ -52,3 +52,26 @@ def _unchanged(ctx):
     changed = [i for i, r in enumerate(ctx["repos"]) if tree_hash(r / ".kairyn") != ctx["before"][i]]
     summarize("init", f"never overwrites  {len(ctx['repos']) - len(changed)}/{len(ctx['repos'])} unchanged (need all)")
     assert not changed, f"runs {changed} changed .kairyn/ (overwriting user edits is the worst failure)"
+
+
+ORIGINAL_CLAUDE_MD = "# My project\n\nMy own rules.\n"
+
+
+@given("fresh git repos with an existing CLAUDE.md")
+def _with_claude_md(ctx, tmp_path):
+    ctx["repos"] = []
+    for i in range(RUNS):
+        repo = new_repo(tmp_path, f"claude-md-{i}")
+        (repo / "CLAUDE.md").write_text(ORIGINAL_CLAUDE_MD)
+        ctx["repos"].append(repo)
+
+
+@then("every CLAUDE.md keeps its original text and has exactly one kairyn block")
+def _claude_md_kept(ctx):
+    bad = []
+    for i, repo in enumerate(ctx["repos"]):
+        text = (repo / "CLAUDE.md").read_text()
+        if not text.startswith(ORIGINAL_CLAUDE_MD) or text.count("<!-- kairyn:start -->") != 1:
+            bad.append(i)
+    summarize("init", f"keeps CLAUDE.md   {len(ctx['repos']) - len(bad)}/{len(ctx['repos'])} intact with one block (need all)")
+    assert not bad, f"runs {bad} damaged CLAUDE.md or did not add exactly one block"

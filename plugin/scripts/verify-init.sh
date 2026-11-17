@@ -29,6 +29,19 @@ for kind in stages templates; do
   done
 done
 
+# The consumer harness: every shipped file exists (users may edit them, so no byte compare).
+while read -r f; do
+  f="${f#./}"
+  [ -f "$repo/.harness/$f" ] || problem ".harness/$f missing"
+done < <(cd "$plugin/harness/.harness" && find . -type f | sort)
+
+# CLAUDE.md carries the kairyn block.
+if [ ! -f "$repo/CLAUDE.md" ]; then
+  problem "CLAUDE.md missing"
+elif ! grep -q '<!-- kairyn:start -->' "$repo/CLAUDE.md" || ! grep -q '<!-- kairyn:end -->' "$repo/CLAUDE.md"; then
+  problem "CLAUDE.md is missing the kairyn block (<!-- kairyn:start --> ... <!-- kairyn:end -->)"
+fi
+
 # learnings.md: exists and starts with the heading.
 learn="$repo/.kairyn/learnings.md"
 if [ ! -f "$learn" ]; then

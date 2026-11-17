@@ -1,4 +1,4 @@
-# depends: plugin/stages/REQUIREMENTS.md, plugin/stages/_template.md, plugin/templates/STATE.md
+# depends: plugin/stages/REQUIREMENTS.md, plugin/stages/_template.md, plugin/templates/STATE.md, plugin/scripts/init.sh, plugin/harness/**/*
 Feature: requirements stage
 
   Background:

@@ -104,4 +104,53 @@ def test_report_shows_usage_most_used_first(tmp_path):
 
 def test_repo_files_are_within_budget():
     budgets = load_budgets(ROOT / ".harness" / "budgets.yml")
-    assert check(ROOT, budgets) == [], "run: uv run python tools/budgets.py"
+    assert check(ROOT, budgets) == [], "run: uv run python plugin/scripts/budgets.py"
+
+
+# --- strict mode and CLI (consumer repos) ------------------------------------
+
+import subprocess
+import sys
+
+from budgets import load_config
+from helpers import PLUGIN
+
+
+def test_config_defaults_to_strict(tmp_path):
+    cfg = tmp_path / "budgets.yml"
+    cfg.write_text("budgets:\n  - {pattern: CLAUDE.md, max_tokens: 700, load: always}\n")
+    budgets, strict = load_config(cfg)
+    assert strict is True and budgets == [Budget("CLAUDE.md", 700, "always")]
+
+
+def test_config_can_turn_strict_off(tmp_path):
+    cfg = tmp_path / "budgets.yml"
+    cfg.write_text("strict: false\nbudgets:\n  - {pattern: CLAUDE.md, max_tokens: 700, load: always}\n")
+    assert load_config(cfg)[1] is False
+
+
+def test_non_strict_ignores_unbudgeted_files_but_still_enforces_budgeted_ones(tmp_path):
+    write(tmp_path, "docs/anything.md", "x" * 4000)     # unbudgeted: ignored
+    write(tmp_path, "CLAUDE.md", "x" * 404)             # budgeted and over: reported
+    problems = check(tmp_path, [Budget("CLAUDE.md", 100, "always")], strict=False)
+    assert len(problems) == 1 and "CLAUDE.md" in problems[0]
+
+
+def run_cli(*args):
+    return subprocess.run([sys.executable, str(PLUGIN / "scripts" / "budgets.py"), *args], capture_output=True, text=True)
+
+
+def test_cli_checks_the_given_root(tmp_path):
+    (tmp_path / ".harness").mkdir()
+    (tmp_path / ".harness" / "budgets.yml").write_text("budgets:\n  - {pattern: CLAUDE.md, max_tokens: 1, load: always}\n")
+    write(tmp_path, "CLAUDE.md", "x" * 40)
+    result = run_cli("--root", str(tmp_path))
+    assert result.returncode == 1 and "over by" in result.stdout
+
+
+def test_cli_passes_on_a_clean_root(tmp_path):
+    (tmp_path / ".harness").mkdir()
+    (tmp_path / ".harness" / "budgets.yml").write_text("budgets:\n  - {pattern: CLAUDE.md, max_tokens: 100, load: always}\n")
+    write(tmp_path, "CLAUDE.md", "x" * 40)
+    result = run_cli("--root", str(tmp_path))
+    assert result.returncode == 0 and "OK" in result.stdout

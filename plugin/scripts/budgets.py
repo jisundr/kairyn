@@ -9,8 +9,11 @@ with a load class saying when the file is read:
 The first matching pattern wins, so list specific patterns before general ones.
 Every markdown file must match a pattern; a new file with no budget fails.
 
+Set `strict: false` at the top of budgets.yml to ignore files that match no pattern
+(for projects whose other markdown files are not ours to budget).
+
 Usage:
-    python tools/budgets.py     # print usage per file, exit 1 if any file is over or unbudgeted
+    python budgets.py [--root DIR]   # DIR defaults to the current directory; exit 1 on any problem
 """
 import fnmatch
 import math
@@ -18,7 +21,7 @@ import sys
 from pathlib import Path
 from typing import NamedTuple
 
-import yaml
+from simple_yaml import parse_budgets
 
 LOAD_CLASSES = ("always", "on-demand", "runtime")
 
@@ -37,8 +40,9 @@ def estimate_tokens(text: str) -> int:
     return math.ceil(len(text) / 4)
 
 
-def load_budgets(path: Path) -> list[Budget]:
-    entries = (yaml.safe_load(path.read_text()) or {}).get("budgets", [])
+def load_config(path: Path) -> tuple[list[Budget], bool]:
+    """Returns (budgets, strict)."""
+    options, entries = parse_budgets(path.read_text())
     budgets = []
     for entry in entries:
         pattern, limit, load = entry.get("pattern"), entry.get("max_tokens"), entry.get("load")
@@ -47,7 +51,11 @@ def load_budgets(path: Path) -> list[Budget]:
         if load not in LOAD_CLASSES:
             raise ValueError(f"bad budget entry {entry!r}: load must be one of {LOAD_CLASSES}")
         budgets.append(Budget(pattern, limit, load))
-    return budgets
+    return budgets, options.get("strict", True) is not False
+
+
+def load_budgets(path: Path) -> list[Budget]:
+    return load_config(path)[0]
 
 
 def budget_for(rel_path: str, budgets: list[Budget]) -> Budget | None:
@@ -67,12 +75,13 @@ def find_docs(root: Path) -> list[str]:
     return sorted(docs)
 
 
-def check(root: Path, budgets: list[Budget]) -> list[str]:
+def check(root: Path, budgets: list[Budget], strict: bool = True) -> list[str]:
     problems = []
     for rel in find_docs(root):
         budget = budget_for(rel, budgets)
         if budget is None:
-            problems.append(f"{rel}: no budget (add a pattern to .harness/budgets.yml)")
+            if strict:
+                problems.append(f"{rel}: no budget (add a pattern to .harness/budgets.yml)")
             continue
         used = estimate_tokens((root / rel).read_text())
         if used > budget.max_tokens:
@@ -80,10 +89,12 @@ def check(root: Path, budgets: list[Budget]) -> list[str]:
     return problems
 
 
-def report(root: Path, budgets: list[Budget]) -> list[str]:
+def report(root: Path, budgets: list[Budget], strict: bool = True) -> list[str]:
     rows = []
     for rel in find_docs(root):
         budget = budget_for(rel, budgets)
+        if budget is None and not strict:
+            continue
         used = estimate_tokens((root / rel).read_text())
         limit = budget.max_tokens if budget else None
         pct = used / limit if limit else float("inf")
@@ -91,12 +102,16 @@ def report(root: Path, budgets: list[Budget]) -> list[str]:
     return [line for _, line in sorted(rows, key=lambda r: -r[0])]
 
 
-def main() -> int:
-    root = Path(__file__).resolve().parent.parent
-    budgets = load_budgets(root / ".harness" / "budgets.yml")
+def root_from_args(argv: list[str]) -> Path:
+    return Path(argv[argv.index("--root") + 1]).resolve() if "--root" in argv else Path.cwd()
+
+
+def main(argv: list[str]) -> int:
+    root = root_from_args(argv)
+    budgets, strict = load_config(root / ".harness" / "budgets.yml")
     print("tokens/budget  load       file")
-    print("\n".join(report(root, budgets)))
-    problems = check(root, budgets)
+    print("\n".join(report(root, budgets, strict)))
+    problems = check(root, budgets, strict)
     for problem in problems:
         print(f"FAIL: {problem}")
     if not problems:
@@ -105,4 +120,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

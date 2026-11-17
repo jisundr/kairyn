@@ -13,6 +13,12 @@ An agentic SDLC that grows with your repo.
 /plugin install kairyn@kairyn
 ```
 
+## What you get in your repo
+
+`/kairyn:init` sets up `.kairyn/` (stages, templates, learnings), `docs/tasks/`, and a `.harness/` of short workflow docs with size budgets. It appends a marked block to your `CLAUDE.md` (creating it if needed) that points Claude to those docs on demand. Nothing you already have is overwritten.
+
+`/kairyn:check` verifies the doc headers and size budgets, using only `python3`. `/kairyn:check write` also refreshes the index tables.
+
 ## Layout
 
 ```
@@ -20,14 +26,15 @@ An agentic SDLC that grows with your repo.
 ├── .claude-plugin/marketplace.json   # marketplace entry pointing to ./plugin
 ├── plugin/                           # the kairyn plugin
 │   ├── .claude-plugin/plugin.json
-│   ├── commands/init.md              # /kairyn:init sets up .kairyn/ in a repo
+│   ├── commands/                     # /kairyn:init, /kairyn:check
+│   ├── scripts/                      # init, verify, and the doc and budget checkers
+│   ├── harness/                      # .harness/ and CLAUDE.md block installed into your repo
 │   ├── stages/                       # stage definitions copied into .kairyn/stages/
 │   │   ├── _template.md              # skeleton for authoring new stages
 │   │   └── REQUIREMENTS.md           # stage 1: request -> scoped requirements
 │   └── templates/STATE.md            # per-task state file
 ├── tests/                            # fast tests (pytest)
 ├── evals/                            # BDD evals that run real claude sessions
-├── tools/                            # harness_docs.py (doc headers, indexes), budgets.py (file sizes), budgets_html.py (human report)
 ├── .harness/                         # how we work on kairyn: dev workflows
 ├── CLAUDE.md                         # loaded every session; points to .harness on demand
 └── README.md                         # docs live at the root

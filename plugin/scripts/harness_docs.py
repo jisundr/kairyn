@@ -12,16 +12,16 @@ An agent reads only those lines to decide whether the doc matters. The index
 tables in CLAUDE.md and .harness/README.md are generated from them.
 
 Usage:
-    python tools/harness_docs.py --check   # exit 1 if a header is bad or an index is stale
-    python tools/harness_docs.py --write   # regenerate the index tables
+    python harness_docs.py [--root DIR]            # check: exit 1 if a header is bad or an index is stale
+    python harness_docs.py [--root DIR] --write    # regenerate the index tables
+DIR defaults to the current directory.
 """
 import re
 import sys
 from pathlib import Path
 
-import yaml
-
 from budgets import LOAD_CLASSES
+from simple_yaml import parse_front_matter
 
 KEYS = ("title", "summary", "read_when", "load")
 MAX_SUMMARY = 160
@@ -29,15 +29,7 @@ START, END = "<!-- harness-docs:start -->", "<!-- harness-docs:end -->"
 
 
 def read_meta(path: Path) -> dict | None:
-    text = path.read_text()
-    match = re.match(r"---\n(.*?)\n---\n", text, re.S)
-    if not match:
-        return None
-    try:
-        data = yaml.safe_load(match.group(1))
-    except yaml.YAMLError:
-        return None
-    return data if isinstance(data, dict) else None
+    return parse_front_matter(path.read_text())
 
 
 def doc_problems(path: Path, meta: dict | None) -> list[str]:
@@ -121,7 +113,7 @@ def sync(root: Path) -> None:
 
 
 def main(argv: list[str]) -> int:
-    root = Path(__file__).resolve().parent.parent
+    root = Path(argv[argv.index("--root") + 1]).resolve() if "--root" in argv else Path.cwd()
     if "--write" in argv:
         sync(root)
         print("indexes updated")

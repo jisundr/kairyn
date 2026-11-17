@@ -4,14 +4,14 @@
 The page is built from the same data the tests enforce, so it cannot drift from it.
 
 Usage:
-    python tools/budgets_html.py [--out PATH]    # default: .harness/budgets.html (git-ignored)
+    python budgets_html.py [--root DIR] [--out PATH]    # default: .harness/budgets.html (git-ignored)
 """
 import sys
 from datetime import datetime, timezone
 from html import escape
 from pathlib import Path
 
-from budgets import Budget, budget_for, estimate_tokens, find_docs, load_budgets
+from budgets import Budget, budget_for, estimate_tokens, find_docs, load_config, root_from_args
 
 CLASS_LABELS = {
     "always": ("Always loaded", "in every session"),
@@ -67,11 +67,13 @@ def _row(rel: str, used: int, budget: Budget | None) -> tuple[float, str]:
                  f'<td>{meter}</td><td class="status">{status}</td></tr>')
 
 
-def render_html(root: Path, budgets: list[Budget], generated: datetime | None = None) -> str:
+def render_html(root: Path, budgets: list[Budget], generated: datetime | None = None, strict: bool = True) -> str:
     generated = generated or datetime.now(timezone.utc)
     rows, totals = [], {c: [0, 0, 0] for c in CLASS_LABELS}   # used, budget, files
     for rel in find_docs(root):
         budget = budget_for(rel, budgets)
+        if budget is None and not strict:
+            continue
         used = estimate_tokens((root / rel).read_text())
         rows.append(_row(rel, used, budget))
         if budget:
@@ -111,15 +113,16 @@ def render_html(root: Path, budgets: list[Budget], generated: datetime | None = 
     )
 
 
-def write_html(root: Path, budgets: list[Budget], out: Path, generated: datetime | None = None) -> None:
+def write_html(root: Path, budgets: list[Budget], out: Path, generated: datetime | None = None, strict: bool = True) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(render_html(root, budgets, generated))
+    out.write_text(render_html(root, budgets, generated, strict))
 
 
 def main(argv: list[str]) -> int:
-    root = Path(__file__).resolve().parent.parent
+    root = root_from_args(argv)
     out = Path(argv[argv.index("--out") + 1]) if "--out" in argv else root / ".harness" / "budgets.html"
-    write_html(root, load_budgets(root / ".harness" / "budgets.yml"), out)
+    budgets, strict = load_config(root / ".harness" / "budgets.yml")
+    write_html(root, budgets, out, strict=strict)
     print(f"wrote {out}")
     return 0
 

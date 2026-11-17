@@ -25,7 +25,7 @@ How work gets done in this repo: the workflows for developing kairyn itself. Rea
 2. **Tests before code, evals before instructions.** Write the failing test or eval first, then make it pass.
 3. **Evidence over claims.** A passing eval leaves its outputs and scores in `evals/results/`. Don't report a pass you can't point to.
 4. **Never trust the model with the clock or with overwriting user files.** Timestamps come from `date`. Init never overwrites.
-5. **Lean files.** What an AI reads has a size budget (`budgets.yml`, estimated tokens). Tests fail when a file is over or has no budget. For people, `uv run python tools/budgets_html.py` builds a readable report (`.harness/budgets.html`, git-ignored) from `budgets.yml`.
+5. **Lean files.** What an AI reads has a size budget (`budgets.yml`, estimated tokens). Tests fail when a file is over or has no budget. For people, `uv run python plugin/scripts/budgets_html.py` builds a readable report (`.harness/budgets.html`, git-ignored) from `budgets.yml`.
 
 ## Doc format
 
@@ -53,8 +53,8 @@ Classes are set per file pattern in `budgets.yml` and must match each doc's head
 Read only those first lines (`head -6 <file>`) to decide whether a doc matters. The tables above and in `CLAUDE.md` are generated from these headers:
 
 ```bash
-uv run python tools/harness_docs.py --write   # regenerate the index tables
-uv run python tools/harness_docs.py --check   # verify headers and indexes
+uv run python plugin/scripts/harness_docs.py --write   # regenerate the index tables
+uv run python plugin/scripts/harness_docs.py --check   # verify headers and indexes
 ```
 
 `uv run pytest` runs the same check, so a missing header or a stale index fails the tests.

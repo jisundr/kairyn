@@ -36,6 +36,8 @@ Current evals and thresholds:
 |---|---|---|
 | init | verified layout | at least 90% of repos pass `verify-init.sh` |
 | init | never overwrites | 100% leave `.kairyn/` unchanged, including user edits |
+| init | keeps CLAUDE.md | 100% keep the original text and add exactly one kairyn block |
+| check | reports a broken doc | at least 90% of replies name the doc that lost its header |
 | requirements | well-formed | at least 90% leave a valid task folder, `STATE.md` and `REQUIREMENTS.md` with real timestamps |
 | requirements | quality | LLM judge mean at least 4, no score below 3 |
 

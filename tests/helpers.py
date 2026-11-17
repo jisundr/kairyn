@@ -10,11 +10,9 @@ VERIFY = PLUGIN / "scripts" / "verify-init.sh"
 
 
 def make_good_repo(dest: Path) -> Path:
-    """Reference layout: what a correct /kairyn:init produces."""
-    (dest / "docs" / "tasks").mkdir(parents=True)
-    shutil.copytree(PLUGIN / "stages", dest / ".kairyn" / "stages")
-    shutil.copytree(PLUGIN / "templates", dest / ".kairyn" / "templates")
-    (dest / ".kairyn" / "learnings.md").write_text("# Learnings\n\nStages append here.\n")
+    """What a correct /kairyn:init produces: run the real init script on an empty repo."""
+    dest.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["bash", str(PLUGIN / "scripts" / "init.sh"), str(dest)], check=True, capture_output=True)
     return dest
 
 

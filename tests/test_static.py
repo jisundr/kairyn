@@ -53,3 +53,23 @@ def test_state_template_front_matter():
     assert set(data) == {"task", "title", "stage", "status", "stages", "created", "updated"}
     assert data["stage"] in data["stages"]
     assert "# Log" in body.splitlines()
+
+
+# --- commands -----------------------------------------------------------------
+
+import re
+
+COMMANDS = sorted((PLUGIN / "commands").glob("*.md"))
+
+
+def test_expected_commands_exist():
+    assert {c.stem for c in COMMANDS} >= {"init", "check"}
+
+
+@pytest.mark.parametrize("command", COMMANDS, ids=lambda p: p.stem)
+def test_command_has_description_and_valid_script_references(command):
+    text = command.read_text()
+    fm, _ = split_front_matter(text)
+    assert yaml.safe_load(fm).get("description")
+    for script in re.findall(r"\$\{CLAUDE_PLUGIN_ROOT\}/(scripts/[\w.-]+)", text):
+        assert (PLUGIN / script).is_file(), f"{command.name} references missing {script}"

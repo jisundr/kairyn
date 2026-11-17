@@ -11,3 +11,4 @@ budgets:
   - {pattern: "plugin/stages/*.md", max_tokens: 500, load: runtime}
   - {pattern: "plugin/commands/*.md", max_tokens: 300, load: runtime}
   - {pattern: "plugin/templates/*.md", max_tokens: 200, load: runtime}
+  - {pattern: "plugin/harness/*.md", max_tokens: 800, load: runtime}   # templates copied into consumer repos

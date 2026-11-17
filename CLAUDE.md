@@ -19,7 +19,7 @@ uv run pytest -m eval               # evals: real claude runs, slow, costs token
 - **Init never overwrites** anything in a user's `.kairyn/`.
 - **Report evidence, not claims.** Quote numbers from `evals/results/<run-id>/summary.md`.
 - Stage files and their outputs are upper case (`REQUIREMENTS.md`); stage names and `STATE.md` values are lower case (`requirements`).
-- **Keep files lean.** Every markdown file has a token budget in `.harness/budgets.yml`; `uv run python tools/budgets.py` shows usage. Over budget: cut or split, don't raise the limit. New markdown files need a budget entry.
+- **Keep files lean.** Every markdown file has a token budget in `.harness/budgets.yml`; `uv run python plugin/scripts/budgets.py` shows usage. Over budget: cut or split, don't raise the limit. New markdown files need a budget entry.
 - The remote is GitHub, so it is a pull request, not a merge request.
 
 ## Read on demand
@@ -37,4 +37,4 @@ Open a doc only when the task matches. Do not read them all up front. Each start
 | running, writing or interpreting tests or evals, or touching evals/ | `.harness/workflows/testing-and-evals.md` |
 <!-- harness-docs:end -->
 
-If you change a workflow, update the matching `.harness` doc in the same commit. After adding or editing a `.harness` doc, run `uv run python tools/harness_docs.py --write`.
+If you change a workflow, update the matching `.harness` doc in the same commit. After adding or editing a `.harness` doc, run `uv run python plugin/scripts/harness_docs.py --write`.

@@ -171,7 +171,7 @@ def test_check_reports_doc_with_bad_header(tmp_path):
 # --- the real repo -----------------------------------------------------------
 
 def test_repo_docs_are_valid_and_indexes_in_sync():
-    assert check(ROOT) == [], "run: uv run python tools/harness_docs.py --write"
+    assert check(ROOT) == [], "run: uv run python plugin/scripts/harness_docs.py --write"
 
 
 def test_header_load_class_matches_budgets_yml():
@@ -180,3 +180,13 @@ def test_header_load_class_matches_budgets_yml():
     for path, meta in collect(ROOT):
         rel = path.relative_to(ROOT).as_posix()
         assert budget_for(rel, budgets).load == meta["load"], f"{rel}: header and budgets.yml disagree on load class"
+
+
+def test_cli_checks_the_given_root(tmp_path):
+    import subprocess, sys
+    from helpers import PLUGIN
+    root = repo_with_indexes(tmp_path)
+    cmd = [sys.executable, str(PLUGIN / "scripts" / "harness_docs.py"), "--root", str(root)]
+    assert subprocess.run(cmd, capture_output=True, text=True).returncode == 1          # stale indexes
+    assert subprocess.run(cmd + ["--write"], capture_output=True, text=True).returncode == 0
+    assert subprocess.run(cmd, capture_output=True, text=True).returncode == 0

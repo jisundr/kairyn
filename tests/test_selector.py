@@ -107,3 +107,12 @@ def test_save_then_load_round_trips(tmp_path):
     save_record(path, {"init": "h1"})
     assert load_record(path) == {"init": "h1"}
     assert json.loads(path.read_text()) == {"init": "h1"}
+
+
+def test_hash_covers_nested_and_hidden_files_with_recursive_glob(tmp_path):
+    (tmp_path / "plugin" / "harness" / ".harness" / "workflows").mkdir(parents=True)
+    nested = tmp_path / "plugin" / "harness" / ".harness" / "workflows" / "a.md"
+    nested.write_text("a")
+    before = deps_hash(tmp_path, ["plugin/harness/**/*"])
+    nested.write_text("changed")
+    assert deps_hash(tmp_path, ["plugin/harness/**/*"]) != before
