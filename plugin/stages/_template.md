@@ -25,8 +25,11 @@ Write to `docs/tasks/<YYYY-MM-DD>-<slug>/<STAGE-NAME>.md` (stage name in caps):
 - [ ] <checkable condition that marks this stage done>
 
 ## State update
-When the stage finishes, update `STATE.md`: mark this stage done, set the
-current stage to the next one, and record any open questions.
+`STATE.md` front matter is the source of truth for task state: read it, not the
+log, to find the current stage. When the stage finishes:
+- Front matter: set this stage to `done` in `stages`, advance `stage`, update
+  `status`, `open_questions` and `updated`.
+- Log: append one line `<timestamp> [<stage-name>] <summary of what happened>`.
 
 ## Learnings
 Append anything this run taught about the repo (conventions, pitfalls, commands)
