@@ -25,6 +25,7 @@ An agentic SDLC that grows with your repo.
 │   │   ├── _template.md              # skeleton for authoring new stages
 │   │   └── requirements.md           # stage 1: request -> scoped requirements
 │   └── templates/STATE.md            # per-task state file
+├── tests/                            # pytest: deterministic + probabilistic
 └── README.md                         # docs live at the root
 ```
 
@@ -37,6 +38,15 @@ docs/tasks/<YYYY-MM-DD>-<slug>/
 ├── STATE.md              # front matter = current state, body = log
 └── REQUIREMENTS.md
 ```
+
+## Tests
+
+```bash
+uv run pytest                      # deterministic: fast, no LLM
+uv run pytest -m probabilistic     # real claude runs, N times each (slow, costs tokens)
+```
+
+Probabilistic tests read `KAIRYN_RUNS` (default 10), `KAIRYN_MODEL` and `KAIRYN_JUDGE_MODEL`.
 
 ## License
 
