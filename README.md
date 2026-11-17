@@ -23,7 +23,7 @@ An agentic SDLC that grows with your repo.
 │   ├── commands/init.md              # /kairyn:init sets up .kairyn/ in a repo
 │   ├── stages/                       # stage definitions copied into .kairyn/stages/
 │   │   ├── _template.md              # skeleton for authoring new stages
-│   │   └── requirements.md           # stage 1: request -> scoped requirements
+│   │   └── REQUIREMENTS.md           # stage 1: request -> scoped requirements
 │   └── templates/STATE.md            # per-task state file
 ├── tests/                            # pytest: deterministic + probabilistic
 └── README.md                         # docs live at the root

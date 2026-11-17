@@ -29,7 +29,7 @@ def test_stages_exist():
 def test_stage_front_matter(stage):
     fm, _ = split_front_matter(stage.read_text())
     data = yaml.safe_load(fm)
-    assert data["name"] == stage.stem
+    assert data["name"] == stage.stem.lower()
     assert isinstance(data["order"], int)
     assert data["purpose"]
 

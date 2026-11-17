@@ -89,7 +89,7 @@ def test_init_is_idempotent(tmp_path):
 
 def run_requirements(repo: Path) -> Path | None:
     claude(
-        "Follow the stage definition in .kairyn/stages/requirements.md exactly. "
+        "Follow the stage definition in .kairyn/stages/REQUIREMENTS.md exactly. "
         f"Request: {REQUEST} Do not ask questions; make reasonable assumptions and record them.",
         repo, model=MODEL,
     )
