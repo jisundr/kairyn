@@ -19,6 +19,7 @@ uv run pytest -m eval               # evals: real claude runs, slow, costs token
 - **Init never overwrites** anything in a user's `.kairyn/`.
 - **Report evidence, not claims.** Quote numbers from `evals/results/<run-id>/summary.md`.
 - Stage files and their outputs are upper case (`REQUIREMENTS.md`); stage names and `STATE.md` values are lower case (`requirements`).
+- **Keep files lean.** Every markdown file has a token budget in `.harness/budgets.yml`; `uv run python tools/budgets.py` shows usage. Over budget: cut or split, don't raise the limit. New markdown files need a budget entry.
 - The remote is GitHub, so it is a pull request, not a merge request.
 
 ## Read on demand

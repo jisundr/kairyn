@@ -1,0 +1,11 @@
+# Size budgets for markdown files, in estimated tokens (characters / 4).
+# First matching pattern wins: list specific patterns before general ones.
+# Tight on purpose. Over budget? Cut, split, or move detail out before raising a limit.
+budgets:
+  - {pattern: CLAUDE.md, max_tokens: 700}                 # loaded every session
+  - {pattern: README.md, max_tokens: 900}
+  - {pattern: .harness/README.md, max_tokens: 900}
+  - {pattern: ".harness/workflows/*.md", max_tokens: 1000}
+  - {pattern: "plugin/stages/*.md", max_tokens: 500}      # read on every stage run
+  - {pattern: "plugin/commands/*.md", max_tokens: 300}
+  - {pattern: "plugin/templates/*.md", max_tokens: 200}
