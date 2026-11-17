@@ -1,7 +1,7 @@
-"""Deterministic: the timestamp checker used by the probabilistic tests."""
+"""Timestamp checks used by the requirements eval."""
 from datetime import datetime, timedelta, timezone
 
-from test_probabilistic import TS_FORMAT, timestamp_problems
+from checks import TS_FORMAT, timestamp_problems
 
 START = datetime(2026, 11, 17, 5, 56, 0, tzinfo=timezone.utc)
 END = START + timedelta(minutes=2)

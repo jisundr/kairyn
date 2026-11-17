@@ -1,10 +1,10 @@
-"""Deterministic: static checks on the plugin's own files."""
+"""Static checks on the plugin's own files."""
 import json
 
 import pytest
 import yaml
 
-from conftest import PLUGIN, ROOT, VERIFY, split_front_matter
+from helpers import PLUGIN, ROOT, VERIFY, split_front_matter
 
 STAGES = sorted(p for p in (PLUGIN / "stages").glob("*.md") if p.name != "_template.md")
 REQUIRED_SECTIONS = ["## Inputs", "## Steps", "## Output", "## Exit criteria", "## State update", "## Learnings"]

@@ -1,9 +1,9 @@
-"""Deterministic: verify-init.sh accepts a correct layout and rejects broken ones."""
+"""verify-init.sh accepts a correct layout and rejects broken ones."""
 import shutil
 
 import pytest
 
-from conftest import make_good_repo, run_verify
+from helpers import make_good_repo, run_verify
 
 
 def test_good_layout_passes(good_repo):
@@ -53,7 +53,7 @@ def test_empty_repo_fails(tmp_path):
 
 import subprocess
 
-from conftest import PLUGIN
+from helpers import PLUGIN
 
 INIT = PLUGIN / "scripts" / "init.sh"
 

@@ -25,7 +25,8 @@ An agentic SDLC that grows with your repo.
 │   │   ├── _template.md              # skeleton for authoring new stages
 │   │   └── REQUIREMENTS.md           # stage 1: request -> scoped requirements
 │   └── templates/STATE.md            # per-task state file
-├── tests/                            # pytest: deterministic + probabilistic
+├── tests/                            # fast tests (pytest)
+├── evals/                            # BDD evals that run real claude sessions
 └── README.md                         # docs live at the root
 ```
 
@@ -39,14 +40,30 @@ docs/tasks/<YYYY-MM-DD>-<slug>/
 └── REQUIREMENTS.md
 ```
 
-## Tests
+## Tests and evals
+
+**Tests** are fast, free and give the same result every time:
 
 ```bash
-uv run pytest                      # deterministic: fast, no LLM
-uv run pytest -m probabilistic     # real claude runs, N times each (slow, costs tokens)
+uv run pytest
 ```
 
-Probabilistic tests read `KAIRYN_RUNS` (default 10), `KAIRYN_MODEL` and `KAIRYN_JUDGE_MODEL`.
+**Evals** run real `claude` sessions N times and check a pass rate, so they are slow and cost tokens. They are written as BDD scenarios in `evals/features/*.feature`, and each feature declares the plugin files it exercises:
+
+```gherkin
+# depends: plugin/stages/REQUIREMENTS.md, plugin/stages/_template.md
+```
+
+An eval runs only when those files changed since it last passed (recorded locally in `evals/results/passed.json`):
+
+```bash
+uv run pytest -m eval               # only evals whose dependencies changed
+uv run pytest -m eval --all-evals   # everything, e.g. before a release
+```
+
+Every eval run saves its evidence (task folders, judge scores) under `evals/results/<run-id>/`. Settings: `KAIRYN_EVAL_RUNS` (default 10), `KAIRYN_MODEL`, `KAIRYN_JUDGE_MODEL`.
+
+Adding an eval: write the scenario first and watch it fail against the current stage instructions, then change the instructions until it passes. To add one, create `evals/features/<name>.feature` and `evals/test_<name>.py`.
 
 ## License
 
