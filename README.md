@@ -28,6 +28,7 @@ An agentic SDLC that grows with your repo.
 ├── tests/                            # fast tests (pytest)
 ├── evals/                            # BDD evals that run real claude sessions
 ├── .harness/                         # how we work on kairyn: dev workflows
+├── CLAUDE.md                         # loaded every session; points to .harness on demand
 └── README.md                         # docs live at the root
 ```
 

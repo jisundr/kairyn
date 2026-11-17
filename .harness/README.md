@@ -31,4 +31,5 @@ evals/                            BDD evals that run real claude sessions
   features/*.feature              scenarios, each with a `# depends:` header
   selector.py                     runs an eval only if its dependencies changed
 .harness/                         these docs
+CLAUDE.md                         loaded every session; points here on demand
 ```
