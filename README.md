@@ -19,7 +19,11 @@ An agentic SDLC that grows with your repo.
 .
 ├── .claude-plugin/marketplace.json   # marketplace entry pointing to ./plugin
 ├── plugin/                           # the kairyn plugin
-│   └── .claude-plugin/plugin.json
+│   ├── .claude-plugin/plugin.json
+│   ├── commands/init.md              # /kairyn:init sets up .kairyn/ in a repo
+│   └── stages/                       # stage definitions copied into .kairyn/stages/
+│       ├── _template.md              # skeleton for authoring new stages
+│       └── define.md                 # stage 1: request -> scoped problem
 └── README.md                         # docs live at the root
 ```
 
