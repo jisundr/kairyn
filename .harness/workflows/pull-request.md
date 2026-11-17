@@ -21,6 +21,15 @@ uv run pytest -m eval               # only evals whose dependencies changed
 - Before a release, run everything with `uv run pytest -m eval --all-evals`.
 - Put the eval summary in the PR description when evals ran. Quote numbers, not "passed".
 
+## CI
+
+`.github/workflows/ci.yml` runs on every PR and on pushes to `main`:
+- `tests`: `uv run pytest` on Linux and macOS (catches shell portability bugs)
+- `consumer install`: init and the checkers with plain Python 3.10 and no dependencies, as a user would run them
+- `shellcheck`: the shell scripts
+
+Evals are **not** in CI: they need credentials and cost tokens. Run them locally and put the summary in the PR.
+
 ## Opening
 
 1. Branch from `main`, commit, push.
