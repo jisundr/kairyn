@@ -6,8 +6,7 @@ purpose: <one line: what this stage decides or produces>
 
 # Stage: <stage-name>
 
-Each task lives in its own folder: `docs/tasks/<YYYY-MM-DD>-<slug>/`.
-`STATE.md` in that folder tracks which stage the task is in.
+Each task has a folder `docs/tasks/<YYYY-MM-DD>-<slug>/`. Its `STATE.md` tracks the stage.
 
 ## Time
 Never write dates or timestamps from memory. Get them from the system clock:
@@ -30,15 +29,23 @@ Write every output file in ASD-STE100, about 80% of the way. A person or the nex
 2. <...>
 
 ## Output
-Write to `docs/tasks/<YYYY-MM-DD>-<slug>/<STAGE-NAME>.md` (stage name in caps):
+Write to `docs/tasks/<YYYY-MM-DD>-<slug>/<STAGE-NAME>.md` (stage name in caps).
+Start it with this front matter. Task state stays in `STATE.md`.
+```yaml
+---
+task: <YYYY-MM-DD>-<slug>
+stage: <stage-name>
+summary: "<one line, at most 160 characters>"
+---
+```
+Then:
 - <what the file must contain>
 
 ## Exit criteria
 - [ ] <checkable condition that marks this stage done>
 
 ## State update
-`STATE.md` front matter is the source of truth for task state: read it, not the
-log, to find the current stage. When the stage finishes:
+`STATE.md` front matter is the source of truth for task state, not the log. When the stage finishes:
 - Front matter: set this stage to `done` in `stages`, update `updated`, and:
   - if another stage follows, set `stage` to it and keep `status: in-progress`;
   - if this was the last stage, leave `stage` as is and set `status: done`;
@@ -46,5 +53,4 @@ log, to find the current stage. When the stage finishes:
 - Log: append one line `<timestamp> [<stage-name>] <summary of what happened>`.
 
 ## Learnings
-Append anything this run taught about the repo (conventions, pitfalls, commands)
-to `.kairyn/learnings.md` so the next run starts smarter.
+Append what this run taught about the repo (conventions, pitfalls, commands) to `.kairyn/learnings.md`.

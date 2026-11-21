@@ -17,6 +17,8 @@ docs/tasks/<YYYY-MM-DD>-<slug>/
 
 Stage outputs are files, not chat, so later stages (which run in a fresh context) can read them, a person can review them in git, and the repo keeps a history.
 
+Each output starts with front matter: `task` (folder name), `stage` and a one-line `summary`. Identity only: task state stays in `STATE.md`, so the two cannot drift. `checks.output_header_problems` enforces it in the requirements eval.
+
 ## STATE.md
 
 Front matter is the source of truth. Read it, not the log, to find where a task is.
