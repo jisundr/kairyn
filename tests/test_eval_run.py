@@ -18,3 +18,17 @@ def test_score_gate_applies_mean_and_floor(tmp_path):
     assert any("gradable" in line for line in score_gate(tmp_path, "s", 5, cfg))
     runs([{"verifiable": 3, "scope": 3, "no_invention": 3}] * 3)
     assert any("mean 3.00" in line for line in score_gate(tmp_path, "s", 3, cfg))
+
+
+def test_score_gate_applies_per_criterion_mean(tmp_path):
+    import json
+    from run import score_gate
+    for i, row in enumerate([{"verifiable": 5, "scope": 5, "no_invention": 3}] * 3):
+        d = tmp_path / "s" / f"run-{i}"
+        d.mkdir(parents=True)
+        (d / "judge.json").write_text(json.dumps(row))
+    loose = {"mean": 4, "floor": 3, "min_gradable": 0.9}
+    assert score_gate(tmp_path, "s", 3, loose)[0].startswith("PASS")   # overall mean 4.33 hides it
+    strict = {**loose, "criteria": {"no_invention": 4}}
+    lines = score_gate(tmp_path, "s", 3, strict)
+    assert lines[0].startswith("FAIL") and any("no_invention mean 3.00 < 4" in l for l in lines)
