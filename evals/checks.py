@@ -13,6 +13,54 @@ LOG_LINE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z) \[requirement
 CLOCK_SLACK = timedelta(seconds=5)
 
 
+# ASD-STE100, about 80% of the way: the rules a regex can check reliably.
+# Not checked: passive voice and trailing -ing phrases (too many false hits).
+STE_MAX_WORDS = 25
+STE_HEDGES = re.compile(r"\b(should|would|might|may)\b", re.I)
+STE_FILLER = re.compile(
+    r"\b(in order to|it is important to note|please note|basically|simply|essentially|leverage[sd]?|seamless(?:ly)?)\b",
+    re.I,
+)
+_FENCE = re.compile(r"^```.*?^```", re.S | re.M)
+_INLINE_CODE = re.compile(r"`[^`]*`")
+_SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
+
+
+def _ste_units(text: str) -> list[str]:
+    """Prose units: sentences, list items and table cells. Skips front matter, headings and code."""
+    if text.startswith("---\n"):
+        parts = text.split("---\n", 2)
+        text = parts[2] if len(parts) == 3 else text
+    text = _INLINE_CODE.sub("code", _FENCE.sub("", text))
+    units = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or re.fullmatch(r"[|\s:-]+", line):
+            continue
+        cells = [c for c in line.strip("|").split("|")] if line.startswith("|") else [line]
+        for cell in cells:
+            cell = re.sub(r"^([-*+]|\d+\.)\s+(\[[ x]\]\s+)?", "", cell.strip())
+            units += [s for s in _SENTENCE_END.split(cell) if s.strip()]
+    return units
+
+
+def ste_problems(text: str) -> list[str]:
+    problems = []
+    for unit in _ste_units(text):
+        words = len(unit.split())
+        if words > STE_MAX_WORDS:
+            problems.append(f"long: {words} words: {unit[:60]}")
+        problems += [f"hedge: {m.group(1).lower()}" for m in STE_HEDGES.finditer(unit)]
+        problems += [f"filler: {m.group(1).lower()}" for m in STE_FILLER.finditer(unit)]
+    return problems
+
+
+def ste_rate(text: str) -> float:
+    """STE violations per 100 words of prose."""
+    words = sum(len(u.split()) for u in _ste_units(text))
+    return round(100 * len(ste_problems(text)) / words, 2) if words else 0.0
+
+
 def timestamp_problems(data: dict, body: str, start: datetime, end: datetime) -> list[str]:
     """Timestamps must come from the real clock, not from the model's memory."""
     lo, hi = start - CLOCK_SLACK, end + CLOCK_SLACK

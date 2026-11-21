@@ -22,11 +22,11 @@ Two layers, kept apart because they behave differently.
 uv run pytest
 ```
 
-Covers the plugin's static shape, the init scripts, the timestamp checker, the eval selector and the eval pass-rate gate. It never calls `claude`. Write the test first and watch it fail.
+Covers the plugin's static shape, the init scripts, the pure eval checks, the selector and the pass-rate gate. It never calls `claude`. Write the test first and watch it fail.
 
 ## Evals
 
-Evals use promptfoo (needs Node; run via `npx`, version pinned in `evals/run.py`). Each eval is `evals/promptfoo/<name>.yaml`. promptfoo repeats every test N times (default 10); each repeat calls `evals/promptfoo/provider.py`, which runs one real headless `claude` session in a fresh repo and returns the evidence as JSON. The assertions then check that JSON:
+Evals use promptfoo (needs Node; run via `npx`, version pinned in `evals/run.py`). Each eval is `evals/promptfoo/<name>.yaml`. promptfoo repeats every test N times (default 10). Each repeat calls `evals/promptfoo/provider.py`: one headless `claude` session in a fresh repo, evidence returned as JSON. Assertions check it:
 
 - Deterministic checks are `python` assertions in `asserts.py`, built on `evals/checks.py`.
 - Quality is scored 1 to 5 per criterion by a `claude` judge in `asserts.py` (no API key).
@@ -41,6 +41,7 @@ Each test declares its thresholds as `metadata.min_pass_rate: {metric: fraction}
 | check | names_broken_doc | at least 90% of replies name the doc that lost its header |
 | requirements | well_formed | at least 90% leave a valid task folder, `STATE.md` and `REQUIREMENTS.md` with real timestamps |
 | requirements | quality | judge scores (verifiable, scope, no_invention) average at least 4, none below 3 |
+| requirements | plain_language | 80% of runs have at most 1.0 ASD-STE100 violations per 100 words (`checks.ste_problems`) |
 
 ### Running only what changed
 
@@ -64,7 +65,7 @@ uv run python evals/run.py --concurrency 4      # parallel claude sessions
 
 ### Evidence and summary
 
-Each run saves to `evals/results/<run-id>/`: promptfoo's `<name>.json` (every run and reason), per-run evidence (task folders, replies, verify output) and `summary.md`. Check these before claiming a result.
+Each run saves to `evals/results/<run-id>/`: promptfoo's `<name>.json`, per-run evidence and `summary.md`. Check these before claiming a result.
 
 ### Settings
 
