@@ -12,3 +12,8 @@ budgets:
   - {pattern: "plugin/commands/*.md", max_tokens: 300, load: runtime}
   - {pattern: "plugin/templates/*.md", max_tokens: 200, load: runtime}
   - {pattern: "plugin/harness/*.md", max_tokens: 800, load: runtime}   # templates copied into consumer repos
+  # This repo uses its own plugin: files installed by /kairyn:init and task outputs.
+  - {pattern: ".kairyn/stages/*.md", max_tokens: 500, load: runtime}
+  - {pattern: ".kairyn/templates/*.md", max_tokens: 200, load: runtime}
+  - {pattern: ".kairyn/learnings.md", max_tokens: 1000, load: runtime}
+  - {pattern: "docs/tasks/*/*.md", max_tokens: 1500, load: runtime}
