@@ -14,6 +14,13 @@ Never write dates or timestamps from memory. Get them from the system clock:
 - date for folder names: `date +%Y-%m-%d`
 - timestamps (`created`, `updated`, log lines): `date -u +%Y-%m-%dT%H:%M:%SZ`
 
+## Writing
+Write every output file in ASD-STE100, about 80% of the way. A person or the next stage acts on it.
+- Short sentences: at most 20 words for an instruction, 25 for a description.
+- Active voice. No *should*, *would*, *may* or *might*: say what happens.
+- Keep real uncertainty as a condition: "If X, Y happens."
+- Use the same term for the same thing every time.
+
 ## Inputs
 - `docs/tasks/<YYYY-MM-DD>-<slug>/STATE.md`
 - <outputs of earlier stages this one needs, e.g. `REQUIREMENTS.md`>

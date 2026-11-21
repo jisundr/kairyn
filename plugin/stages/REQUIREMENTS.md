@@ -25,12 +25,14 @@ Write to `docs/tasks/<YYYY-MM-DD>-<slug>/REQUIREMENTS.md`:
 - Acceptance criteria
 - Open questions and the answers given
 
+Write it in ASD-STE100, about 80% of the way (see `_template.md`, Writing). The next stage reads it as its only input.
+
 ## Exit criteria
 - [ ] Every acceptance criterion is verifiable.
 - [ ] No unresolved open questions remain.
 
 ## State update
-Update `STATE.md` as described in `_template.md`: set `requirements` to `done` in the front matter, advance `stage` (or set `status: done` if no later stage exists), and append a log line summarizing the requirements.
+Update `STATE.md` as described in `_template.md`. Set `requirements` to `done` in the front matter. Advance `stage`, or set `status: done` if no later stage exists. Append a log line that summarizes the requirements.
 
 ## Learnings
 Append anything this run taught about the repo to `.kairyn/learnings.md`.

@@ -9,7 +9,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
-from checks import TS_FORMAT, structural_problems  # noqa: E402
+from checks import TS_FORMAT, ste_problems, ste_rate, structural_problems  # noqa: E402
 from runner import JUDGE_MODEL, claude  # noqa: E402
 
 
@@ -45,6 +45,20 @@ def well_formed(output, context):
     parse = lambda s: datetime.strptime(s, TS_FORMAT).replace(tzinfo=timezone.utc)
     run = {"task": Path(d["task_path"]) if d["task_path"] else None, "start": parse(d["start"]), "end": parse(d["end"])}
     return _result(structural_problems(run))
+
+
+STE_MAX_RATE = 1.0   # ASD-STE100 violations per 100 words; baseline before the rule was 1.47 (0.92 to 1.98)
+
+
+def plain_language(output, context):
+    """REQUIREMENTS.md follows ASD-STE100 about 80% of the way (see checks.ste_problems)."""
+    doc = json.loads(output)["requirements_md"]
+    if not doc:
+        return _result(["no REQUIREMENTS.md to lint"])
+    rate, problems = ste_rate(doc), ste_problems(doc)
+    ok = rate <= STE_MAX_RATE
+    return {"pass": ok, "score": 1 if ok else 0,
+            "reason": f"{rate} violations/100 words (max {STE_MAX_RATE}); " + ", ".join(problems[:5])}
 
 
 RUBRIC = """You are grading a REQUIREMENTS.md written for this request:
