@@ -14,11 +14,11 @@ The repo is on GitHub (`jisundr/kairyn`), so changes go through pull requests, n
 ```bash
 uv run pytest                       # tests, fast
 claude plugin validate plugin       # manifest and component validation
-uv run pytest -m eval               # only evals whose dependencies changed
+uv run python evals/run.py         # only evals whose dependencies changed
 ```
 
 - If you changed anything under `plugin/`, run the evals that depend on it. Skipped evals are fine only when the selector says the dependencies are unchanged.
-- Before a release, run everything with `uv run pytest -m eval --all-evals`.
+- Before a release, run everything with `uv run python evals/run.py --all-evals`.
 - Put the eval summary in the PR description when evals ran. Quote numbers, not "passed".
 
 ## CI
@@ -44,4 +44,4 @@ One logical change per commit, message in the imperative. Commits made with Clau
 
 - Commit `evals/results/`, `.venv/` or caches (all git-ignored).
 - Merge with failing tests or a failing eval you have not explained.
-- Rename or move `plugin/` files without updating the `# depends:` headers in `evals/features/` and the README layout.
+- Rename or move `plugin/` files without updating the `# depends:` headers in `evals/promptfoo/*.yaml` and the README layout.

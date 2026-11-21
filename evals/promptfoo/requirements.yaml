@@ -1,0 +1,16 @@
+# depends: plugin/stages/REQUIREMENTS.md, plugin/stages/_template.md, plugin/templates/STATE.md, plugin/scripts/init.sh, plugin/harness/**/*
+description: requirements stage
+prompts: ["{{scenario}}"]
+providers:
+  - id: file://provider.py
+    config: {timeout: 600000}
+tests:
+  - description: Requirements stage on a small CLI feature request
+    vars: {scenario: requirements}
+    metadata:
+      min_pass_rate: {well_formed: 0.9}
+      # Judge scores 1-5 per criterion: mean over all runs and criteria, and no score below floor.
+      score_gate: {mean: 4, floor: 3, min_gradable: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:well_formed", metric: well_formed}
+      - {type: python, value: "file://asserts.py:quality", metric: quality}

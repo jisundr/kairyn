@@ -1,0 +1,11 @@
+# depends: plugin/commands/check.md, plugin/scripts/*, plugin/harness/**/*
+description: kairyn check
+prompts: ["{{scenario}}"]
+providers:
+  - id: file://provider.py
+    config: {timeout: 600000}
+tests:
+  - description: Check reports a harness doc with a broken header
+    vars: {scenario: check_broken_doc}
+    metadata: {min_pass_rate: {names_broken_doc: 0.9}}
+    assert: [{type: python, value: "file://asserts.py:names_broken_doc", metric: names_broken_doc}]
