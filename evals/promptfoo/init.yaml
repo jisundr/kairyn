@@ -1,0 +1,19 @@
+# depends: plugin/commands/init.md, plugin/scripts/*, plugin/stages/*, plugin/templates/*, plugin/harness/**/*
+description: kairyn init
+prompts: ["{{scenario}}"]
+providers:
+  - id: file://provider.py
+    config: {timeout: 600000}
+tests:
+  - description: Init creates a verified layout in a fresh repo
+    vars: {scenario: init_fresh}
+    metadata: {min_pass_rate: {verified_layout: 0.9}}
+    assert: [{type: python, value: "file://asserts.py:verified_layout", metric: verified_layout}]
+  - description: Init never overwrites an existing setup
+    vars: {scenario: init_keeps_edits}
+    metadata: {min_pass_rate: {never_overwrites: 1.0}}
+    assert: [{type: python, value: "file://asserts.py:kairyn_tree_unchanged", metric: never_overwrites}]
+  - description: Init keeps an existing CLAUDE.md and adds one kairyn block
+    vars: {scenario: init_keeps_claude_md}
+    metadata: {min_pass_rate: {keeps_claude_md: 1.0}}
+    assert: [{type: python, value: "file://asserts.py:claude_md_intact", metric: keeps_claude_md}]

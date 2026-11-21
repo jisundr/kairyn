@@ -7,12 +7,12 @@ A Claude Code plugin: an agentic SDLC that grows with the user's repo. Shipped c
 ```bash
 uv run pytest                       # fast tests, no LLM, always safe
 claude plugin validate plugin       # manifest and component validation
-uv run pytest -m eval               # evals: real claude runs, slow, costs tokens
+uv run python evals/run.py         # promptfoo evals: real claude runs, slow, costs tokens
 ```
 
 ## Rules that always apply
 
-- **Evals cost real tokens (3 to 7 minutes each).** Never run them unless asked or the change touches `plugin/`. Never remove `-m 'not eval'` from `pyproject.toml`. Use `--all-evals` only for a release check.
+- **Evals cost real tokens (3 to 7 minutes each).** Never run them unless asked or the change touches `plugin/`. `uv run pytest` never runs them; keep it that way. Use `--all-evals` only for a release check.
 - **Tests before code, evals before instructions.** Write the failing test or eval first and watch it fail.
 - **Script what must always work.** Steps that need to be reliable go in `plugin/scripts/`, not in model instructions.
 - **Timestamps come from `date`**, never from memory.

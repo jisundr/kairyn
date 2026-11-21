@@ -38,7 +38,7 @@ It exits 1 and prints a `FAIL:` line per problem.
 
 ```bash
 uv run pytest                       # init.sh and verify-init.sh behavior
-uv run pytest -m eval               # init eval runs if init.md or scripts changed
+uv run python evals/run.py init  # init eval runs if init.md or scripts changed
 ```
 
 ## The consumer harness (`plugin/harness/`)

@@ -12,9 +12,9 @@ Two layers, kept apart because they behave differently.
 | | Tests (`tests/`) | Evals (`evals/`) |
 |---|---|---|
 | Result | Same every time | A pass rate over N runs |
-| Speed and cost | Under a second, free | About 3 to 7 minutes per feature, uses tokens |
+| Speed and cost | Under a second, free | About 3 to 7 minutes per eval, uses tokens |
 | Runs | Always | Only when dependencies changed |
-| Command | `uv run pytest` | `uv run pytest -m eval` |
+| Command | `uv run pytest` | `uv run python evals/run.py` |
 
 ## Tests
 
@@ -22,60 +22,57 @@ Two layers, kept apart because they behave differently.
 uv run pytest
 ```
 
-Covers the plugin's static shape (manifests, stage front matter and required sections, the `STATE.md` template), `verify-init.sh` and `init.sh` against good and broken layouts, the timestamp checker, and the eval selector. Evals are deselected by default (`addopts = -m 'not eval'`), so this never calls `claude`.
-
-Write the test first and watch it fail before writing the code. The selector was built this way.
+Covers the plugin's static shape, the init scripts, the timestamp checker, the eval selector and the eval pass-rate gate. It never calls `claude`. Write the test first and watch it fail.
 
 ## Evals
 
-An eval runs real headless `claude` sessions N times (default 10) and checks a pass rate. Each is a BDD feature in `evals/features/<name>.feature` with its steps in `evals/test_<name>.py` (the filename convention is how they are paired).
+Evals use promptfoo (needs Node; run via `npx`, version pinned in `evals/run.py`). Each eval is `evals/promptfoo/<name>.yaml`. promptfoo repeats every test N times (default 10); each repeat calls `evals/promptfoo/provider.py`, which runs one real headless `claude` session in a fresh repo and returns the evidence as JSON. The assertions then check that JSON:
 
-Current evals and thresholds:
+- Deterministic checks are `python` assertions in `asserts.py`, built on `evals/checks.py`.
+- Quality is scored 1 to 5 per criterion by a `claude` judge in `asserts.py` (no API key).
 
-| Feature | Check | Pass when |
+Each test declares its thresholds as `metadata.min_pass_rate: {metric: fraction}`, and each assertion names its `metric`. `evals/run.py` turns promptfoo's JSON into a pass rate per metric and fails when a metric is below its threshold.
+
+| Eval | Metric | Pass when |
 |---|---|---|
-| init | verified layout | at least 90% of repos pass `verify-init.sh` |
-| init | never overwrites | 100% leave `.kairyn/` unchanged, including user edits |
-| init | keeps CLAUDE.md | 100% keep the original text and add exactly one kairyn block |
-| check | reports a broken doc | at least 90% of replies name the doc that lost its header |
-| requirements | well-formed | at least 90% leave a valid task folder, `STATE.md` and `REQUIREMENTS.md` with real timestamps |
-| requirements | quality | LLM judge mean at least 4, no score below 3 |
+| init | verified_layout | at least 90% of repos pass `verify-init.sh` |
+| init | never_overwrites | 100% leave `.kairyn/` unchanged, including user edits |
+| init | keeps_claude_md | 100% keep the original text and add exactly one kairyn block |
+| check | names_broken_doc | at least 90% of replies name the doc that lost its header |
+| requirements | well_formed | at least 90% leave a valid task folder, `STATE.md` and `REQUIREMENTS.md` with real timestamps |
+| requirements | quality | judge scores (verifiable, scope, no_invention) average at least 4, none below 3 |
 
 ### Running only what changed
 
-Each feature starts with a header naming the plugin files it exercises:
+Each config starts with a header naming the plugin files it exercises:
 
-```gherkin
+```yaml
 # depends: plugin/stages/REQUIREMENTS.md, plugin/stages/_template.md, plugin/templates/STATE.md
 ```
 
-The selector hashes those files and compares with the hash saved when the feature last passed (`evals/results/passed.json`, local and git-ignored). Unchanged means skipped.
+The selector hashes those files and compares with the hash saved when the eval last passed (`evals/results/passed.json`, local and git-ignored). Unchanged means skipped.
 
 ```bash
-uv run pytest -m eval                # only evals whose dependencies changed
-uv run pytest -m eval --all-evals    # everything, e.g. before a release
+uv run python evals/run.py                      # only evals whose dependencies changed
+uv run python evals/run.py init                 # a named eval
+uv run python evals/run.py --all-evals          # everything, e.g. before a release
+uv run python evals/run.py --concurrency 4      # parallel claude sessions
 ```
 
-Rules the selector follows:
-- A hash is recorded only when every scenario in the feature passed.
-- It is recorded only at the full run count. Smoke runs (`KAIRYN_EVAL_RUNS` below 10) never vouch for a feature.
+- A hash is recorded only when every metric met its threshold, and only at the full run count (`KAIRYN_EVAL_RUNS` below 10 never vouches).
 - Add every plugin file an eval relies on to its `# depends:` header, or a change there will not trigger a re-run.
 
 ### Evidence and summary
 
-Every run prints a short summary and saves its evidence to `evals/results/<run-id>/`: task folders per run, `problems.txt`, `window.txt`, judge outputs and `scores.json`, plus `summary.md`. Check these before claiming a result.
+Each run saves to `evals/results/<run-id>/`: promptfoo's `<name>.json` (every run and reason), per-run evidence (task folders, replies, verify output) and `summary.md`. Check these before claiming a result.
 
 ### Settings
 
-`KAIRYN_EVAL_RUNS` (default 10), `KAIRYN_MODEL`, `KAIRYN_JUDGE_MODEL`.
-
-### Cost warning
-
-A full requirements eval takes about 7 minutes. Never run plain `pytest -m eval --all-evals` casually, and never remove the default `-m 'not eval'`: an unmarked eval will call `claude` on every test run.
+`KAIRYN_EVAL_RUNS` (default 10), `KAIRYN_MODEL`, `KAIRYN_JUDGE_MODEL`. Evals cost tokens: never run `--all-evals` casually.
 
 ## Adding an eval
 
-1. Write `evals/features/<name>.feature` with a `# depends:` header.
-2. Write `evals/test_<name>.py` with `scenarios("features/<name>.feature")` and the steps.
+1. Write `evals/promptfoo/<name>.yaml` with a `# depends:` header, tests with `metadata.min_pass_rate`, and a named `metric` on every assertion.
+2. Add a scenario function to `provider.py` and its checks to `asserts.py`.
 3. Run it against the current instructions and confirm it can fail.
-4. Put reusable pure checks in `evals/checks.py` and give them tests in `tests/`.
+4. Reusable pure checks go in `evals/checks.py`, with tests in `tests/`.
