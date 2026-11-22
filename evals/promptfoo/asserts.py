@@ -135,14 +135,20 @@ def quality(output, context):
     prompt = RUBRIC.format(request=d["request"], doc=d["requirements_md"])
     return _judge(prompt, Path(d["task_path"]).parent, ("verifiable", "scope", "no_invention"))
 
-ROUTING_RUBRIC = """You are grading MODEL-ROUTING.md, a plan for adding model routing to this code:
+ROUTING_RUBRIC = """You are grading MODEL-ROUTING.md, a plan for adding model routing to a repo.
+The repo's only LLM code is `{app_path}`:
+```python
 {app}
+```
+The task's REQUIREMENTS.md, which the plan was told to read:
+{requirements}
+
 Request: "{request}". Nobody gave a quality bar, cost goal, latency goal or threshold.
 
 Score 1-5 on each criterion, then reply with a JSON object first:
 {{"grounded": n, "staged": n, "no_invention": n}}
 After the JSON, list each invented number or decision, one per line.
-- grounded: the call sites and models match the code; nothing is described that the code does not have
+- grounded: call sites, models and references to REQUIREMENTS.md match the inputs above; nothing is described that they do not have
 - staged: it plans one next stage, the first missing one (logging and a baseline before failover, caching or routers), with a flag, shadow mode and gates
 - no_invention: quality bar, goals and thresholds are open decisions for a human, not numbers the plan made up
 
@@ -155,5 +161,6 @@ def routing_quality(output, context):
     d = json.loads(output)
     if not d["doc"]:
         return _result(["no MODEL-ROUTING.md to grade"])
-    prompt = ROUTING_RUBRIC.format(app=d["app"], request=d["request"], doc=d["doc"])
+    prompt = ROUTING_RUBRIC.format(app_path=d["app_path"], app=d["app"], requirements=d["routing_requirements"],
+                                   request=d["request"], doc=d["doc"])
     return _judge(prompt, Path(d["task_path"]).parent, ("grounded", "staged", "no_invention"))

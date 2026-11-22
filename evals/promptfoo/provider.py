@@ -82,7 +82,8 @@ def model_routing(work: Path, scenario: str, run_id: str) -> dict:
     shutil.copytree(run["task"], kept)   # temp repo is deleted; assertions read this copy
     doc = kept / "MODEL-ROUTING.md"
     return {"request": ROUTING_REQUEST, "task_path": str(kept), "doc": doc.read_text() if doc.exists() else "",
-            "app": (repo / "support" / "reply.py").read_text(),
+            "app": (repo / "support" / "reply.py").read_text(), "app_path": "support/reply.py",
+            "routing_requirements": (kept / "REQUIREMENTS.md").read_text(),
             "start": run["start"].strftime(TS), "end": run["end"].strftime(TS)}
 
 
