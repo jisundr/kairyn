@@ -8,7 +8,7 @@ stages:
   design: done
   build: in-progress
 created: 2026-11-21T23:11:54Z
-updated: 2026-11-22T05:48:42Z
+updated: 2026-11-22T06:22:27Z
 ---
 
 # Log
@@ -26,3 +26,5 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-22T05:38:01Z [design] User approved the plan. Build starts by hand from playbook 03 (no build stage yet), task 1: budget and index-marker fixes.
 2026-11-22T05:39:51Z [build] Task 1 done: fallback budgets for installed files (also the 3 kairyn harness docs and .harness/README.md, which the design missed), .kairyn/.base/ skipped, every index marker pair refreshed. 164 tests pass.
 2026-11-22T05:48:42Z [build] Task 3 done: verify-init.sh default mode accepts tasks and edited stages, --fresh keeps the init checks (init command, CI, init eval). Manifest check waits for task 2. 175 tests pass.
+2026-11-22T06:12:03Z [build] Task 2 done: kairyn_files.py (file table, owners, manifest, .base/), init.sh records what it wrote (not files the user had), verify-init.sh checks the manifest. Works on python3 3.9. 202 tests pass.
+2026-11-22T06:22:27Z [build] Task 4 done: scripts/release_hashes.py builds plugin/release-hashes.json from every commit per version (0.1.0: 34 hashes, 12 paths) plus the working tree; plugin.json is 0.2.0. 213 tests pass.

@@ -4,7 +4,7 @@ An agentic SDLC that grows with your repo.
 
 **kairyn** is a Tagalized spelling of *cairn*: a pile of stacked stones that marks a trail. Each stage is a marker on the trail, and every run adds a stone back to your repo.
 
-> Early setup. Commands, agents and stage templates are coming next.
+> Early setup. More commands and stages are coming.
 
 ## Install (Claude Code)
 
@@ -15,9 +15,9 @@ An agentic SDLC that grows with your repo.
 
 ## What you get in your repo
 
-`/kairyn:init` sets up `.kairyn/` (stages, templates, learnings), `docs/tasks/`, and a `.harness/` of short workflow docs with size budgets. It appends a marked block to your `CLAUDE.md` (creating it if needed) that points Claude to those docs on demand. Nothing you already have is overwritten.
+`/kairyn:init` sets up `.kairyn/` (stages, templates, learnings, a manifest), `docs/tasks/`, and a `.harness/` of short workflow docs with size budgets. It adds a marked block to your `CLAUDE.md` (created if needed) that points Claude to those docs. Nothing you already have is overwritten.
 
-`/kairyn:check` verifies the doc headers and size budgets, using only `python3`. `/kairyn:check write` also refreshes the index tables.
+`/kairyn:check` verifies doc headers and size budgets with only `python3`. `/kairyn:check write` also refreshes the indexes.
 
 ## Layout
 
@@ -33,7 +33,8 @@ An agentic SDLC that grows with your repo.
 │   │   ├── _template.md              # skeleton for authoring new stages
 │   │   ├── REQUIREMENTS.md           # stage 1: request -> scoped requirements
 │   │   └── MODEL-ROUTING.md          # optional: plan the next model-routing stage
-│   └── templates/STATE.md            # per-task state file
+│   ├── templates/STATE.md            # per-task state file
+│   └── release-hashes.json           # installed-file hashes per release
 ├── tests/                            # fast tests (pytest)
 ├── evals/                            # BDD evals that run real claude sessions
 ├── .harness/                         # how we work on kairyn: dev workflows

@@ -1,0 +1,94 @@
+{
+ "0.1.0": {
+  ".harness/README.md": [
+   "6f9c37140f878ce2281393d01d7f5b09abb644c307926a7006c606a4d0ea2f39"
+  ],
+  ".harness/budgets.yml": [
+   "e47002349cf744019ab293bf26c9e01f0b5bb5bd84c1e27ba8ed85a9f3636995"
+  ],
+  ".harness/workflows/keeping-docs-lean.md": [
+   "699e10f931555123dbdc2411a5d999b2e4653fb0aa0e71c927173c67878748b4",
+   "f0b1bb0b5abe012a8a402a9a30d53ce24fd96783e8463905eeea58990258d2b4"
+  ],
+  ".harness/workflows/running-stages.md": [
+   "e81efcfc885583db8755c929b46a338df8bd5f4dc19592b46f79c6109b382f2a",
+   "fd008c895431ce8b3ab0c897088ec50ad54092931fc83e31fb9cdf5743f7810e"
+  ],
+  ".harness/workflows/task-lifecycle.md": [
+   "0347c16c6b0bceba45151196c1f52b41e30e8a12ecaef13da10a6bd135b8dd61",
+   "4f813c5759b5d03ee626e1723606c6e5a75f1dd6a8effddb705bf27981146bd7"
+  ],
+  ".kairyn/stages/MODEL-ROUTING.md": [
+   "97d2fb57693d76e0769f0b03c23d9cdd6b764856a5e9597f549809e2882fd0fb"
+  ],
+  ".kairyn/stages/REQUIREMENTS.md": [
+   "2ae2236afb938809189f45d01754ffdb2339633a5eac6e2dddd3a1db8bdb917f",
+   "3dc812ec693aeeb39a410eafb59cb1ec626fc7c10fc8172c4493ec01d9b812a3",
+   "9363644456eaa6ec7e094ea1813ef0d9d3f8d82a8f7c65b47b8908a1ed94bdcf",
+   "a254be238bed57857226fbdca943b3af8a248149290431b77ee0df7d0839ca43",
+   "b4e129c2f9e46a635252358b25f7886a5b2c6db1d41d58f93fa670f7f81f0173",
+   "c7b3960d1c2a8b3bf3ed7ba54aafe7682355bd7509795654f052f51837808359",
+   "e55c693970041b0f816adf0a684f7070a11cd59fc1d6f9155d3e458da3055b8e"
+  ],
+  ".kairyn/stages/_template.md": [
+   "0ec4e8db0dfa73a592f77378915022fa765e016a1758dfe10c55c6ea4861f323",
+   "3f57bf35de90a42aa21290d1528eb0b068f6524b21118d9131048d3acb674106",
+   "46e969e4797fd6319bb85bf51cd48dae5cd9eae39c50a5d1ea44e7e7fbedd7fb",
+   "90d54e31afd6bafe4fe7f9ded2ed4e31f28cb97d8005dcac432f0286dc0c06d7",
+   "93c6e0ce5342d6f1f6aeda26889cbd0d97ad962c736cf4921a7a8bcc5be02fab",
+   "b263b606f57e6b285a66880141a7a4b9b2c64545982af0daf2a575155ae810ab",
+   "d588ea46e40f443a65eac35d18eddaa4a4d48c48f659c04163cb8c5d5e987dda",
+   "daf277620bbd465f103f8a209c6fb6a8655fa1f4d9e813dc2cb40872e5fb3272",
+   "de59ec19f18deca9426d43f3fd09c1e5d91b0ec93a9d109b6d9566215f7adc5d"
+  ],
+  ".kairyn/stages/define.md": [
+   "09cf1223258ba904ccd81bce00c3ba6067ca8de75060a938dca6f95d33905b44"
+  ],
+  ".kairyn/stages/requirements.md": [
+   "4b6ebbacb5f0ebaebfc0b3c40480594ac3259bcaaf2b0eafe864958466a611cb",
+   "5ffd2a4f49805c200c79141b24af23df5d7286dbf7a2d7b5cb9f556ec09cde97",
+   "b4e129c2f9e46a635252358b25f7886a5b2c6db1d41d58f93fa670f7f81f0173"
+  ],
+  ".kairyn/templates/STATE.md": [
+   "a879584eefdccdaf1a39b2ead97cb1cd22f15c02e5e8a8bcd3d9232dfc48eb51",
+   "c153f6c1f7c44c7f9b7c975b90e7561a85eb202ddab7ce1953f5cb0c7098f3db",
+   "da4a084bc2f732838aed4c1f02086da6c5cb689d0a48fc185218b7e2a1281846",
+   "fd912ac9ebacc2e7d7520f679ef6235d0bd31f13ee9af0938203ababd5605716"
+  ],
+  "CLAUDE.md#kairyn": [
+   "4ff3fac572e4cd73c1b61f345225c72bb418a308e00d116aa1ce2610fe6a1bcd"
+  ]
+ },
+ "0.2.0": {
+  ".harness/README.md": [
+   "6f9c37140f878ce2281393d01d7f5b09abb644c307926a7006c606a4d0ea2f39"
+  ],
+  ".harness/budgets.yml": [
+   "e47002349cf744019ab293bf26c9e01f0b5bb5bd84c1e27ba8ed85a9f3636995"
+  ],
+  ".harness/workflows/keeping-docs-lean.md": [
+   "f0b1bb0b5abe012a8a402a9a30d53ce24fd96783e8463905eeea58990258d2b4"
+  ],
+  ".harness/workflows/running-stages.md": [
+   "e81efcfc885583db8755c929b46a338df8bd5f4dc19592b46f79c6109b382f2a"
+  ],
+  ".harness/workflows/task-lifecycle.md": [
+   "0347c16c6b0bceba45151196c1f52b41e30e8a12ecaef13da10a6bd135b8dd61"
+  ],
+  ".kairyn/stages/MODEL-ROUTING.md": [
+   "97d2fb57693d76e0769f0b03c23d9cdd6b764856a5e9597f549809e2882fd0fb"
+  ],
+  ".kairyn/stages/REQUIREMENTS.md": [
+   "2ae2236afb938809189f45d01754ffdb2339633a5eac6e2dddd3a1db8bdb917f"
+  ],
+  ".kairyn/stages/_template.md": [
+   "de59ec19f18deca9426d43f3fd09c1e5d91b0ec93a9d109b6d9566215f7adc5d"
+  ],
+  ".kairyn/templates/STATE.md": [
+   "fd912ac9ebacc2e7d7520f679ef6235d0bd31f13ee9af0938203ababd5605716"
+  ],
+  "CLAUDE.md#kairyn": [
+   "4ff3fac572e4cd73c1b61f345225c72bb418a308e00d116aa1ce2610fe6a1bcd"
+  ]
+ }
+}
