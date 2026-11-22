@@ -49,7 +49,7 @@ uv run python evals/run.py init  # init eval runs if init.md or scripts changed
 
 What a user's repo gets: generic workflow docs, `budgets.yml` (`strict: false`, so only listed files are checked) and the CLAUDE.md block. Keep it generic: kairyn's own dev docs (testing, evals, PRs) do not belong there.
 
-Checkers are not copied. They ship in `plugin/scripts/` and run through `/kairyn:check`, using only `python3` (`simple_yaml.py` replaces PyYAML; a test keeps it in line with PyYAML).
+Checkers are not copied. They ship in `plugin/scripts/` and run through `/kairyn:check`, using only `python3` 3.9 or newer (`simple_yaml.py` replaces PyYAML; a test keeps it in line with PyYAML).
 
 The index tables inside these templates are generated. After editing a doc there, run `bash scripts/refresh-harness-templates.sh`; `test_installed_harness_passes_the_doc_and_budget_checkers` fails if they are stale.
 

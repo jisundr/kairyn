@@ -73,6 +73,13 @@ def test_find_docs_lists_markdown_and_skips_generated_dirs(tmp_path):
     assert find_docs(tmp_path) == ["CLAUDE.md", "plugin/stages/A.md"]
 
 
+def test_find_docs_skips_claude_code_worktrees(tmp_path):
+    for rel in ("CLAUDE.md", ".claude/worktrees/w1/CLAUDE.md", ".claude/worktrees/w1/plugin/stages/A.md",
+                ".claude/commands/c.md"):
+        write(tmp_path, rel, "x")
+    assert find_docs(tmp_path) == [".claude/commands/c.md", "CLAUDE.md"]
+
+
 # --- check -------------------------------------------------------------------
 
 def test_files_within_budget_pass(tmp_path):

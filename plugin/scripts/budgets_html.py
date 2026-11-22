@@ -6,6 +6,8 @@ The page is built from the same data the tests enforce, so it cannot drift from 
 Usage:
     python budgets_html.py [--root DIR] [--out PATH]    # default: .harness/budgets.html (git-ignored)
 """
+from __future__ import annotations
+
 import sys
 from datetime import datetime, timezone
 from html import escape

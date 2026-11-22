@@ -8,6 +8,8 @@ Comments (`# ...`) and blank lines are ignored. Anything else raises ValueError
 (or returns None for front matter), so malformed files fail loudly.
 tests/test_simple_yaml.py checks it against PyYAML.
 """
+from __future__ import annotations
+
 import re
 
 FRONT_MATTER_RE = re.compile(r"\A---\n(.*?)\n---\n", re.S)
