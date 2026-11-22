@@ -40,7 +40,7 @@ jobs:
         run: |
           repo="$(mktemp -d)"
           bash plugin/scripts/init.sh "$repo"
-          bash plugin/scripts/verify-init.sh "$repo"
+          bash plugin/scripts/verify-init.sh --fresh "$repo"
           python plugin/scripts/harness_docs.py --root "$repo"
           python plugin/scripts/budgets.py --root "$repo"
 

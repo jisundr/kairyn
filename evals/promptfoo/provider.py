@@ -31,7 +31,7 @@ def _save(scenario: str, run_id: str, name: str, text: str) -> None:
 def init_fresh(work: Path, scenario: str, run_id: str) -> dict:
     repo = new_repo(work, "repo")
     claude("/kairyn:init", repo, plugin=True, model=MODEL)
-    result = run_verify(repo)
+    result = run_verify(repo, fresh=True)
     _save(scenario, run_id, "verify.txt", f"exit={result.returncode}\n{result.stdout}")
     return {"verify_exit": result.returncode, "verify_out": result.stdout}
 
