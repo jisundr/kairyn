@@ -9,3 +9,4 @@ Stages append here.
 - 2026-11-22 [build] `/kairyn:check write` rewrites the doc index in the CLAUDE.md block, so the block's hash leaves the index out. Otherwise every check would make upgrade see an edit.
 - 2026-11-22 [build] Headless `claude -p --permission-mode acceptEdits` refuses Bash beyond simple read-only commands: a globbed `grep` "requires approval". Stage steps that must work in evals use Read and Glob, not shell pipelines.
 - 2026-11-22 [build] On macOS the filesystem ignores case: `GRILL.md` and `grill.md` in one folder are the same file. Draft stage and command files in separate folders.
+- 2026-11-22 [requirements] `evals/checks.py` requires `status: done` after requirements, so a stage that waits for approval (`status: blocked`) fails the eval until the check changes.
