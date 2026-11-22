@@ -24,6 +24,7 @@ def _rm_learnings(r): (r / ".kairyn" / "learnings.md").unlink()
 def _bad_heading(r): (r / ".kairyn" / "learnings.md").write_text("hello\n")
 def _stray_task(r): (r / "docs" / "tasks" / "2026-01-01-x").mkdir()
 def _no_kairyn(r): shutil.rmtree(r / ".kairyn")
+def _no_manifest(r): (r / ".kairyn" / "manifest.json").unlink()
 
 
 # Broken in both modes.
@@ -35,6 +36,7 @@ BROKEN = {
     "missing learnings.md": (_rm_learnings, "learnings.md missing"),
     "wrong learnings heading": (_bad_heading, "# Learnings"),
     "missing .kairyn": (_no_kairyn, ".kairyn/ missing"),
+    "missing manifest": (_no_manifest, "manifest.json missing"),
 }
 
 # Normal in a repo in use; wrong right after init.

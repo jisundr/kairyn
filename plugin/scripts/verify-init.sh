@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Deterministic check of a repo's kairyn layout.
 # Usage: verify-init.sh [--fresh] <repo-dir> [plugin-dir]
-#   default  a repo in use: everything kairyn installs is present. Tasks may exist and
-#            repo-owned files (.kairyn/stages/) may be edited.
+#   default  a repo in use: everything kairyn installs is present and recorded in
+#            .kairyn/manifest.json. Tasks may exist and repo-owned files
+#            (.kairyn/stages/) may be edited.
 #   --fresh  right after /kairyn:init: also stages match the plugin byte for byte and
 #            docs/tasks/ is empty.
 # Exit 0 if everything is in place, 1 otherwise (prints each problem), 2 on bad usage.
@@ -60,6 +61,14 @@ if [ ! -f "$learn" ]; then
   problem ".kairyn/learnings.md missing"
 elif [ "$(head -n 1 "$learn")" != "# Learnings" ]; then
   problem ".kairyn/learnings.md must start with '# Learnings'"
+fi
+
+# The record of what was installed: .kairyn/manifest.json and matching .kairyn/.base/ copies.
+if [ -d "$repo/.kairyn" ]; then
+  if ! out="$(python3 "$plugin/scripts/kairyn_files.py" check "$repo")"; then
+    echo "$out"
+    fail=1
+  fi
 fi
 
 # init must not create tasks or other output.
