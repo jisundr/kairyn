@@ -31,19 +31,20 @@ Evals use promptfoo (needs Node; run via `npx`, version pinned in `evals/run.py`
 - Deterministic checks are `python` assertions in `asserts.py`, built on `evals/checks.py`.
 - Quality is scored 1 to 5 per criterion by a `claude` judge in `asserts.py` (no API key).
 
-Each test declares its thresholds as `metadata.min_pass_rate: {metric: fraction}`, and each assertion names its `metric`. `evals/run.py` turns promptfoo's JSON into a pass rate per metric and fails when a metric is below its threshold.
+Each test declares thresholds as `metadata.min_pass_rate: {metric: fraction}`, and each assertion names its `metric`. `evals/run.py` fails when a metric's pass rate is below its threshold.
 
 | Eval | Metric | Pass when |
 |---|---|---|
-| init | verified_layout | at least 90% of repos pass `verify-init.sh` |
+| init | verified_layout | 90% of repos pass `verify-init.sh --fresh` |
 | init | never_overwrites | 100% leave `.kairyn/` unchanged, including user edits |
 | init | keeps_claude_md | 100% keep the original text and add exactly one kairyn block |
-| check | names_broken_doc | at least 90% of replies name the doc that lost its header |
-| requirements | well_formed | at least 90% leave a valid task folder, `STATE.md` and `REQUIREMENTS.md` with real timestamps |
+| check | names_broken_doc | 90% of replies name the doc that lost its header |
+| requirements | well_formed | 90% leave a valid task folder, `STATE.md` and `REQUIREMENTS.md`, real timestamps |
 | requirements | quality | judge scores (verifiable, scope, no_invention) average at least 4, none below 3; `no_invention` alone at least 4 |
 | requirements | traceable | 90% of runs tag every acceptance criterion `(request)` or `(A<n>)` |
-| requirements | plain_language | 80% of runs have at most 1.0 ASD-STE100 violations per 100 words (`checks.ste_problems`) |
+| requirements | plain_language | 80% of runs have at most 1.0 ASD-STE100 violations per 100 words |
 | model-routing | all | 90%: `well_formed`, `starts_with_baseline` (stage 0), `waits_for_human` (open `D<n>`); 80%: `plain_language`; judge as above |
+| upgrade | upgrade_ran, reports_conflict | 90% upgrade a v0.1.0 repo and name its conflict |
 
 ### Running only what changed
 

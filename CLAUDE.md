@@ -18,10 +18,10 @@ uv run python evals/run.py         # promptfoo evals: real claude runs, slow, co
 - **Init never overwrites** anything in a user's `.kairyn/`.
 - **Report evidence, not claims.** Quote numbers from `evals/results/<run-id>/summary.md`.
 - Stage files and their outputs are upper case (`REQUIREMENTS.md`); stage names and `STATE.md` values are lower case (`requirements`).
-- **Keep files lean.** Every markdown file needs a token budget in `.harness/budgets.yml` (`plugin/scripts/budgets.py` checks). Over budget: cut or split, never raise the limit.
+- **Keep files lean.** Every markdown file needs a token budget in `.harness/budgets.yml`. Over budget: cut or split, never raise the limit.
 - The remote is GitHub, so it is a pull request, not a merge request.
 
-If you change a workflow, update the matching `.harness` doc in the same commit. After adding or editing a `.harness` doc, run `uv run python plugin/scripts/harness_docs.py --write`. The doc index is in the kairyn block (this repo uses its own plugin).
+If you change a workflow, update its `.harness` doc in the same commit. After adding or editing a `.harness` doc, run `uv run python plugin/scripts/harness_docs.py --write`. The doc index is in the kairyn block.
 
 <!-- kairyn:start -->
 ## kairyn
@@ -41,5 +41,6 @@ Read a doc only when the task matches; `head -6 <file>` shows its header.
 | running a stage, or editing or adding stage instructions | `.harness/workflows/running-stages.md` |
 | changing STATE.md, task folders or timestamps | `.harness/workflows/task-lifecycle.md` |
 | running, writing or interpreting tests or evals, or touching evals/ | `.harness/workflows/testing-and-evals.md` |
+| changing upgrades or the plugin version | `.harness/workflows/upgrade.md` |
 <!-- harness-docs:end -->
 <!-- kairyn:end -->

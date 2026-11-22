@@ -19,6 +19,8 @@ An agentic SDLC that grows with your repo.
 
 `/kairyn:check` verifies doc headers and size budgets with only `python3`. `/kairyn:check write` also refreshes the indexes.
 
+`/kairyn:upgrade` brings those files up to a newer plugin and keeps your edits. A session-start hook tells you when to run it.
+
 ## Layout
 
 ```
@@ -26,8 +28,9 @@ An agentic SDLC that grows with your repo.
 ├── .claude-plugin/marketplace.json   # marketplace entry pointing to ./plugin
 ├── plugin/                           # the kairyn plugin
 │   ├── .claude-plugin/plugin.json
-│   ├── commands/                     # /kairyn:init, /kairyn:check
-│   ├── scripts/                      # init, verify, and the doc and budget checkers
+│   ├── commands/                     # /kairyn:init, /kairyn:check, /kairyn:upgrade
+│   ├── hooks/hooks.json              # SessionStart: warn when the repo's kairyn files are older
+│   ├── scripts/                      # init, verify, upgrade, version check, doc and budget checkers
 │   ├── harness/                      # .harness/ and CLAUDE.md block installed into your repo
 │   ├── stages/                       # stage definitions copied into .kairyn/stages/
 │   │   ├── _template.md              # skeleton for authoring new stages
@@ -60,22 +63,14 @@ docs/tasks/<YYYY-MM-DD>-<slug>/
 uv run pytest
 ```
 
-**Evals** run real `claude` sessions N times and check a pass rate, so they are slow and cost tokens. They are written as BDD scenarios in `evals/features/*.feature`, and each feature declares the plugin files it exercises:
-
-```gherkin
-# depends: plugin/stages/REQUIREMENTS.md, plugin/stages/_template.md
-```
-
-An eval runs only when those files changed since it last passed (recorded locally in `evals/results/passed.json`):
+**Evals** run real `claude` sessions N times and check a pass rate, so they are slow and cost tokens. Each one runs only when the plugin files it exercises changed since it last passed:
 
 ```bash
-uv run pytest -m eval               # only evals whose dependencies changed
-uv run pytest -m eval --all-evals   # everything, e.g. before a release
+uv run python evals/run.py              # only evals whose dependencies changed
+uv run python evals/run.py --all-evals  # everything, e.g. before a release
 ```
 
-Every eval run saves its evidence (task folders, judge scores) under `evals/results/<run-id>/`. Settings: `KAIRYN_EVAL_RUNS` (default 10), `KAIRYN_MODEL`, `KAIRYN_JUDGE_MODEL`.
-
-Adding an eval: write the scenario first and watch it fail against the current stage instructions, then change the instructions until it passes. To add one, create `evals/features/<name>.feature` and `evals/test_<name>.py`.
+Evidence goes to `evals/results/<run-id>/`. Details: [testing and evals](.harness/workflows/testing-and-evals.md).
 
 ## Contributing
 
