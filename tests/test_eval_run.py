@@ -32,3 +32,13 @@ def test_score_gate_applies_per_criterion_mean(tmp_path):
     strict = {**loose, "criteria": {"no_invention": 4}}
     lines = score_gate(tmp_path, "s", 3, strict)
     assert lines[0].startswith("FAIL") and any("no_invention mean 3.00 < 4" in l for l in lines)
+
+
+def test_score_gates_count_runs_per_test():
+    """A config with two tests: each score gate counts only its own test's runs."""
+    from run import score_gates
+    case = lambda scenario, gate=None: {"testCase": {"description": scenario, "vars": {"scenario": scenario},
+                                                     "metadata": {"score_gate": gate} if gate else {}}}
+    gate = {"mean": 4, "floor": 3, "min_gradable": 0.9}
+    data = {"results": {"results": [case("requirements", gate)] * 10 + [case("requirements_with_concept")] * 10}}
+    assert score_gates(data) == [("requirements", 10, gate)]

@@ -83,6 +83,18 @@ def score_gate(results_dir: Path, scenario: str, total: int, gate_cfg: dict) -> 
         + [f"      - {p}" for p in problems]
 
 
+def score_gates(data: dict) -> list[tuple[str, int, dict]]:
+    """(scenario, runs of that test, gate config) for each test that declares a score_gate."""
+    gates: dict = {}
+    for r in data["results"]["results"]:
+        case = r.get("testCase", {})
+        sg = (case.get("metadata") or {}).get("score_gate")
+        if sg:
+            scenario = case["vars"]["scenario"]
+            gates[scenario] = (scenario, gates.get(scenario, (None, 0))[1] + 1, sg)
+    return list(gates.values())
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("names", nargs="*", help="eval names (init, check, requirements); default: all")
@@ -121,11 +133,8 @@ def main(argv=None) -> int:
             continue
         data = json.loads(out_json.read_text())
         lines = gate(metric_outcomes(data))
-        for r in data["results"]["results"][:1]:   # same test config for every repeat
-            sg = (r.get("testCase", {}).get("metadata") or {}).get("score_gate")
-            if sg:
-                total = len(data["results"]["results"])
-                lines += score_gate(results_dir, r["testCase"]["vars"]["scenario"], total, sg)
+        for scenario, total, sg in score_gates(data):
+            lines += score_gate(results_dir, scenario, total, sg)
         summary += [f"{name}: {line}" if not line.startswith("      ") else line for line in lines]
         if any(line.startswith("FAIL") for line in lines):
             failed = True
