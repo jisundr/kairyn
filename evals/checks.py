@@ -65,25 +65,112 @@ def ste_rate(text: str) -> float:
     return round(100 * len(ste_problems(text)) / words, 2) if words else 0.0
 
 
-# No invention: each acceptance criterion ends with its source, "(request)", "(A1, A3)" or a grill decision "(D2)",
-# and every assumption it cites is defined as a labeled assumption (a line that starts with A<n>).
+# No invention: each acceptance criterion ends with its source, "(request)", "(A1, A3)", a grill decision "(D2)"
+# or the requirement it checks "(R1)". Every assumption or requirement it cites is defined in the document.
 _CRITERION = re.compile(r"^\s*- \[[ x]\] (.*)$", re.M)
-_SOURCE_TAG = re.compile(r"\(((?:request|[AD]\d+)(?:\s*[,;]\s*(?:request|[AD]\d+))*)\)", re.I)
+_SOURCE_TAG = re.compile(r"\(((?:request|[ADR]\d+)(?:\s*[,;]\s*(?:request|[ADR]\d+))*)\)", re.I)
 _ASSUMPTION_DEF = re.compile(r"^\s*(?:[-*]|\d+\.|\|)?\s*[*`]*\s*(A\d+)\b", re.M)
+_REQUIREMENT = re.compile(r"^\s*(?:[-*]|\d+\.)\s*[*`]*(R\d+)\b[*`]*\s*[:.)\u2014-]?\s*(.*)$", re.M)
+
+
+def _tags(line: str) -> list[str]:
+    return [t.lower() if t.lower() == "request" else t.upper() for m in _SOURCE_TAG.finditer(line)
+            for t in re.split(r"\s*[,;]\s*", m.group(1))]
 
 
 def traceability_problems(text: str) -> list[str]:
     criteria = _CRITERION.findall(text)
     if not criteria:
         return ["no acceptance criteria to trace"]
-    defined = set(_ASSUMPTION_DEF.findall(text))
+    defined = set(_ASSUMPTION_DEF.findall(text)) | {r for r, _ in _REQUIREMENT.findall(text)}
     problems = []
     for c in criteria:
-        tags = [t for m in _SOURCE_TAG.finditer(c) for t in re.split(r"\s*[,;]\s*", m.group(1))]
+        tags = _tags(c)
         if not tags:
             problems.append(f"no source: {c[:60]}")
         # D<n> are grill decisions, defined in CONCEPT.md, not here.
-        problems += [f"undefined {t}: {c[:40]}" for t in tags if t[0] in "Aa" and t not in defined]
+        problems += [f"undefined {t}: {c[:40]}" for t in tags if t[0] in "AR" and t not in defined]
+    return problems
+
+
+# --- playbook gaps: EARS requirements, non-functional needs, owners, approval ---------
+_EARS = re.compile(r"^(The|When|While|If|Where)\b.*\bshall\b", re.I)
+NFR_NEEDS = ("accessibility", "performance", "security", "observability")
+_NO_OWNER = {"", "-", "?", "tbd", "none", "n/a", "unknown"}
+_APPROVAL = re.compile(r"^\W*Approval\W*:\**\s*(.*?)\s*$", re.M | re.I)
+_APPROVED = re.compile(r'^(.+?),\s*(\S+),\s*["\u201c](.*)["\u201d]\W*$')
+
+
+def ears_problems(text: str) -> list[str]:
+    """Each requirement is one EARS sentence with a source, and at least one criterion checks it."""
+    reqs = _REQUIREMENT.findall(section_text(text, "requirements"))
+    if not reqs:
+        return ["no ## Requirements section with R<n> items"]
+    checked = {t for c in _CRITERION.findall(text) for t in _tags(c)}
+    problems = []
+    for rid, body in reqs:
+        if not _EARS.match(_SOURCE_TAG.sub("", body).strip(" *`")):
+            problems.append(f"{rid} is not in EARS form: {body[:50]}")
+        if not [t for t in _tags(body) if not t.startswith("R")]:
+            problems.append(f"{rid} has no source")
+        if rid not in checked:
+            problems.append(f"{rid} has no acceptance criterion")
+    return problems
+
+
+def nfr_problems(text: str) -> list[str]:
+    """Each non-functional need is stated with a source, or marked not applicable with a reason."""
+    body = section_text(text, "non-functional needs")
+    problems = []
+    for need in NFR_NEEDS:
+        m = re.search(rf"^\s*(?:[-*]|\|)?\s*[*`]*{need}[*`]*\s*(?::|\|)[*`]*(.*)$", body, re.M | re.I)
+        if not m:
+            problems.append(f"non-functional need missing: {need}")
+        elif not m.group(1).strip(" |*`"):
+            problems.append(f"non-functional need empty: {need}")
+        elif not re.match(r"\W*not applicable\b", m.group(1), re.I) and not _tags(m.group(1)):
+            problems.append(f"non-functional need has no source: {need}")
+    return problems
+
+
+def owner_problems(text: str) -> list[str]:
+    """Every assumption, risk and dependency sits in one table with a real owner."""
+    m = re.search(r"^##\s+[^\n]*\brisks?\b[^\n]*\n(.*?)(?=^##\s|\Z)", text, re.M | re.I | re.S)
+    rows = [[c.strip() for c in line.strip().strip("|").split("|")] for line in (m.group(1) if m else "").splitlines()
+            if line.strip().startswith("|") and not re.fullmatch(r"[|\s:-]+", line.strip())]
+    if len(rows) < 2 or "owner" not in [c.lower() for c in rows[0]]:
+        return ["no assumptions, risks and dependencies table"]
+    col = [c.lower() for c in rows[0]].index("owner")
+    problems, ids = [], set()
+    for row in rows[1:]:
+        rid = row[0].strip("*` ")
+        ids.add(rid)
+        owner = row[col].strip("*` ") if col < len(row) else ""
+        if owner.lower() in _NO_OWNER:
+            problems.append(f"{rid} has no owner")
+    problems += [f"{a} is not in the owner table" for a in sorted(set(_ASSUMPTION_DEF.findall(text)) - ids)]
+    return problems
+
+
+def approval_problems(text: str, approved: bool, name: str = "", words: str = "",
+                      start: datetime | None = None, end: datetime | None = None) -> list[str]:
+    """Unapproved: 'Approval: pending'. Approved: 'Approval: <name>, <UTC timestamp>, "<user's words>"'."""
+    values = _APPROVAL.findall(text)
+    given = [v for v in values if v.strip("*` ").lower() != "pending"]
+    if not approved:
+        if given:
+            return ["approval line written without the user's approval"]
+        return [] if values else ["no 'Approval: pending' line"]
+    if not given:
+        return ["no recorded approval line"]
+    m = _APPROVED.match(given[-1].strip("*` "))
+    if not m:
+        return [f"approval line not '<name>, <timestamp>, \"<words>\"': {given[-1][:60]}"]
+    problems = [] if m.group(1).strip() == name else [f"approver {m.group(1).strip()!r} != {name!r}"]
+    problems += [p.replace("approval: ", "approval timestamp: ") for p in
+                 timestamp_problems({"created": m.group(2), "updated": m.group(2)}, "", start, end)[:1]]
+    if words.lower() not in m.group(3).lower():
+        problems.append(f"approval does not quote the user's words {words!r}")
     return problems
 
 
@@ -148,8 +235,9 @@ def timestamp_problems(data: dict, body: str, start: datetime, end: datetime, st
     return problems
 
 
-def structural_problems(run: dict) -> list[str]:
-    """run = {"task": Path | None, "start": datetime, "end": datetime}"""
+def structural_problems(run: dict, approved: bool = False) -> list[str]:
+    """run = {"task": Path | None, "start": datetime, "end": datetime}.
+    Requirements is the last stage: it ends blocked on approval, and done once the user approved."""
     task, start, end = run["task"], run["start"], run["end"]
     if task is None:
         return ["expected exactly one task folder"]
@@ -166,9 +254,9 @@ def structural_problems(run: dict) -> list[str]:
         return problems + [f"STATE.md front matter invalid: {e}"]
     if data.get("stages", {}).get("requirements") != "done":
         problems.append("stages.requirements != done")
-    # Only stage defined today, so "finished" means status: done (or stage moved on).
-    if data.get("stage") == "requirements" and data.get("status") != "done":
-        problems.append("stage not advanced and status not done")
+    expected = "done" if approved else "blocked"
+    if data.get("stage") == "requirements" and data.get("status") != expected:
+        problems.append(f"stage not advanced and status not {expected}")
     if not any(LOG_LINE_RE.match(line) for line in body.splitlines()):
         problems.append("no timestamped [requirements] log line")
     problems += timestamp_problems(data, body, start, end)

@@ -42,3 +42,13 @@ def test_score_gates_count_runs_per_test():
     gate = {"mean": 4, "floor": 3, "min_gradable": 0.9}
     data = {"results": {"results": [case("requirements", gate)] * 10 + [case("requirements_with_concept")] * 10}}
     assert score_gates(data) == [("requirements", 10, gate)]
+
+
+def test_eval_modules_import():
+    """promptfoo loads these by path; a syntax error there only shows up as a failed eval run."""
+    import importlib.util
+    from helpers import ROOT
+    for name in ("asserts", "provider"):
+        path = ROOT / "evals" / "promptfoo" / f"{name}.py"
+        spec = importlib.util.spec_from_file_location(f"kairyn_{name}", path)
+        spec.loader.exec_module(importlib.util.module_from_spec(spec))

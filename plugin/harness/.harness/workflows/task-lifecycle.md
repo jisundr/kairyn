@@ -28,7 +28,7 @@ The body is a `# Log`, newest last, one line per event: `<timestamp> [<stage>] <
 When a stage finishes: set it `done`, update `updated`, then
 - another stage follows: set `stage` to it
 - it was the last stage: leave `stage`, set `status: done`
-- waiting on the user: set `status: blocked` and log why
+- waiting on the user: set `status: blocked` and log why (`requirements` waits here until the user approves `REQUIREMENTS.md`)
 
 ## Time
 

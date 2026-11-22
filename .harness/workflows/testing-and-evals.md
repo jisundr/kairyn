@@ -39,7 +39,7 @@ Judge gate: criterion scores average at least 4, none below 3. Plain language: a
 |---|---|
 | init | 90% pass `verify-init.sh --fresh`; 100% leave `.kairyn/` unchanged and keep `CLAUDE.md` with one kairyn block |
 | check | 90% of replies name the doc that lost its header |
-| requirements | 90%: `well_formed` (task folder, real timestamps), `traceable` (criteria tagged `(request)`, `(A<n>)`, `(D<n>)`), `uses_concept` (on the grill folder, cites `D<n>`); 80% plain language; judge, `no_invention` at least 4 |
+| requirements | 90%: `well_formed` (ends blocked on approval, real timestamps), `traceable` (criteria cite `request`, `A<n>`, `D<n>` or `R<n>`), `specified` (EARS, non-functional needs, owners), `waits_for_approval`, `uses_concept`; over 3 turns `approval_gate` and `records_approval`; 80% plain language; judge, `no_invention` at least 4 |
 | model-routing | 90%: `well_formed`, `starts_with_baseline` (stage 0), `waits_for_human` (open `D<n>`); 80% plain language; judge |
 | grill | 90% over 4 scripted turns: `well_formed`, `one_question` (with a recommendation), `records_answers`, `waits_for_answer`, `hands_off` (names the folder); 80% plain language; judge |
 | upgrade | 90% upgrade a v0.1.0 repo and name its conflict |

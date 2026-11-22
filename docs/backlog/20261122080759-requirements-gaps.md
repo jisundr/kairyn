@@ -1,6 +1,6 @@
 ---
 title: Requirements stage misses parts of its playbook
-status: inbox
+status: committed
 requester: Jayson
 date: 2026-11-22
 appetite:
@@ -22,3 +22,5 @@ review_by:
 # Log
 
 2026-11-22T08:07:59Z [capture] Created from the playbook by Claude. Status inbox, waiting for triage.
+2026-11-22T10:47:44Z [commit] Jayson asked for a task. Status committed, task [2026-11-22-requirements-gaps](../tasks/2026-11-22-requirements-gaps/REQUIREMENTS.md).
+2026-11-22T10:57:39Z [commit] Task renamed to [2026-11-22-requirements-gaps](../tasks/2026-11-22-requirements-gaps/REQUIREMENTS.md) after #17.

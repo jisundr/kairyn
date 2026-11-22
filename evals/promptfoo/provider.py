@@ -14,9 +14,9 @@ HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
 from helpers import PLUGIN, ROOT, make_good_repo, run_verify  # noqa: E402
-from runner import (CONCEPT_DECISIONS, CONCEPT_TASK, CONCEPT_VALUE, GRILL_APP, GRILL_README, GRILL_REQUEST, MODEL, REQUEST, RESULTS, ROUTING_REQUEST,  # noqa: E402
+from runner import (APPROVAL_WORDS, APPROVER, CONCEPT_DECISIONS, CONCEPT_TASK, CONCEPT_VALUE, GRILL_APP, GRILL_README, GRILL_REQUEST, MODEL, REQUEST, RESULTS, ROUTING_REQUEST,  # noqa: E402
                     claude, make_concept_repo, make_grill_repo, make_routing_repo, new_repo, run_grill, run_model_routing,
-                    run_requirements, run_requirements_with_concept, tree_hash)
+                    run_requirements, run_requirements_approval, run_requirements_with_concept, tree_hash)
 
 TS = "%Y-%m-%dT%H:%M:%SZ"
 ORIGINAL_CLAUDE_MD = "# My project\n\nMy own rules.\n"
@@ -117,6 +117,24 @@ def requirements_with_concept(work: Path, scenario: str, run_id: str) -> dict:
             "value": CONCEPT_VALUE, "requirements_md": req.read_text() if req.exists() else ""}
 
 
+def requirements_approval(work: Path, scenario: str, run_id: str) -> dict:
+    repo = make_good_repo(new_repo(work, "repo"))
+    run = run_requirements_approval(repo)
+    run_dir = RESULTS / scenario / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+    (run_dir / "turns.json").write_text(json.dumps(run["turns"], indent=2))
+    out = {"request": REQUEST, "turns": run["turns"], "task_path": None, "requirements_md": "",
+           "approver": APPROVER, "words": APPROVAL_WORDS,
+           "start": run["start"].strftime(TS), "end": run["end"].strftime(TS)}
+    if run["task"] is not None:
+        kept = run_dir / run["task"].name
+        shutil.copytree(run["task"], kept)   # temp repo is deleted; assertions read this copy
+        out["task_path"] = str(kept)
+        req = kept / "REQUIREMENTS.md"
+        out["requirements_md"] = req.read_text() if req.exists() else ""
+    return out
+
+
 HAND_MADE = "hand-made template\n"
 
 
@@ -136,7 +154,8 @@ def upgrade_conflict(work: Path, scenario: str, run_id: str) -> dict:
 
 
 SCENARIOS = {f.__name__: f for f in (init_fresh, init_keeps_edits, init_keeps_claude_md, check_broken_doc, requirements,
-                                     model_routing, grill, requirements_with_concept, upgrade_conflict)}
+                                     model_routing, grill, requirements_with_concept, requirements_approval,
+                                     upgrade_conflict)}
 
 
 def call_api(prompt, options, context):

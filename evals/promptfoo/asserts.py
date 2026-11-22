@@ -9,7 +9,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
-from checks import (TS_FORMAT, concept_use_problems, decision_labels, grill_problems, grill_reply_problems, next_routing_stage,  # noqa: E402
+from checks import (TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_reply_problems, next_routing_stage,  # noqa: E402
                     open_decisions, routing_problems, state_fields, ste_problems, ste_rate, structural_problems,
                     traceability_problems)
 from runner import JUDGE_MODEL, claude  # noqa: E402
@@ -94,6 +94,18 @@ def traceable(output, context):
     """No invention, checked: every acceptance criterion cites the request or a labeled assumption."""
     doc = json.loads(output)["requirements_md"]
     return _result(traceability_problems(doc) if doc else ["no REQUIREMENTS.md to trace"])
+
+
+def specified(output, context):
+    """Playbook gaps closed: EARS requirements each with a criterion, four non-functional needs, owners."""
+    doc = json.loads(output)["requirements_md"]
+    return _result(ears_problems(doc) + nfr_problems(doc) + owner_problems(doc) if doc else ["no REQUIREMENTS.md"])
+
+
+def waits_for_approval(output, context):
+    """Nobody approved, so the document says 'Approval: pending' and no approval line."""
+    doc = json.loads(output)["requirements_md"]
+    return _result(approval_problems(doc, approved=False) if doc else ["no REQUIREMENTS.md"])
 
 
 RUBRIC = """You are grading a REQUIREMENTS.md written for this request:
@@ -271,3 +283,30 @@ def uses_concept(output, context):
     d = json.loads(output)
     problems = [] if d["tasks"] == [Path(d["task_path"]).name] else [f"task folders {d['tasks']}, expected only the grill task"]
     return _result(problems + concept_use_problems(Path(d["task_path"]), tuple(d["decisions"]), d["value"]))
+
+
+# --- approval: turns 0 = the stage, 1 = "Thanks. I will read it later.", 2 = "Approved." ----------
+def approval_gate(output, context):
+    """Before the user approves, the task waits: blocked, 'Approval: pending', no approval line."""
+    turns = json.loads(output)["turns"]
+    if len(turns) != 3:
+        return _result([f"{len(turns)} turns, expected 3"])
+    problems = []
+    for i in (0, 1):
+        f = state_fields(turns[i]["state"])
+        if f.get("status") != "blocked":
+            problems.append(f"turn {i}: status {f.get('status')!r}, expected blocked")
+        problems += [f"turn {i}: {p}" for p in approval_problems(turns[i]["requirements"], approved=False)]
+    return _result(problems)
+
+
+def records_approval(output, context):
+    """After 'Approved.', the approval line names the approver, the time and the words, and the task is done."""
+    d = json.loads(output)
+    if not d["task_path"]:
+        return _result(["no task folder"])
+    run = _run(d)
+    problems = structural_problems(run, approved=True)
+    problems += approval_problems(d["requirements_md"], approved=True, name=d["approver"], words=d["words"],
+                                  start=run["start"], end=run["end"])
+    return _result(problems)

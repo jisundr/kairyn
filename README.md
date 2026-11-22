@@ -34,10 +34,10 @@ An agentic SDLC that grows with your repo.
 │   ├── harness/                      # .harness/ and CLAUDE.md block installed into your repo
 │   ├── stages/                       # stage definitions copied into .kairyn/stages/
 │   │   ├── _template.md              # skeleton for authoring new stages
-│   │   ├── REQUIREMENTS.md           # stage 1: request -> scoped requirements
+│   │   ├── REQUIREMENTS.md           # stage 1: request -> approved EARS requirements
 │   │   ├── GRILL.md                  # optional: interview until you share one concept
 │   │   └── MODEL-ROUTING.md          # optional: plan the next model-routing stage
-│   ├── templates/STATE.md            # per-task state file
+│   ├── templates/                    # STATE.md per task, REQUIREMENTS.md to fill in
 │   └── release-hashes.json           # installed-file hashes per release
 ├── tests/                            # fast tests (pytest)
 ├── evals/                            # BDD evals that run real claude sessions
@@ -53,7 +53,7 @@ Each task gets a folder in your repo, with a `STATE.md` and one file per stage:
 ```
 docs/tasks/<YYYY-MM-DD>-<slug>/
 ├── STATE.md              # front matter = current state, body = log
-└── REQUIREMENTS.md
+└── REQUIREMENTS.md       # ends with an approval line
 ```
 
 ## Tests and evals
