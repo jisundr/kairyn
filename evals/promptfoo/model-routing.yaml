@@ -1,4 +1,4 @@
-# depends: plugin/stages/MODEL-ROUTING.md, plugin/stages/_template.md, plugin/templates/STATE.md, plugin/scripts/init.sh
+# depends: plugin/skills/model-routing/SKILL.md, plugin/stages/MODEL-ROUTING.md, plugin/stages/_template.md, plugin/templates/STATE.md, plugin/scripts/init.sh
 description: model-routing stage
 prompts: ["{{scenario}}"]
 providers:

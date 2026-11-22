@@ -1,6 +1,7 @@
 ---
 description: Check this repo's harness docs and size budgets (add "write" to refresh index tables)
 argument-hint: "[write]"
+model: haiku
 allowed-tools: Bash(python3:*), Read
 ---
 

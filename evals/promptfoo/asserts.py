@@ -12,7 +12,7 @@ sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 from checks import (TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_reply_problems, next_routing_stage,  # noqa: E402
                     open_decisions, routing_problems, state_fields, ste_problems, ste_rate, structural_problems,
                     traceability_problems)
-from runner import JUDGE_MODEL, claude  # noqa: E402
+from runner import JUDGE_MODEL, NO_QUESTIONS, claude  # noqa: E402
 
 
 def _result(problems: list[str]) -> dict:
@@ -110,6 +110,7 @@ def waits_for_approval(output, context):
 
 RUBRIC = """You are grading a REQUIREMENTS.md written for this request:
 "{request}"
+The run was also told: \"""" + NO_QUESTIONS + """\" Recording that instruction, and the assumptions it asks for, is not invention.
 
 Score 1-5 on each criterion, then reply with a JSON object first:
 {{"verifiable": n, "scope": n, "no_invention": n}}
@@ -127,7 +128,7 @@ FLOOR = 3   # a run fails if any criterion scores below this; the mean gate is a
 def _judge(prompt: str, run_dir: Path, criteria: tuple[str, ...]) -> dict:
     """LLM judge. Saves the raw reply and scores in run_dir so run.py can apply the mean gate."""
     with tempfile.TemporaryDirectory(prefix="kairyn-judge-") as cwd:
-        raw = claude(prompt, Path(cwd), model=JUDGE_MODEL)
+        raw = claude(prompt, Path(cwd), model=JUDGE_MODEL, role="judge", cost_dir=run_dir)
     (run_dir / "judge.txt").write_text(raw)
     match = re.search(r"\{.*?\}", raw, re.S)
     try:

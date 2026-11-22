@@ -16,7 +16,7 @@ sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 from helpers import PLUGIN, ROOT, make_good_repo, run_verify  # noqa: E402
 from runner import (APPROVAL_WORDS, APPROVER, CONCEPT_DECISIONS, CONCEPT_TASK, CONCEPT_VALUE, GRILL_APP, GRILL_README, GRILL_REQUEST, MODEL, REQUEST, RESULTS, ROUTING_REQUEST,  # noqa: E402
                     claude, make_concept_repo, make_grill_repo, make_routing_repo, new_repo, run_grill, run_model_routing,
-                    run_requirements, run_requirements_approval, run_requirements_with_concept, tree_hash)
+                    run_requirements, run_requirements_approval, run_requirements_with_concept, set_cost_dir, tree_hash)
 
 TS = "%Y-%m-%dT%H:%M:%SZ"
 ORIGINAL_CLAUDE_MD = "# My project\n\nMy own rules.\n"
@@ -162,9 +162,11 @@ def call_api(prompt, options, context):
     scenario = context["vars"]["scenario"]
     run_id = f"run-{uuid.uuid4().hex[:8]}"
     work = Path(tempfile.mkdtemp(prefix=f"kairyn-{scenario}-"))
+    set_cost_dir(RESULTS / scenario / run_id)   # every claude call of this run appends its cost there
     try:
         return {"output": json.dumps(SCENARIOS[scenario](work, scenario, run_id))}
     except Exception as e:   # surfaced by promptfoo as a failed run, with the reason
         return {"error": f"{scenario}: {type(e).__name__}: {e}"}
     finally:
+        set_cost_dir(None)
         shutil.rmtree(work, ignore_errors=True)

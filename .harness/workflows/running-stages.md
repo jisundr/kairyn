@@ -11,14 +11,16 @@ Stage instructions are in `.kairyn/stages/`, one file per stage, in `order`. The
 
 ## Run one
 
-Ask Claude to follow `.kairyn/stages/<STAGE>.md` for your request, for example: "Follow `.kairyn/stages/REQUIREMENTS.md` for: add a dry-run flag."
+Run its skill: `/kairyn:requirements add a dry-run flag`, `/kairyn:grill <topic>` or `/kairyn:model-routing <task folder>`. Or ask Claude to follow `.kairyn/stages/<STAGE>.md` for your request. That route works for stages you add.
+
+Each skill names a cheaper model in its `model:` front matter. The model applies to the turn the skill runs. Your next reply, for example an approval or a grill answer, runs on the session model. Set a cheaper session model with `/model` for long stages.
 
 A stage:
 1. reads `STATE.md` and earlier stage outputs (see `task-lifecycle.md`)
 2. writes its output to `docs/tasks/<date>-<slug>/<STAGE>.md`
 3. updates `STATE.md` and appends to `.kairyn/learnings.md`
 
-An optional stage (`optional: true` in its front matter) is not in the default stage list. Run it on a task only when it fits: `GRILL.md` (`/kairyn:grill`) before `requirements` when a request is vague, `MODEL-ROUTING.md` after it to cut model cost. It adds itself to the task's `stages`.
+An optional stage (`optional: true` in its front matter) is not in the default stage list. Run it on a task only when it fits: `GRILL.md` before `requirements` when a request is vague, `MODEL-ROUTING.md` after it to cut model cost. It adds itself to the task's `stages`.
 
 ## Approve requirements
 

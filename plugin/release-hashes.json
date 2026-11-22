@@ -196,5 +196,44 @@
   "CLAUDE.md#kairyn": [
    "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
   ]
+ },
+ "0.5.0": {
+  ".harness/README.md": [
+   "efe793519875f2a1f87dffa403f7308f3dc1380aa2d2b452b2b1ad442289b139"
+  ],
+  ".harness/budgets.yml": [
+   "e47002349cf744019ab293bf26c9e01f0b5bb5bd84c1e27ba8ed85a9f3636995"
+  ],
+  ".harness/workflows/keeping-docs-lean.md": [
+   "f0b1bb0b5abe012a8a402a9a30d53ce24fd96783e8463905eeea58990258d2b4"
+  ],
+  ".harness/workflows/running-stages.md": [
+   "00064a4678733f3cf07601d002c89aa77b1b01e0a135c06f0f9265e527c804d9"
+  ],
+  ".harness/workflows/task-lifecycle.md": [
+   "89d164e89fde500bd9e6701646302ffcd275937c039b7610f7e46f235175dba8"
+  ],
+  ".kairyn/stages/GRILL.md": [
+   "47a97ff7ef2f2e8d9bac45e6d0e7c2936121a123ff935e9e0c75d5cfbfe87ba5"
+  ],
+  ".kairyn/stages/MODEL-ROUTING.md": [
+   "97d2fb57693d76e0769f0b03c23d9cdd6b764856a5e9597f549809e2882fd0fb"
+  ],
+  ".kairyn/stages/REQUIREMENTS.md": [
+   "d9ce45b734d3d9c4a776bd8c9c2d6842b09b049637e870319f1c38a3783c007b",
+   "fe2d720c046767cfbe390936c10a30f4bfa4b6a724fd7446bc56d946f272e750"
+  ],
+  ".kairyn/stages/_template.md": [
+   "de59ec19f18deca9426d43f3fd09c1e5d91b0ec93a9d109b6d9566215f7adc5d"
+  ],
+  ".kairyn/templates/REQUIREMENTS.md": [
+   "460795fc6f84d8212232dd779f84f7e2c22f391e682dea290942941e691b320c"
+  ],
+  ".kairyn/templates/STATE.md": [
+   "fd912ac9ebacc2e7d7520f679ef6235d0bd31f13ee9af0938203ababd5605716"
+  ],
+  "CLAUDE.md#kairyn": [
+   "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
+  ]
  }
 }

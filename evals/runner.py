@@ -21,13 +21,52 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def claude(prompt: str, cwd: Path, *, plugin: bool = False, model: str | None = None, timeout: int = 600) -> str:
-    cmd = ["claude", "-p", prompt, "--permission-mode", "acceptEdits", "--output-format", "text"]
+# Cost per run: provider.py points this at the run's evidence folder; each call appends to cost.jsonl there.
+_COST_DIR: Path | None = None
+# Headless runs cannot answer questions. The requirements judge is told this too, so recording it is not invention.
+NO_QUESTIONS = "Do not ask questions; make reasonable assumptions and record them."
+
+
+def set_cost_dir(path: Path | None) -> None:
+    global _COST_DIR
+    _COST_DIR = path
+
+
+def cost_of(output: str) -> float | None:
+    """total_cost_usd from `claude -p --output-format json`: a client-side estimate, not the bill."""
+    try:
+        cost = json.loads(output).get("total_cost_usd")
+    except (ValueError, AttributeError):
+        return None
+    return float(cost) if isinstance(cost, (int, float)) else None
+
+
+def record_cost(run_dir: Path | None, role: str, usd: float | None) -> None:
+    if run_dir is None or usd is None:
+        return
+    run_dir.mkdir(parents=True, exist_ok=True)
+    with (run_dir / "cost.jsonl").open("a") as f:
+        f.write(json.dumps({"role": role, "usd": usd}) + "\n")
+
+
+def _result(output: str) -> str:
+    try:
+        data = json.loads(output)
+    except ValueError:
+        return output
+    return (data.get("result") or "") if isinstance(data, dict) else output
+
+
+def claude(prompt: str, cwd: Path, *, plugin: bool = False, model: str | None = None, timeout: int = 600,
+           role: str = "run", cost_dir: Path | None = None) -> str:
+    cmd = ["claude", "-p", prompt, "--permission-mode", "acceptEdits", "--output-format", "json"]
     if plugin:
         cmd += ["--plugin-dir", str(PLUGIN)]
     if model:
         cmd += ["--model", model]
-    return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout).stdout
+    out = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout).stdout
+    record_cost(cost_dir or _COST_DIR, role, cost_of(out))
+    return _result(out)
 
 
 def new_repo(parent: Path, name: str) -> Path:
@@ -119,21 +158,16 @@ def make_routing_repo(repo: Path) -> Path:
 
 def run_model_routing(repo: Path) -> dict:
     start = utcnow()
-    claude(
-        "Follow the stage definition in .kairyn/stages/MODEL-ROUTING.md exactly "
-        f"for the task docs/tasks/{ROUTING_TASK}/. Do not ask questions.",
-        repo, model=MODEL,
-    )
+    claude(f"/kairyn:model-routing docs/tasks/{ROUTING_TASK}/ Do not ask questions.",   # through its skill
+           repo, plugin=True, model=MODEL)
     return {"task": repo / "docs" / "tasks" / ROUTING_TASK, "start": start, "end": utcnow()}
 
 
 def run_requirements(repo: Path) -> dict:
     start = utcnow()
-    claude(
-        "Follow the stage definition in .kairyn/stages/REQUIREMENTS.md exactly. "
-        f"Request: {REQUEST} Do not ask questions; make reasonable assumptions and record them.",
-        repo, model=MODEL,
-    )
+    # Through its skill. requirements_with_concept and requirements_approval follow the stage file directly.
+    claude(f"/kairyn:requirements {REQUEST} {NO_QUESTIONS}",
+           repo, plugin=True, model=MODEL)
     end = utcnow()
     tasks = [p for p in (repo / "docs" / "tasks").iterdir() if p.is_dir()] if (repo / "docs" / "tasks").is_dir() else []
     return {"task": tasks[0] if len(tasks) == 1 else None, "start": start, "end": end}
@@ -160,6 +194,8 @@ def claude_session(prompts: list[str], cwd: Path, *, plugin: bool = False, model
         replies.append(data.get("result") or "")
         if on_turn:
             on_turn(i, replies[-1])
+    # On --resume, total_cost_usd is the conversation total so far, so only the last turn counts.
+    record_cost(_COST_DIR, "run", cost_of(out) if replies else None)
     return replies
 
 
@@ -274,7 +310,7 @@ def run_requirements_with_concept(repo: Path) -> dict:
     claude(
         # The handoff grill names at its end: the user runs requirements on the task folder.
         "Follow the stage definition in .kairyn/stages/REQUIREMENTS.md exactly "
-        f"for the task docs/tasks/{CONCEPT_TASK}/. Do not ask questions; make reasonable assumptions and record them.",
+        f"for the task docs/tasks/{CONCEPT_TASK}/. {NO_QUESTIONS}",
         repo, model=MODEL,
     )
     return {"tasks": task_dirs(repo)}

@@ -1,5 +1,6 @@
 ---
 description: Upgrade this repo's kairyn files to the installed plugin version, keeping your edits
+model: haiku
 allowed-tools: Bash(python3:*), Read
 ---
 
