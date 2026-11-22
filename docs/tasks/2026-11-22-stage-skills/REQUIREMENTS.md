@@ -8,7 +8,7 @@ summary: "Ship one skill per stage, each with its own model, and record the cost
 
 ## Problem statement
 
-The request is "making agent skills per stages with model routing. The costs today is around $400". Every stage and every eval runs on the session model. `KAIRYN_MODEL` is unset by default, and no run records its cost. So nobody can see which stage or eval spends the money.
+The request is "making agent skills per stages with model routing". The project has spent about $400 in tokens so far (user). Every stage and every eval runs on the session model. `KAIRYN_MODEL` is unset by default, and no run records its cost. So nobody can see which stage or eval spent the money, and each new run costs the same.
 
 ## Grounding
 
@@ -54,7 +54,7 @@ Out:
 | A2 | assumption | `/kairyn:grill` keeps its name and arguments when it moves from a command to a skill. | design |
 | A3 | assumption | Existing evals that follow stage files directly keep passing. | build |
 | A4 | assumption | Script-only commands do not need a large model. | design |
-| A5 | assumption | Success is a lower measured cost per eval run at the same pass rate, before and after. | Jayson |
+| A5 | assumption | Success is a lower measured cost per eval run at the same pass rate, before and after. Build runs only the evals the selector picks, to limit new spend. | Jayson |
 | A6 | assumption | Cost comes from `total_cost_usd`, a client-side estimate, not the bill. | design |
 | A7 | assumption | `running-stages.md` explains the skills. The plugin version goes up. | build |
 | K1 | risk | `model:` lasts one turn. Grill answers and the approval reply run on the session model. | design |
@@ -75,7 +75,7 @@ Out:
 
 ## Open questions and answers
 - Q1: Subagents or skills? A: A skill per stage (user, 2026-11-22). Replaces the generated subagents draft.
-- Q2: Where does the cost go? A: Both evals and stage runs (user).
+- Q2: Where does the cost go? A: Both evals and stage runs. About $400 is already spent; the goal is to cut what new runs cost (user).
 - Q3: Which stages? A: The built-in stages; user-added stages keep the file route (Claude, follows from Q1).
 
 Approval: pending
