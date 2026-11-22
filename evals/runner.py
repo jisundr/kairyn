@@ -23,6 +23,8 @@ def utcnow() -> datetime:
 
 # Cost per run: provider.py points this at the run's evidence folder; each call appends to cost.jsonl there.
 _COST_DIR: Path | None = None
+# Headless runs cannot answer questions. The requirements judge is told this too, so recording it is not invention.
+NO_QUESTIONS = "Do not ask questions; make reasonable assumptions and record them."
 
 
 def set_cost_dir(path: Path | None) -> None:
@@ -164,7 +166,7 @@ def run_model_routing(repo: Path) -> dict:
 def run_requirements(repo: Path) -> dict:
     start = utcnow()
     # Through its skill. requirements_with_concept and requirements_approval follow the stage file directly.
-    claude(f"/kairyn:requirements {REQUEST} Do not ask questions; make reasonable assumptions and record them.",
+    claude(f"/kairyn:requirements {REQUEST} {NO_QUESTIONS}",
            repo, plugin=True, model=MODEL)
     end = utcnow()
     tasks = [p for p in (repo / "docs" / "tasks").iterdir() if p.is_dir()] if (repo / "docs" / "tasks").is_dir() else []
@@ -308,7 +310,7 @@ def run_requirements_with_concept(repo: Path) -> dict:
     claude(
         # The handoff grill names at its end: the user runs requirements on the task folder.
         "Follow the stage definition in .kairyn/stages/REQUIREMENTS.md exactly "
-        f"for the task docs/tasks/{CONCEPT_TASK}/. Do not ask questions; make reasonable assumptions and record them.",
+        f"for the task docs/tasks/{CONCEPT_TASK}/. {NO_QUESTIONS}",
         repo, model=MODEL,
     )
     return {"tasks": task_dirs(repo)}

@@ -12,7 +12,7 @@ sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 from checks import (TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_reply_problems, next_routing_stage,  # noqa: E402
                     open_decisions, routing_problems, state_fields, ste_problems, ste_rate, structural_problems,
                     traceability_problems)
-from runner import JUDGE_MODEL, claude  # noqa: E402
+from runner import JUDGE_MODEL, NO_QUESTIONS, claude  # noqa: E402
 
 
 def _result(problems: list[str]) -> dict:
@@ -110,6 +110,7 @@ def waits_for_approval(output, context):
 
 RUBRIC = """You are grading a REQUIREMENTS.md written for this request:
 "{request}"
+The run was also told: \"""" + NO_QUESTIONS + """\" Recording that instruction, and the assumptions it asks for, is not invention.
 
 Score 1-5 on each criterion, then reply with a JSON object first:
 {{"verifiable": n, "scope": n, "no_invention": n}}

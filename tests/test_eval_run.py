@@ -114,3 +114,14 @@ def test_concurrency_flag_beats_env_and_floors_at_one():
     assert concurrency(None, {"KAIRYN_EVAL_CONCURRENCY": "2"}) == 2
     assert concurrency(6, {"KAIRYN_EVAL_CONCURRENCY": "2"}) == 6
     assert concurrency(0, {}) == 1
+
+
+def test_requirements_judge_sees_the_instruction_the_run_got():
+    """The run is told not to ask questions; recording that is not invention, so the judge must know it."""
+    import importlib.util
+    from helpers import ROOT
+    from runner import NO_QUESTIONS
+    spec = importlib.util.spec_from_file_location("kairyn_asserts", ROOT / "evals" / "promptfoo" / "asserts.py")
+    asserts = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(asserts)
+    assert NO_QUESTIONS in asserts.RUBRIC.format(request="r", doc="d")
