@@ -35,12 +35,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.9", "3.x"]
+        python: ["3.9", "3.13"]
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
-        with:
-          python-version: ${{ matrix.python }}
+      # setup-python has no 3.9 build for the current ubuntu-latest; uv does. A bare venv
+      # (no packages) puts that interpreter first on PATH as both python and python3.
+      - uses: astral-sh/setup-uv@v10.3.3
+      - name: Python ${{ matrix.python }} with nothing installed
+        run: |
+          uv venv --python ${{ matrix.python }} "$RUNNER_TEMP/py"
+          echo "$RUNNER_TEMP/py/bin" >> "$GITHUB_PATH"
       - name: Init and check a fresh repo with no dependencies installed
         run: |
           repo="$(mktemp -d)"
