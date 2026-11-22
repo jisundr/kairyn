@@ -76,5 +76,10 @@ if [ "$fresh" -eq 1 ] && [ -d "$repo/docs/tasks" ] && [ -n "$(find "$repo/docs/t
   problem "docs/tasks/ should be empty after init"
 fi
 
+# A newer plugin than the installed files: a warning, not a failure.
+if [ -d "$repo/.kairyn" ]; then
+  python3 "$plugin/scripts/version_check.py" --root "$repo" --plugin "$plugin" | sed 's/^/WARN: /'
+fi
+
 if [ "$fail" -eq 0 ]; then echo "OK: kairyn init layout verified"; fi
 exit "$fail"
