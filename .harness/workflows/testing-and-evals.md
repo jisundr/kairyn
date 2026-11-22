@@ -7,7 +7,7 @@ load: on-demand
 
 # Testing and evals
 
-Two separate layers.
+Two layers.
 
 | | Tests (`tests/`) | Evals (`evals/`) |
 |---|---|---|
@@ -22,7 +22,7 @@ Two separate layers.
 uv run pytest
 ```
 
-Plugin shape, init scripts, pure eval checks, selector and gates. Never calls `claude`.
+Plugin shape, scripts, eval checks, selector and gates. Never calls `claude`.
 
 ## Evals
 
@@ -61,18 +61,18 @@ uv run python evals/run.py init                 # a named eval
 uv run python evals/run.py --all-evals          # everything, e.g. before a release
 ```
 
-- A hash is saved only when every metric passed at the full run count (`KAIRYN_EVAL_RUNS` below 10 never vouches).
+- A hash is saved only when every metric passed at 10 runs; fewer never vouch.
 - List every plugin file an eval uses in `# depends:`.
 
 ### Evidence and summary
 
-Each run saves promptfoo's `<name>.json`, per-run evidence and `summary.md` to `evals/results/<run-id>/`. Read them before you claim a result.
+Each run saves `<name>.json`, per-run evidence and `summary.md` to `evals/results/<run-id>/`. Read them before you claim a result.
 
 `summary.md` ends with cost per scenario and a total, from each run's `cost.jsonl` (`total_cost_usd`, an estimate). A session records its last turn only: on `--resume` the value is cumulative.
 
 ### Settings
 
-`KAIRYN_EVAL_RUNS` (default 10), `KAIRYN_MODEL`, `KAIRYN_JUDGE_MODEL`.
+`KAIRYN_EVAL_RUNS` (default 10), `KAIRYN_EVAL_CONCURRENCY` or `--concurrency` (default 4), `KAIRYN_MODEL`, `KAIRYN_JUDGE_MODEL`.
 
 ## Adding an eval
 
