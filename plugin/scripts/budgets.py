@@ -38,7 +38,8 @@ class Budget(NamedTuple):
 
 
 SKIP_DIRS = {".git", ".venv", ".pytest_cache", "__pycache__", "node_modules"}
-SKIP_PREFIXES = ("evals/results/", ".kairyn/.base/")   # .base/ holds upgrade merge bases, not docs
+# .base/ holds upgrade merge bases; .claude/worktrees/ holds full Claude Code checkouts. Neither is docs.
+SKIP_PREFIXES = ("evals/results/", ".kairyn/.base/", ".claude/worktrees/")
 
 # Checked after the repo's patterns, so the repo's own limit wins.
 FALLBACK_BUDGETS = [
