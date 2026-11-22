@@ -9,6 +9,8 @@ load: on-demand
 
 Each task has a folder: `docs/tasks/<YYYY-MM-DD>-<slug>/`, holding `STATE.md` and one upper-case file per stage (`REQUIREMENTS.md`). Stage outputs are files, not chat, so later stages and people can read them.
 
+Each stage output starts with front matter that names it: `task`, `stage` and a one-line `summary`. It holds no task state. `head -5` tells you what a file is.
+
 ## STATE.md
 
 Front matter is the source of truth. Read it, not the log, to see where a task is.

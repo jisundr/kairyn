@@ -21,6 +21,7 @@ purpose: Turn a request into clear, scoped requirements with acceptance criteria
 
 ## Output
 Write to `docs/tasks/<YYYY-MM-DD>-<slug>/REQUIREMENTS.md`:
+- Front matter with `stage: requirements` (see `_template.md`, Output)
 - Problem statement (only what the request says)
 - Scope (in / out)
 - Assumptions (`A1`, `A2`, ...)
