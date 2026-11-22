@@ -1,41 +1,35 @@
 ---
 name: requirements
 order: 1
-purpose: Turn a request into clear, scoped requirements with acceptance criteria.
+purpose: Turn a request into approved, testable requirements with acceptance criteria.
 ---
 
 # Stage: requirements
 
 ## Inputs
-- A feature request, bug report or idea (from the user's command arguments).
-- `.kairyn/learnings.md`, if present.
+- A request, or a task folder that `grill` started.
+- `CONCEPT.md` and `.kairyn/learnings.md`, if present.
 
 ## Steps
-1. Get the date and a UTC timestamp by running `date` (see `_template.md`, Time). Create the task folder `docs/tasks/<YYYY-MM-DD>-<slug>/` and a `STATE.md` from `.kairyn/templates/STATE.md`.
-2. Restate the request in one paragraph.
-3. Skim the relevant parts of the repo to ground the request in existing code.
-4. List open questions; ask the user only those you cannot resolve from the repo.
-5. Do not add what the request does not ask for (docs, tests, output wording, design). If a detail is necessary and the request does not give it, record it as a labeled assumption: `A1`, `A2`.
-6. Write the scope. Each "in" item comes from the request or an assumption. Put other ideas in "out".
-7. Write acceptance criteria as a checklist a reviewer could verify. End each criterion with its source: `(request)` or its labels, for example `(A2)`.
+1. Get timestamps from `date` (see `_template.md`, Time). Read each `docs/tasks/*/STATE.md`. If one has `requirements: pending` and matches the request, use its folder. Else create `docs/tasks/<YYYY-MM-DD>-<slug>/` and a `STATE.md` from `.kairyn/templates/STATE.md`.
+2. Read the relevant code.
+3. Take `CONCEPT.md` decisions as answers. Ask the user only what the repo and `CONCEPT.md` do not answer.
+4. Add nothing the request does not ask for. Record each needed detail it does not state as an assumption `A<n>`.
+5. Fill `.kairyn/templates/REQUIREMENTS.md`. Write each requirement as one EARS sentence that starts with The, When, While, If or Where. End each "in" item, requirement and non-functional need with the source that states it: `(request)`, `(A2)` or `(D1)`.
+6. Give each assumption, risk (`K<n>`) and dependency the owner who confirms it.
+7. Write acceptance criteria a reviewer can verify. End each with the requirements it checks: `(R1)`. Each requirement needs one.
 
 ## Output
-Write to `docs/tasks/<YYYY-MM-DD>-<slug>/REQUIREMENTS.md`:
-- Front matter with `stage: requirements` (see `_template.md`, Output)
-- Problem statement (only what the request says)
-- Scope (in / out)
-- Assumptions (`A1`, `A2`, ...)
-- Acceptance criteria
-- Open questions and the answers given
-
-Write it in ASD-STE100, about 80% of the way (see `_template.md`, Writing). The next stage reads it as its only input.
+`REQUIREMENTS.md` in the task folder, in ASD-STE100 (see `_template.md`, Writing).
 
 ## Exit criteria
-- [ ] Every acceptance criterion is verifiable and names its source.
+- [ ] Each requirement has a source and a criterion.
 - [ ] No unresolved open questions remain.
 
 ## State update
-Update `STATE.md` as described in `_template.md`. Set `requirements` to `done` in the front matter. Advance `stage`, or set `status: done` if no later stage exists. Append a log line that summarizes the requirements.
+Update `STATE.md` as in `_template.md`. Set `requirements` to `done`, then:
+- Until the user approves in chat: keep `Approval: pending`, set `status: blocked`, ask for approval. Other replies are not approval. Never approve for the user.
+- When the user approves: replace the line with `Approval: <git config user.name>, <timestamp>, "<the user's words>"`. Advance `stage`, or set `status: done` if no stage follows.
 
 ## Learnings
-Append anything this run taught about the repo to `.kairyn/learnings.md`.
+Append what this run taught about the repo to `.kairyn/learnings.md`.
