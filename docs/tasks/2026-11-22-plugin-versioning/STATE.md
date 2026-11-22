@@ -2,13 +2,13 @@
 task: 2026-11-22-plugin-versioning
 title: Plugin versioning and consumer upgrades
 stage: build
-status: in-progress   # in-progress | blocked | done
+status: done   # in-progress | blocked | done
 stages:
   requirements: done   # pending | in-progress | done
   design: done
-  build: in-progress
+  build: done
 created: 2026-11-21T23:11:54Z
-updated: 2026-11-22T07:02:44Z
+updated: 2026-11-22T07:30:43Z
 ---
 
 # Log
@@ -30,3 +30,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-22T06:22:27Z [build] Task 4 done: scripts/release_hashes.py builds plugin/release-hashes.json from every commit per version (0.1.0: 34 hashes, 12 paths) plus the working tree; plugin.json is 0.2.0. 213 tests pass.
 2026-11-22T07:02:44Z [build] User decided: deleting <file>.kairyn-new resolves a conflict (the design had no resolution step). A conflict with no merge base, kept by the user, makes the file theirs.
 2026-11-22T07:02:44Z [build] Tasks 5 to 8 done: upgrade.py and /kairyn:upgrade, version_check.py (check, verify-init, SessionStart hook), CI version-bump job, upgrade eval. This repo upgraded: 2 stages REPLACED, MODEL-ROUTING.md ADDED, 3 own dev docs resolved as theirs. 253 tests pass.
+2026-11-22T07:30:43Z [build] Done. Merged as #8 (design, tasks 1 and 3) and #9 (0.2.0: tasks 2, 4 to 8; #12 folded in). Main CI passed; this repo verifies on 0.2.0.
