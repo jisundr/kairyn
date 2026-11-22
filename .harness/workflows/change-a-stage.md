@@ -35,3 +35,7 @@ Stage files and their outputs are upper case (`REQUIREMENTS.md`). Stage names an
 3. Add the stage to `stages:` in `plugin/templates/STATE.md`, and update the previous stage's State update so it advances to the new one.
 4. Make sure `init.sh` needs no change: it copies everything in `plugin/stages/` and `plugin/templates/`.
 5. Update the README layout.
+
+## Optional stages
+
+A stage that only some tasks need (for example `model-routing`) sets `optional: true` in its front matter. Do not add it to `stages:` in `STATE.md`, and do not make the previous stage advance to it. Its State update adds the stage to the task's `stages` when it runs. Give it an `order` above the main stages.

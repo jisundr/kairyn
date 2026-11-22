@@ -9,7 +9,11 @@ from helpers import split_front_matter
 
 TASK_DIR_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(-[a-z0-9]+)*$")
 TS_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
-LOG_LINE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z) \[requirements\] \S")
+def log_line_re(stage: str) -> re.Pattern:
+    return re.compile(rf"^(\d{{4}}-\d{{2}}-\d{{2}}T\d{{2}}:\d{{2}}:\d{{2}}Z) \[{re.escape(stage)}\] \S")
+
+
+LOG_LINE_RE = log_line_re("requirements")
 CLOCK_SLACK = timedelta(seconds=5)
 
 
@@ -112,9 +116,10 @@ def output_header_problems(text: str, task: str, stage: str) -> list[str]:
     return problems
 
 
-def timestamp_problems(data: dict, body: str, start: datetime, end: datetime) -> list[str]:
+def timestamp_problems(data: dict, body: str, start: datetime, end: datetime, stage: str = "requirements") -> list[str]:
     """Timestamps must come from the real clock, not from the model's memory."""
     lo, hi = start - CLOCK_SLACK, end + CLOCK_SLACK
+    line_re = log_line_re(stage)
 
     # YAML parses an unquoted 2026-11-17T06:23:19Z into a datetime; normalise to the Z string.
     def as_raw(v):
@@ -125,7 +130,7 @@ def timestamp_problems(data: dict, body: str, start: datetime, end: datetime) ->
 
     stamps = {k: as_raw(data.get(k)) for k in ("created", "updated")}
     for n, line in enumerate(body.splitlines()):
-        m = LOG_LINE_RE.match(line)
+        m = line_re.match(line)
         if m:
             stamps[f"log line {n}"] = m.group(1)
     problems = []
@@ -176,4 +181,56 @@ def structural_problems(run: dict) -> list[str]:
             problems.append(f"REQUIREMENTS.md missing {section!r}")
     if not re.search(r"^\s*- \[ \] ", text, re.M):
         problems.append("no acceptance-criteria checkboxes")
+    return problems
+
+
+# --- model-routing stage -------------------------------------------------------
+# The stage plans one routing stage at a time (0 = logging and a baseline ... 7 = cascade routing)
+# and leaves every human decision (quality bar, goals, thresholds) open unless the user gave it.
+ROUTING_STAGE = "model-routing"
+ROUTING_SECTIONS = ("call sites", "next stage", "decisions", "build plan", "gates")
+_NEXT_STAGE = re.compile(r"^##\s+Next stage\s*\n+\s*\**Stage\s+(\d)\b", re.M | re.I)
+_DECISION = re.compile(r"^\s*(?:[-*]|\d+\.|\|)?\s*[*`]*\s*(D\d+)\b(.*)$", re.M)
+
+
+def next_routing_stage(text: str) -> int | None:
+    m = _NEXT_STAGE.search(text)
+    return int(m.group(1)) if m else None
+
+
+def open_decisions(text: str) -> list[str]:
+    """Decision labels whose line says they are still open."""
+    return [d for d, rest in _DECISION.findall(text) if re.search(r"\bopen\b", rest, re.I)]
+
+
+def routing_problems(run: dict) -> list[str]:
+    """run = {"task": Path | None, "start": datetime, "end": datetime}"""
+    task, start, end = run["task"], run["start"], run["end"]
+    if task is None:
+        return ["expected exactly one task folder"]
+    state, doc = task / "STATE.md", task / "MODEL-ROUTING.md"
+    if not doc.exists():
+        return ["MODEL-ROUTING.md missing"]
+    try:
+        fm, body = split_front_matter(state.read_text())
+        data = yaml.safe_load(fm)
+    except (AssertionError, FileNotFoundError, yaml.YAMLError) as e:
+        return [f"STATE.md unreadable: {e}"]
+    problems = []
+    stages = data.get("stages") or {}
+    if stages.get("requirements") != "done":
+        problems.append("stages.requirements != done")
+    if stages.get(ROUTING_STAGE) not in ("in-progress", "done"):
+        problems.append(f"stages.{ROUTING_STAGE} is {stages.get(ROUTING_STAGE)!r}, expected in-progress or done")
+    if not any(log_line_re(ROUTING_STAGE).match(line) for line in body.splitlines()):
+        problems.append(f"no timestamped [{ROUTING_STAGE}] log line")
+    # The task (and its `created`) predates this stage run; `updated` and the log line must not.
+    problems += [p for p in timestamp_problems(data, body, start, end, ROUTING_STAGE) if not p.startswith("created")]
+    text = doc.read_text()
+    problems += output_header_problems(text, task.name, ROUTING_STAGE)
+    for section in ROUTING_SECTIONS:
+        if not re.search(rf"^##\s+{section}\b", text, re.M | re.I):
+            problems.append(f"MODEL-ROUTING.md missing section {section!r}")
+    if next_routing_stage(text) is None:
+        problems.append("Next stage section does not start with 'Stage <n>'")
     return problems

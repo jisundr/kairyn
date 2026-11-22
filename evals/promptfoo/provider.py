@@ -14,7 +14,8 @@ HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
 from helpers import make_good_repo, run_verify  # noqa: E402
-from runner import MODEL, REQUEST, RESULTS, claude, new_repo, run_requirements, tree_hash  # noqa: E402
+from runner import (MODEL, REQUEST, RESULTS, ROUTING_REQUEST, claude, make_routing_repo, new_repo,  # noqa: E402
+                    run_model_routing, run_requirements, tree_hash)
 
 TS = "%Y-%m-%dT%H:%M:%SZ"
 ORIGINAL_CLAUDE_MD = "# My project\n\nMy own rules.\n"
@@ -74,7 +75,20 @@ def requirements(work: Path, scenario: str, run_id: str) -> dict:
     return out
 
 
-SCENARIOS = {f.__name__: f for f in (init_fresh, init_keeps_edits, init_keeps_claude_md, check_broken_doc, requirements)}
+def model_routing(work: Path, scenario: str, run_id: str) -> dict:
+    repo = make_routing_repo(make_good_repo(new_repo(work, "repo")))
+    run = run_model_routing(repo)
+    kept = RESULTS / scenario / run_id / run["task"].name
+    shutil.copytree(run["task"], kept)   # temp repo is deleted; assertions read this copy
+    doc = kept / "MODEL-ROUTING.md"
+    return {"request": ROUTING_REQUEST, "task_path": str(kept), "doc": doc.read_text() if doc.exists() else "",
+            "app": (repo / "support" / "reply.py").read_text(), "app_path": "support/reply.py",
+            "routing_requirements": (kept / "REQUIREMENTS.md").read_text(),
+            "start": run["start"].strftime(TS), "end": run["end"].strftime(TS)}
+
+
+SCENARIOS = {f.__name__: f for f in (init_fresh, init_keeps_edits, init_keeps_claude_md, check_broken_doc, requirements,
+                                     model_routing)}
 
 
 def call_api(prompt, options, context):

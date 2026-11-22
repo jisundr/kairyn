@@ -7,7 +7,7 @@ load: on-demand
 
 # Testing and evals
 
-Two layers, kept apart.
+Two separate layers.
 
 | | Tests (`tests/`) | Evals (`evals/`) |
 |---|---|---|
@@ -22,7 +22,7 @@ Two layers, kept apart.
 uv run pytest
 ```
 
-Covers the plugin's shape, init scripts, pure eval checks, selector and gates. It never calls `claude`. Write the test first and watch it fail.
+Covers the plugin's shape, init scripts, pure eval checks, selector and gates. It never calls `claude`.
 
 ## Evals
 
@@ -43,6 +43,7 @@ Each test declares its thresholds as `metadata.min_pass_rate: {metric: fraction}
 | requirements | quality | judge scores (verifiable, scope, no_invention) average at least 4, none below 3; `no_invention` alone at least 4 |
 | requirements | traceable | 90% of runs tag every acceptance criterion `(request)` or `(A<n>)` |
 | requirements | plain_language | 80% of runs have at most 1.0 ASD-STE100 violations per 100 words (`checks.ste_problems`) |
+| model-routing | all | 90%: `well_formed`, `starts_with_baseline` (stage 0), `waits_for_human` (open `D<n>`); 80%: `plain_language`; judge as above |
 
 ### Running only what changed
 
@@ -66,15 +67,15 @@ uv run python evals/run.py --concurrency 4      # parallel claude sessions
 
 ### Evidence and summary
 
-Each run saves promptfoo's `<name>.json`, per-run evidence and `summary.md` to `evals/results/<run-id>/`. Check them before claiming a result.
+Each run saves promptfoo's `<name>.json`, per-run evidence and `summary.md` to `evals/results/<run-id>/`. Read them before you claim a result.
 
 ### Settings
 
-`KAIRYN_EVAL_RUNS` (default 10), `KAIRYN_MODEL`, `KAIRYN_JUDGE_MODEL`. Evals cost tokens: never run `--all-evals` casually.
+`KAIRYN_EVAL_RUNS` (default 10), `KAIRYN_MODEL`, `KAIRYN_JUDGE_MODEL`.
 
 ## Adding an eval
 
-1. Write `evals/promptfoo/<name>.yaml` with a `# depends:` header, tests with `metadata.min_pass_rate`, and a named `metric` on every assertion.
+1. Write `evals/promptfoo/<name>.yaml`: `# depends:` header, thresholds, a `metric` per assertion.
 2. Add a scenario function to `provider.py` and its checks to `asserts.py`.
 3. Run it against the current instructions and confirm it can fail.
-4. Reusable pure checks go in `evals/checks.py`, with tests in `tests/`.
+4. Pure checks go in `evals/checks.py`, tested in `tests/`.
