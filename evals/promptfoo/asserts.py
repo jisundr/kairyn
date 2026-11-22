@@ -164,3 +164,20 @@ def routing_quality(output, context):
     prompt = ROUTING_RUBRIC.format(app_path=d["app_path"], app=d["app"], requirements=d["routing_requirements"],
                                    request=d["request"], doc=d["doc"])
     return _judge(prompt, Path(d["task_path"]).parent, ("grounded", "staged", "no_invention"))
+
+
+def upgrade_ran(output, context):
+    """/kairyn:upgrade ran the script: stage upgraded, the conflicting file left as it was, the merge set aside."""
+    d = json.loads(output)
+    problems = [msg for ok, msg in ((d["manifest"], "no manifest written"),
+                                    (d["stage_upgraded"], "REQUIREMENTS.md not upgraded"),
+                                    (d["template_kept"], "hand-made STATE.md template changed"),
+                                    (d["kairyn_new"], "no STATE.md.kairyn-new")) if not ok]
+    return _result(problems)
+
+
+def reports_conflict(output, context):
+    """The reply names the conflict and tells the user where the merge is."""
+    reply = json.loads(output)["reply"]
+    problems = [f"reply does not mention {w}" for w in ("CONFLICT", "STATE.md", ".kairyn-new") if w not in reply]
+    return _result(problems)

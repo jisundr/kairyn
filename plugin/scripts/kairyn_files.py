@@ -10,7 +10,10 @@ kairyn block) are never touched.
 The record:
     .kairyn/manifest.json  {"version": "<plugin version>", "files": {"<repo path>": {"sha256", "owner"}}}
     .kairyn/.base/<repo path>  an exact copy of each recorded file, the merge base for upgrades
-The kairyn block in CLAUDE.md is recorded as the path "CLAUDE.md#kairyn".
+The kairyn block in CLAUDE.md is recorded as the path "CLAUDE.md#kairyn". Its doc index
+(the harness-docs region) is left out of its hash, because /kairyn:check write refreshes it.
+An entry with "pending": true is an open upgrade conflict: <file>.kairyn-new waits for the user.
+"no_base": true marks a conflict that had nothing to merge from (a repo set up before the manifest).
 
 Standard library only: consumers run this with a plain python3.
 
@@ -31,6 +34,7 @@ BLOCK = "CLAUDE.md#kairyn"
 MANIFEST = ".kairyn/manifest.json"
 BASE = ".kairyn/.base"
 _BLOCK_RE = re.compile(r"<!-- kairyn:start -->.*?<!-- kairyn:end -->\n?", re.S)
+_INDEX_RE = re.compile(r"(<!-- harness-docs:start -->).*?(<!-- harness-docs:end -->)", re.S)
 
 # Files under .harness/ the plugin ships but the repo owns. Other shipped harness files are plugin-owned.
 REPO_OWNED_HARNESS = {".harness/README.md", ".harness/budgets.yml"}
@@ -81,12 +85,24 @@ def block_text(claude_md: str) -> str | None:
     return m.group() if m else None
 
 
+def comparable_block(block: str) -> str:
+    """The block as recorded and compared: its doc index emptied."""
+    return _INDEX_RE.sub(lambda m: f"{m.group(1)}\n{m.group(2)}", block)
+
+
+def shipped_bytes(entry: Entry) -> bytes:
+    """A shipped file as recorded and compared (the block: marked region, index emptied)."""
+    if entry.path == BLOCK:
+        return comparable_block(block_text(entry.source.read_text()) or entry.source.read_text()).encode()
+    return entry.source.read_bytes()
+
+
 def current_bytes(repo: Path, path: str) -> bytes | None:
-    """What the repo holds for a recorded path now, or None if it is gone."""
+    """What the repo holds for a recorded path now, as recorded and compared, or None if it is gone."""
     if path == BLOCK:
         claude = repo / "CLAUDE.md"
         block = block_text(claude.read_text()) if claude.is_file() else None
-        return block.encode() if block is not None else None
+        return comparable_block(block).encode() if block is not None else None
     target = repo / path
     return target.read_bytes() if target.is_file() else None
 
@@ -99,20 +115,34 @@ def read_manifest(repo: Path) -> dict:
     return json.loads((repo / MANIFEST).read_text())
 
 
-def write_manifest(repo: Path, plugin: Path, paths: list[str]) -> None:
-    """Record just-installed files: hash each one into the manifest and copy it to .base/."""
+class Record(NamedTuple):
+    data: bytes            # the merge base: the shipped version this repo last took
+    owner: str
+    pending: bool = False  # an open conflict
+    no_base: bool = False  # that conflict had no merge base
+
+
+def write_record(repo: Path, version: str, records: dict) -> None:
+    """Write .kairyn/manifest.json and .kairyn/.base/ for {path: Record}. Paths not given are dropped."""
     files = {}
-    for path in sorted(paths):
-        owner = owner_of(path)
-        data = current_bytes(repo, path)
-        if owner is None or data is None:
-            raise ValueError(f"cannot record {path!r}: no owner or not installed")
+    for path, rec in sorted(records.items()):
         base = repo / BASE / path
         base.parent.mkdir(parents=True, exist_ok=True)
-        base.write_bytes(data)
-        files[path] = {"sha256": sha256(data), "owner": owner}
-    manifest = {"version": plugin_version(plugin), "files": files}
-    (repo / MANIFEST).write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+        base.write_bytes(rec.data)
+        flags = {"pending": True, **({"no_base": True} if rec.no_base else {})} if rec.pending else {}
+        files[path] = {"sha256": sha256(rec.data), "owner": rec.owner, **flags}
+    (repo / MANIFEST).write_text(json.dumps({"version": version, "files": files}, indent=2, sort_keys=True) + "\n")
+
+
+def write_manifest(repo: Path, plugin: Path, paths: list[str]) -> None:
+    """Record just-installed files: hash each one into the manifest and copy it to .base/."""
+    records = {}
+    for path in paths:
+        owner, data = owner_of(path), current_bytes(repo, path)
+        if owner is None or data is None:
+            raise ValueError(f"cannot record {path!r}: no owner or not installed")
+        records[path] = Record(data, owner)
+    write_record(repo, plugin_version(plugin), records)
 
 
 def manifest_problems(repo: Path) -> list[str]:
@@ -128,7 +158,8 @@ def manifest_problems(repo: Path) -> list[str]:
         return [f"{MANIFEST} invalid: {e}"]
     problems = []
     for path, entry in sorted(files.items()):
-        if not isinstance(entry, dict) or entry.get("owner") not in ("plugin", "repo") or not entry.get("sha256"):
+        if (not isinstance(entry, dict) or entry.get("owner") not in ("plugin", "repo") or not entry.get("sha256")
+                or not isinstance(entry.get("pending", False), bool)):
             problems.append(f"{MANIFEST}: bad entry for {path}")
             continue
         base = repo / BASE / path

@@ -10,7 +10,7 @@ import sys
 import pytest
 
 from helpers import PLUGIN, ROOT
-from kairyn_files import BLOCK, block_text, installed_files, plugin_version, sha256
+from kairyn_files import BLOCK, comparable_block, installed_files, plugin_version, sha256, shipped_bytes
 
 sys.path.insert(0, str(ROOT / "scripts"))
 from release_hashes import collect, repo_path  # noqa: E402
@@ -23,8 +23,7 @@ def load():
 
 
 def shipped_hash(entry) -> str:
-    data = entry.source.read_text()
-    return sha256((block_text(data) if entry.path == BLOCK else data).encode())
+    return sha256(shipped_bytes(entry))
 
 
 # --- the shipped file ----------------------------------------------------------
@@ -98,6 +97,6 @@ def test_collect_keeps_every_commit_of_a_version_and_the_working_tree(tmp_path):
 
 def test_collect_hashes_only_the_marked_block_of_claude_block_md(tmp_path):
     git(tmp_path, "init", "-q")
-    block = "<!-- kairyn:start -->\nx\n<!-- kairyn:end -->\n"
-    commit(tmp_path, {"plugin/harness/CLAUDE.block.md": block}, "0.1.0")
-    assert collect(tmp_path)["0.1.0"][BLOCK] == [sha256(block.encode())]
+    block = "<!-- kairyn:start -->\nx\n<!-- harness-docs:start -->\n| index |\n<!-- harness-docs:end -->\n<!-- kairyn:end -->\n"
+    commit(tmp_path, {"plugin/harness/CLAUDE.block.md": "before\n" + block}, "0.1.0")
+    assert collect(tmp_path)["0.1.0"][BLOCK] == [sha256(comparable_block(block).encode())]
