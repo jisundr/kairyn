@@ -1,7 +1,7 @@
 ---
 task: 2026-11-22-stage-skills
 stage: build
-summary: "Sonnet skills cut stage cost by 53 to 59% at the same pass rate in a 2-run smoke. Grill quality drops from 5.0 to 4.3."
+summary: "Grill and model-routing run on Sonnet (53 to 59% cheaper). Requirements stays on Opus: Sonnet failed its 10-run gate."
 ---
 
 # Models per stage: smoke evidence
@@ -28,6 +28,15 @@ Every metric passed in both runs. Plain language for `requirements` went from 1/
 
 ## Choices
 
-- `requirements`, `model-routing`: `sonnet`. Same quality, half the cost.
-- `grill`: `sonnet` passes, but `challenges` sits on its gate. The 10-run gate decides (K2).
+- `model-routing`, `grill`: `sonnet`. Both pass the 10-run gate.
+- `requirements`: `opus`. On Sonnet it failed the 10-run gate (K2).
+- K2 follow-up: scripted timestamps and plainer wording could let `requirements` move to Sonnet later.
 - K1: the model applies to the skill's turn only. Turns after it (grill answers, approval) and the stage-file route cost the same as before. `running-stages.md` tells users to set `/model`.
+
+## 10-run gate
+
+| Eval | Model | Result | Run |
+|---|---|---|---|
+| `grill` | sonnet | pass; `challenges` 4.0 (gate 4), `recommends` 4.2, min 3 | `20261122T130058Z` |
+| `model-routing` | sonnet | pass; `well_formed` 9/10, quality 4.7, min 4 | `20261122T204013Z` |
+| `requirements` | sonnet | fail; `well_formed` 8/10 (guessed `updated:` times), `plain_language` 6/10 ("would", long lines) | `20261122T204013Z` |
