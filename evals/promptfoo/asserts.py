@@ -9,7 +9,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
-from checks import (TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_reply_problems, next_routing_stage,  # noqa: E402
+from checks import (exit_problems, TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_reply_problems, next_routing_stage,  # noqa: E402
                     open_decisions, routing_problems, state_fields, ste_problems, ste_rate, structural_problems,
                     traceability_problems)
 from runner import JUDGE_MODEL, NO_QUESTIONS, claude  # noqa: E402
@@ -311,3 +311,14 @@ def records_approval(output, context):
     problems += approval_problems(d["requirements_md"], approved=True, name=d["approver"], words=d["words"],
                                   start=run["start"], end=run["end"])
     return _result(problems)
+
+
+def exits_with_adr(output, context):
+    """A load-bearing decision (D1, SQLite over JSON) gets an ADR; the task, its backlog file and only those go."""
+    from runner import EXIT_KEYWORD
+    return _result(exit_problems(json.loads(output), expect_adr=True, keyword=EXIT_KEYWORD))
+
+
+def exits_without_adr(output, context):
+    """A typo fix has no load-bearing decision: changelog and deletion, no ADR."""
+    return _result(exit_problems(json.loads(output), expect_adr=False))

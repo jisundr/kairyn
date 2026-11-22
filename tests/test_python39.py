@@ -57,3 +57,9 @@ def test_every_script_imports():
         code = f"import sys; sys.path.insert(0, {str(SCRIPTS)!r}); import {script.stem}"
         result = run39("-c", code)
         assert result.returncode == 0, f"{script.name}: {result.stderr}"
+
+
+def test_exit_script_runs(tmp_path):
+    repo = make_good_repo(tmp_path / "repo")
+    assert run39(str(SCRIPTS / "exit.py"), "adr-path", "first", "--root", str(repo)).stdout.strip() == "docs/adr/0001-first.md"
+    assert run39(str(SCRIPTS / "exit.py"), "check", "none", "--root", str(repo)).stdout.startswith("FAIL:")

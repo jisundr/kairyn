@@ -6,7 +6,11 @@
     },
     ".harness/workflows/running-stages.md": {
       "owner": "plugin",
-      "sha256": "00064a4678733f3cf07601d002c89aa77b1b01e0a135c06f0f9265e527c804d9"
+      "sha256": "28e2560ce2a234cee8322ea1123eafcaa14d99bd93e741be57ecc8cede121aa9"
+    },
+    ".kairyn/stages/EXIT.md": {
+      "owner": "repo",
+      "sha256": "a0bd8202dc72cee634da7ca3bc81b344abb46d11a65c94658ef8d2644be74ec1"
     },
     ".kairyn/stages/GRILL.md": {
       "owner": "repo",
@@ -37,5 +41,5 @@
       "sha256": "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
     }
   },
-  "version": "0.5.0"
+  "version": "0.6.0"
 }

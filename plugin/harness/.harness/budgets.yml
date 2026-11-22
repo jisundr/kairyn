@@ -7,5 +7,6 @@ strict: false
 budgets:
   - {pattern: .harness/README.md, max_tokens: 600, load: on-demand}
   - {pattern: ".harness/workflows/*.md", max_tokens: 800, load: on-demand}
+  - {pattern: "docs/adr/*.md", max_tokens: 500, load: on-demand}   # /kairyn:exit writes these
   # Uncomment to budget your CLAUDE.md (loaded every session):
   # - {pattern: CLAUDE.md, max_tokens: 1000, load: always}

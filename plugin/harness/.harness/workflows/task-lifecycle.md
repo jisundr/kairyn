@@ -33,3 +33,7 @@ When a stage finishes: set it `done`, update `updated`, then
 ## Time
 
 Never write dates from memory. Use `date +%Y-%m-%d` for folder names and `date -u +%Y-%m-%dT%H:%M:%SZ` for timestamps.
+
+## Close a task
+
+After a task's change merges, `/kairyn:exit <task>` runs `EXIT.md`. It writes an ADR in `docs/adr/` for each load-bearing decision, a line under `## Unreleased` in `CHANGELOG.md` and learnings. Then `exit.py` deletes the task folder and its closed backlog files. Git history keeps them. `/kairyn:release <version>` moves `## Unreleased` to the version and tags it locally; you push the tag.

@@ -4,7 +4,7 @@ Options, not commitments. Each file is one idea, named `<YYYYMMDDHHMMSS>-<slug>.
 
 ## Triage digest (2026-11-22)
 
-Eleven ideas are `inbox` and need a keep, park or drop decision. Requirements gaps and exit strategy are `committed`. Grill in requirements is `dropped`: #17 shipped it.
+Eleven ideas are `inbox` and need a keep, park or drop decision. Exit strategy is `committed`. Closed ideas are in `CHANGELOG.md`.
 
 | Idea | Playbook | Depends on | AI note |
 |---|---|---|---|
@@ -14,8 +14,6 @@ Eleven ideas are `inbox` and need a keep, park or drop decision. Requirements ga
 | [Review and merge stage](20261122080759-review-stage.md) | SDLC 05 | gates-stage | Should own `status: done` |
 | [Release and monitoring stage](20261122080759-release-stage.md) | SDLC 06 | review-stage | Maybe optional |
 | [Backlog stage](20261122080759-backlog-stage.md) | SDLC 00 | | This file is a manual run of it |
-| [Requirements gaps](20261122080759-requirements-gaps.md) | SDLC 01 | | Approval line first |
-| [Grill in requirements](20261122104150-grill-requirements.md) | SDLC 01 | | Dropped |
 | [Grill in rounds](20261122105739-grill-rounds.md) | Agents | | From Matt Pocock's grilling skill |
 | [Plain-English outputs](20261122080759-plain-english-outputs.md) | Agents 01 | | |
 | [Pointer-following checks](20261122080759-instruction-file-checks.md) | Agents 02 | | Partly done |

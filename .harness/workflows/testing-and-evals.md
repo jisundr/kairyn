@@ -12,7 +12,7 @@ Two layers.
 | | Tests (`tests/`) | Evals (`evals/`) |
 |---|---|---|
 | Result | Same every time | A pass rate over N runs |
-| Speed and cost | Under a second, free | About 3 to 7 minutes per eval, uses tokens |
+| Speed and cost | Under a second, free | 3 to 7 minutes per eval, uses tokens |
 | Runs | Always | Only when dependencies changed |
 | Command | `uv run pytest` | `uv run python evals/run.py` |
 
@@ -38,11 +38,12 @@ Judge gate: criterion scores average at least 4, none below 3. Plain language: a
 | Eval | Pass when |
 |---|---|
 | init | 90% pass `verify-init.sh --fresh`; 100% keep `.kairyn/` and `CLAUDE.md` (one kairyn block) |
-| check | 90% of replies name the doc that lost its header |
+| check | 90% name the doc that lost its header |
 | requirements | `requirements` runs via its skill. 90%: `well_formed` (ends blocked on approval, real timestamps), `traceable` (criteria cite `request`, `A<n>`, `D<n>` or `R<n>`), `specified` (EARS, non-functional needs, owners), `waits_for_approval`, `uses_concept`; over 3 turns `approval_gate` and `records_approval`; 80% plain language; judge, `no_invention` at least 4 |
 | model-routing | Via its skill. 90%: `well_formed`, `starts_with_baseline` (stage 0), `waits_for_human` (open `D<n>`); 80% plain language; judge |
 | grill | 90% over 4 scripted turns: `well_formed`, `one_question` (with a recommendation), `records_answers`, `waits_for_answer`, `hands_off` (names the folder); 80% plain language; judge |
-| upgrade | 90% upgrade a v0.1.0 repo and name its conflict |
+| upgrade | 90% upgrade a v0.1.0 repo, name its conflict |
+| exit | 90%: task and closed backlog gone, changelog line, ADR only when due |
 
 ### Running only what changed
 
@@ -60,7 +61,7 @@ uv run python evals/run.py init                 # a named eval
 uv run python evals/run.py --all-evals          # everything, e.g. before a release
 ```
 
-- A hash is saved only when every metric passed at the full run count (`KAIRYN_EVAL_RUNS` below 10 never vouches).
+- A hash is saved only when every metric passed at 10 runs; fewer never vouch.
 - List every plugin file an eval uses in `# depends:`.
 
 ### Evidence and summary
@@ -71,11 +72,11 @@ Each run saves `<name>.json`, per-run evidence and `summary.md` to `evals/result
 
 ### Settings
 
-`KAIRYN_EVAL_RUNS` (default 10), `KAIRYN_EVAL_CONCURRENCY` or `--concurrency` (sessions at once, default 4), `KAIRYN_MODEL`, `KAIRYN_JUDGE_MODEL`.
+`KAIRYN_EVAL_RUNS` (default 10), `KAIRYN_EVAL_CONCURRENCY` or `--concurrency` (default 4), `KAIRYN_MODEL`, `KAIRYN_JUDGE_MODEL`.
 
 ## Adding an eval
 
 1. Write `evals/promptfoo/<name>.yaml`: `# depends:` header, thresholds, a `metric` per assertion.
 2. Add a scenario function to `provider.py` and its checks to `asserts.py`.
-3. Run it on the current instructions; confirm it can fail.
-4. Pure checks go in `evals/checks.py`, tested in `tests/`.
+3. Run it on current instructions; confirm it can fail.
+4. Pure checks: `evals/checks.py`, tested in `tests/`.

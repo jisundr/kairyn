@@ -60,3 +60,7 @@ The requirements eval rejects timestamps that are unparseable, look like placeho
 ## Where the template lives
 
 `plugin/templates/STATE.md` is copied to `.kairyn/templates/STATE.md` by init, and the requirements stage creates each task's `STATE.md` from it. Changing the format means updating the template, `_template.md`'s State update section, the stage files, `tests/test_static.py` and the eval checks in `evals/checks.py`.
+
+## Close a task
+
+After a task's change merges, `/kairyn:exit <task>` runs `EXIT.md`. It writes an ADR in `docs/adr/` for each load-bearing decision, a line under `## Unreleased` in `CHANGELOG.md` and learnings. Then `exit.py` deletes the task folder and its closed backlog files. Git history keeps them. `/kairyn:release <version>` moves `## Unreleased` to the version and tags it locally; you push the tag.

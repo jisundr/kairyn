@@ -28,16 +28,12 @@ An agentic SDLC that grows with your repo.
 ├── .claude-plugin/marketplace.json   # marketplace entry pointing to ./plugin
 ├── plugin/                           # the kairyn plugin
 │   ├── .claude-plugin/plugin.json
-│   ├── commands/                     # /kairyn:init, /kairyn:check, /kairyn:upgrade
-│   ├── skills/                       # per stage: /kairyn:requirements, /kairyn:grill, /kairyn:model-routing
+│   ├── commands/                     # /kairyn:init, /kairyn:check, /kairyn:upgrade, /kairyn:release
+│   ├── skills/                       # per stage: /kairyn:requirements, /kairyn:grill, /kairyn:model-routing, /kairyn:exit
 │   ├── hooks/hooks.json              # SessionStart: warn when the repo's kairyn files are older
 │   ├── scripts/                      # init, verify, upgrade, version check, doc and budget checkers
 │   ├── harness/                      # .harness/ and CLAUDE.md block installed into your repo
-│   ├── stages/                       # stage definitions copied into .kairyn/stages/
-│   │   ├── _template.md              # skeleton for authoring new stages
-│   │   ├── REQUIREMENTS.md           # stage 1: request -> approved EARS requirements
-│   │   ├── GRILL.md                  # optional: interview until you share one concept
-│   │   └── MODEL-ROUTING.md          # optional: plan the next model-routing stage
+│   ├── stages/                       # copied into .kairyn/stages/: REQUIREMENTS, GRILL, MODEL-ROUTING, EXIT, _template
 │   ├── templates/                    # STATE.md per task, REQUIREMENTS.md to fill in
 │   └── release-hashes.json           # installed-file hashes per release
 ├── tests/                            # fast tests (pytest)
@@ -56,6 +52,8 @@ docs/tasks/<YYYY-MM-DD>-<slug>/
 ├── STATE.md              # front matter = current state, body = log
 └── REQUIREMENTS.md       # ends with an approval line
 ```
+
+When the change merges, `/kairyn:exit` leaves an ADR (if a decision was load-bearing) and a `CHANGELOG.md` line, then deletes the folder.
 
 ## Tests and evals
 
