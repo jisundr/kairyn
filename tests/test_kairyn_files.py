@@ -7,7 +7,7 @@ import pytest
 
 from helpers import PLUGIN, make_good_repo
 from kairyn_files import (
-    BLOCK, block_text, installed_files, manifest_problems, owner_of, plugin_version, read_manifest,
+    BLOCK, block_text, comparable_block, installed_files, manifest_problems, owner_of, plugin_version, read_manifest,
 )
 
 INIT = PLUGIN / "scripts" / "init.sh"
@@ -82,7 +82,12 @@ def test_init_writes_a_manifest_with_version_hash_and_owner(good_repo):
 def test_init_records_every_installed_file_and_the_claude_block(good_repo):
     assert set(read_manifest(good_repo)["files"]) == {e.path for e in installed_files(PLUGIN)}
     block = block_text((good_repo / "CLAUDE.md").read_text())
-    assert read_manifest(good_repo)["files"][BLOCK]["sha256"] == sha(block.encode())
+    assert read_manifest(good_repo)["files"][BLOCK]["sha256"] == sha(comparable_block(block).encode())
+
+
+def test_comparable_block_empties_the_doc_index():
+    block = "<!-- kairyn:start -->\na\n<!-- harness-docs:start -->\n| row |\n<!-- harness-docs:end -->\n<!-- kairyn:end -->\n"
+    assert comparable_block(block) == "<!-- kairyn:start -->\na\n<!-- harness-docs:start -->\n<!-- harness-docs:end -->\n<!-- kairyn:end -->\n"
 
 
 def test_base_holds_an_exact_copy_of_each_recorded_file(good_repo):

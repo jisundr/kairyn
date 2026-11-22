@@ -8,7 +8,7 @@ stages:
   design: done
   build: in-progress
 created: 2026-11-21T23:11:54Z
-updated: 2026-11-22T06:22:27Z
+updated: 2026-11-22T07:02:44Z
 ---
 
 # Log
@@ -28,3 +28,5 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-22T05:48:42Z [build] Task 3 done: verify-init.sh default mode accepts tasks and edited stages, --fresh keeps the init checks (init command, CI, init eval). Manifest check waits for task 2. 175 tests pass.
 2026-11-22T06:12:03Z [build] Task 2 done: kairyn_files.py (file table, owners, manifest, .base/), init.sh records what it wrote (not files the user had), verify-init.sh checks the manifest. Works on python3 3.9. 202 tests pass.
 2026-11-22T06:22:27Z [build] Task 4 done: scripts/release_hashes.py builds plugin/release-hashes.json from every commit per version (0.1.0: 34 hashes, 12 paths) plus the working tree; plugin.json is 0.2.0. 213 tests pass.
+2026-11-22T07:02:44Z [build] User decided: deleting <file>.kairyn-new resolves a conflict (the design had no resolution step). A conflict with no merge base, kept by the user, makes the file theirs.
+2026-11-22T07:02:44Z [build] Tasks 5 to 8 done: upgrade.py and /kairyn:upgrade, version_check.py (check, verify-init, SessionStart hook), CI version-bump job, upgrade eval. This repo upgraded: 2 stages REPLACED, MODEL-ROUTING.md ADDED, 3 own dev docs resolved as theirs. 253 tests pass.

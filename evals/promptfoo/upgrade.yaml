@@ -1,0 +1,14 @@
+# depends: plugin/commands/upgrade.md, plugin/scripts/upgrade.py, plugin/scripts/kairyn_files.py, plugin/scripts/harness_docs.py, plugin/release-hashes.json
+description: /kairyn:upgrade
+prompts: ["{{scenario}}"]
+providers:
+  - id: file://provider.py
+    config: {timeout: 600000}
+tests:
+  - description: Upgrade a v0.1.0 repo with one hand-made template
+    vars: {scenario: upgrade_conflict}
+    metadata:
+      min_pass_rate: {upgrade_ran: 0.9, reports_conflict: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:upgrade_ran", metric: upgrade_ran}
+      - {type: python, value: "file://asserts.py:reports_conflict", metric: reports_conflict}

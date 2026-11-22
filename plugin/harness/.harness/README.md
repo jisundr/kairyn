@@ -22,3 +22,4 @@ Workflow docs for AI sessions in this repo, set up by `/kairyn:init`. Add your o
 1. Read a doc only when the task matches its `read_when`.
 2. Script what must always work. Leave the model what needs judgment.
 3. Keep files lean: budgets live in `budgets.yml`. Run `/kairyn:check`.
+4. After a kairyn update, run `/kairyn:upgrade`. It keeps your edits.

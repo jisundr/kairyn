@@ -20,7 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "plugin" / "scripts"))
-from kairyn_files import BLOCK, block_text, sha256  # noqa: E402
+from kairyn_files import BLOCK, block_text, comparable_block, sha256  # noqa: E402
 
 OUT = "plugin/release-hashes.json"
 SHIPPED = ("plugin/stages", "plugin/templates", "plugin/harness")
@@ -39,7 +39,7 @@ def repo_path(source: str) -> str | None:
 def _hash(path: str, data: bytes) -> str:
     if path == BLOCK:
         block = block_text(data.decode())
-        data = (block if block is not None else data.decode()).encode()
+        data = comparable_block(block if block is not None else data.decode()).encode()
     return sha256(data)
 
 

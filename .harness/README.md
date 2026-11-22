@@ -19,6 +19,7 @@ How work gets done in this repo: the workflows for developing kairyn itself. Rea
 | [Running stages](workflows/running-stages.md) | running a stage, or editing or adding stage instructions |
 | [Task lifecycle](workflows/task-lifecycle.md) | changing STATE.md, task folders or timestamps |
 | [Testing and evals](workflows/testing-and-evals.md) | running, writing or interpreting tests or evals, or touching evals/ |
+| [Upgrade](workflows/upgrade.md) | changing upgrades or the plugin version |
 <!-- harness-docs:end -->
 
 ## Principles

@@ -1,0 +1,33 @@
+{
+  "files": {
+    ".harness/workflows/keeping-docs-lean.md": {
+      "owner": "plugin",
+      "sha256": "f0b1bb0b5abe012a8a402a9a30d53ce24fd96783e8463905eeea58990258d2b4"
+    },
+    ".harness/workflows/running-stages.md": {
+      "owner": "plugin",
+      "sha256": "e81efcfc885583db8755c929b46a338df8bd5f4dc19592b46f79c6109b382f2a"
+    },
+    ".kairyn/stages/MODEL-ROUTING.md": {
+      "owner": "repo",
+      "sha256": "97d2fb57693d76e0769f0b03c23d9cdd6b764856a5e9597f549809e2882fd0fb"
+    },
+    ".kairyn/stages/REQUIREMENTS.md": {
+      "owner": "repo",
+      "sha256": "2ae2236afb938809189f45d01754ffdb2339633a5eac6e2dddd3a1db8bdb917f"
+    },
+    ".kairyn/stages/_template.md": {
+      "owner": "repo",
+      "sha256": "de59ec19f18deca9426d43f3fd09c1e5d91b0ec93a9d109b6d9566215f7adc5d"
+    },
+    ".kairyn/templates/STATE.md": {
+      "owner": "plugin",
+      "sha256": "fd912ac9ebacc2e7d7520f679ef6235d0bd31f13ee9af0938203ababd5605716"
+    },
+    "CLAUDE.md#kairyn": {
+      "owner": "plugin",
+      "sha256": "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
+    }
+  },
+  "version": "0.2.0"
+}
