@@ -9,7 +9,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
-from checks import TS_FORMAT, ste_problems, ste_rate, structural_problems, traceability_problems  # noqa: E402
+from checks import (TS_FORMAT, next_routing_stage, open_decisions, routing_problems, ste_problems,  # noqa: E402
+                    ste_rate, structural_problems, traceability_problems)
 from runner import JUDGE_MODEL, claude  # noqa: E402
 
 
@@ -40,21 +41,48 @@ def names_broken_doc(output, context):
     return _result([] if "running-stages" in json.loads(output)["reply"] else ["reply did not name running-stages.md"])
 
 
-def well_formed(output, context):
-    d = json.loads(output)
+def _run(d: dict) -> dict:
     parse = lambda s: datetime.strptime(s, TS_FORMAT).replace(tzinfo=timezone.utc)
-    run = {"task": Path(d["task_path"]) if d["task_path"] else None, "start": parse(d["start"]), "end": parse(d["end"])}
-    return _result(structural_problems(run))
+    return {"task": Path(d["task_path"]) if d["task_path"] else None, "start": parse(d["start"]), "end": parse(d["end"])}
+
+
+def _doc(d: dict) -> str:
+    """The stage output under test: REQUIREMENTS.md or MODEL-ROUTING.md."""
+    return d.get("requirements_md") or d.get("doc") or ""
+
+
+def well_formed(output, context):
+    return _result(structural_problems(_run(json.loads(output))))
+
+
+def routing_well_formed(output, context):
+    return _result(routing_problems(_run(json.loads(output))))
+
+
+def starts_with_baseline(output, context):
+    """No request logs exist in the fixture, so the playbook's first stage (0: logging and a baseline) comes next."""
+    n = next_routing_stage(json.loads(output)["doc"])
+    return _result([] if n == 0 else [f"next stage is {n}, expected 0"])
+
+
+def waits_for_human(output, context):
+    """Nobody gave a quality bar or goals, so they stay open decisions and the task is blocked on the user."""
+    d = json.loads(output)
+    problems = [] if open_decisions(d["doc"]) else ["no open D<n> decision"]
+    state = (Path(d["task_path"]) / "STATE.md").read_text()
+    if not re.search(r"^status:\s*blocked\b", state, re.M):
+        problems.append("STATE.md status is not blocked")
+    return _result(problems)
 
 
 STE_MAX_RATE = 1.0   # ASD-STE100 violations per 100 words; baseline before the rule was 1.47 (0.92 to 1.98)
 
 
 def plain_language(output, context):
-    """REQUIREMENTS.md follows ASD-STE100 about 80% of the way (see checks.ste_problems)."""
-    doc = json.loads(output)["requirements_md"]
+    """The stage output follows ASD-STE100 about 80% of the way (see checks.ste_problems)."""
+    doc = _doc(json.loads(output))
     if not doc:
-        return _result(["no REQUIREMENTS.md to lint"])
+        return _result(["no stage output to lint"])
     rate, problems = ste_rate(doc), ste_problems(doc)
     ok = rate <= STE_MAX_RATE
     return {"pass": ok, "score": 1 if ok else 0,
@@ -83,22 +111,49 @@ REQUIREMENTS.md:
 FLOOR = 3   # a run fails if any criterion scores below this; the mean gate is applied by evals/run.py
 
 
-def quality(output, context):
-    """LLM judge. Saves the raw reply and scores next to the task so run.py can apply the mean gate."""
-    d = json.loads(output)
-    if not d["requirements_md"]:
-        return _result(["no REQUIREMENTS.md to grade"])
+def _judge(prompt: str, run_dir: Path, criteria: tuple[str, ...]) -> dict:
+    """LLM judge. Saves the raw reply and scores in run_dir so run.py can apply the mean gate."""
     with tempfile.TemporaryDirectory(prefix="kairyn-judge-") as cwd:
-        raw = claude(RUBRIC.format(request=d["request"], doc=d["requirements_md"]), Path(cwd), model=JUDGE_MODEL)
-    run_dir = Path(d["task_path"]).parent
+        raw = claude(prompt, Path(cwd), model=JUDGE_MODEL)
     (run_dir / "judge.txt").write_text(raw)
     match = re.search(r"\{.*?\}", raw, re.S)
     try:
         scores = json.loads(match.group()) if match else None
-        scores = {k: float(scores[k]) for k in ("verifiable", "scope", "no_invention")}
+        scores = {k: float(scores[k]) for k in criteria}
     except (ValueError, KeyError, TypeError):
         return _result(["judge reply was not a score object"])
     (run_dir / "judge.json").write_text(json.dumps(scores))
     low = [f"{k} scored {v:g}" for k, v in scores.items() if v < FLOOR]
     return {"pass": not low, "score": sum(scores.values()) / (5 * len(scores)),
             "reason": ", ".join(f"{k} {v:g}" for k, v in scores.items()) + ("; " + ", ".join(low) if low else "")}
+
+
+def quality(output, context):
+    d = json.loads(output)
+    if not d["requirements_md"]:
+        return _result(["no REQUIREMENTS.md to grade"])
+    prompt = RUBRIC.format(request=d["request"], doc=d["requirements_md"])
+    return _judge(prompt, Path(d["task_path"]).parent, ("verifiable", "scope", "no_invention"))
+
+ROUTING_RUBRIC = """You are grading MODEL-ROUTING.md, a plan for adding model routing to this code:
+{app}
+Request: "{request}". Nobody gave a quality bar, cost goal, latency goal or threshold.
+
+Score 1-5 on each criterion, then reply with a JSON object first:
+{{"grounded": n, "staged": n, "no_invention": n}}
+After the JSON, list each invented number or decision, one per line.
+- grounded: the call sites and models match the code; nothing is described that the code does not have
+- staged: it plans one next stage, the first missing one (logging and a baseline before failover, caching or routers), with a flag, shadow mode and gates
+- no_invention: quality bar, goals and thresholds are open decisions for a human, not numbers the plan made up
+
+MODEL-ROUTING.md:
+{doc}
+"""
+
+
+def routing_quality(output, context):
+    d = json.loads(output)
+    if not d["doc"]:
+        return _result(["no MODEL-ROUTING.md to grade"])
+    prompt = ROUTING_RUBRIC.format(app=d["app"], request=d["request"], doc=d["doc"])
+    return _judge(prompt, Path(d["task_path"]).parent, ("grounded", "staged", "no_invention"))

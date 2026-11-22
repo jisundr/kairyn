@@ -18,6 +18,8 @@ A stage:
 2. writes its output to `docs/tasks/<date>-<slug>/<STAGE>.md`
 3. updates `STATE.md` and appends to `.kairyn/learnings.md`
 
+An optional stage (`optional: true` in its front matter) is not in the default stage list. Run it on a task only when it fits, for example `MODEL-ROUTING.md` after `requirements` to cut model cost. It adds itself to the task's `stages`.
+
 ## Add a stage
 
 Copy `.kairyn/stages/_template.md`, give it the next `order`, and list it under `stages:` in `.kairyn/templates/STATE.md`. Required sections: Inputs, Steps, Output, Exit criteria, State update, Learnings.
