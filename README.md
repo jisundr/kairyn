@@ -28,13 +28,14 @@ An agentic SDLC that grows with your repo.
 ├── .claude-plugin/marketplace.json   # marketplace entry pointing to ./plugin
 ├── plugin/                           # the kairyn plugin
 │   ├── .claude-plugin/plugin.json
-│   ├── commands/                     # /kairyn:init, /kairyn:check, /kairyn:upgrade
+│   ├── commands/                     # /kairyn:init, /kairyn:check, /kairyn:upgrade, /kairyn:grill
 │   ├── hooks/hooks.json              # SessionStart: warn when the repo's kairyn files are older
 │   ├── scripts/                      # init, verify, upgrade, version check, doc and budget checkers
 │   ├── harness/                      # .harness/ and CLAUDE.md block installed into your repo
 │   ├── stages/                       # stage definitions copied into .kairyn/stages/
 │   │   ├── _template.md              # skeleton for authoring new stages
 │   │   ├── REQUIREMENTS.md           # stage 1: request -> scoped requirements
+│   │   ├── GRILL.md                  # optional: interview until you share one concept
 │   │   └── MODEL-ROUTING.md          # optional: plan the next model-routing stage
 │   ├── templates/STATE.md            # per-task state file
 │   └── release-hashes.json           # installed-file hashes per release

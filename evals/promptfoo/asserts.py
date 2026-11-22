@@ -9,8 +9,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
-from checks import (TS_FORMAT, next_routing_stage, open_decisions, routing_problems, ste_problems,  # noqa: E402
-                    ste_rate, structural_problems, traceability_problems)
+from checks import (TS_FORMAT, concept_use_problems, decision_labels, grill_problems, grill_reply_problems, next_routing_stage,  # noqa: E402
+                    open_decisions, routing_problems, state_fields, ste_problems, ste_rate, structural_problems,
+                    traceability_problems)
 from runner import JUDGE_MODEL, claude  # noqa: E402
 
 
@@ -47,7 +48,7 @@ def _run(d: dict) -> dict:
 
 
 def _doc(d: dict) -> str:
-    """The stage output under test: REQUIREMENTS.md or MODEL-ROUTING.md."""
+    """The stage output under test: REQUIREMENTS.md, MODEL-ROUTING.md or CONCEPT.md."""
     return d.get("requirements_md") or d.get("doc") or ""
 
 
@@ -181,3 +182,92 @@ def reports_conflict(output, context):
     reply = json.loads(output)["reply"]
     problems = [f"reply does not mention {w}" for w in ("CONFLICT", "STATE.md", ".kairyn-new") if w not in reply]
     return _result(problems)
+
+
+# --- grill stage -------------------------------------------------------------------
+# Turns: 0 = /kairyn:grill <request>, 1 and 2 = "I accept your recommendation.", 3 = "Stop the interview now."
+QUESTION_TURNS = (0, 1, 2)
+
+
+def grill_well_formed(output, context):
+    return _result(grill_problems(_run(json.loads(output)), stopped=True))
+
+
+def one_question(output, context):
+    """Every message before the stop asks one question and recommends an answer."""
+    turns = json.loads(output)["turns"]
+    problems = [f"turn {i}: {p}" for i in QUESTION_TURNS if i < len(turns)
+                for p in grill_reply_problems(turns[i]["reply"])]
+    return _result(problems if len(turns) == 4 else problems + [f"{len(turns)} turns, expected 4"])
+
+
+def records_answers(output, context):
+    """After each accepted answer, CONCEPT.md holds one more decision."""
+    turns = json.loads(output)["turns"]
+    if len(turns) < 3:
+        return _result([f"only {len(turns)} turns"])
+    counts = [len(decision_labels(t["concept"])) for t in turns[:3]]
+    problems = [f"after answer {n}: {counts[n]} decisions, expected at least {n}" for n in (1, 2) if counts[n] < n]
+    if counts[2] <= counts[1]:
+        problems.append(f"answer 2 added no decision ({counts[1]} -> {counts[2]})")
+    return _result(problems)
+
+
+def waits_for_answer(output, context):
+    """Until the user stops or confirms, the stage stays in progress and the task waits on the user."""
+    turns = json.loads(output)["turns"]
+    problems = []
+    for i in QUESTION_TURNS[:len(turns)]:
+        f = state_fields(turns[i]["state"])
+        if not f:
+            problems.append(f"turn {i}: no readable STATE.md")
+        elif (f["stages"].get("grill"), f["status"]) != ("in-progress", "blocked"):
+            problems.append(f"turn {i}: grill {f['stages'].get('grill')!r} status {f['status']!r}, expected in-progress blocked")
+    return _result(problems)
+
+
+def hands_off(output, context):
+    """The last message names the task folder, so the user can run requirements on it."""
+    d = json.loads(output)
+    if not d["task_path"] or not d["turns"]:
+        return _result(["no task folder or no turns"])
+    folder = Path(d["task_path"]).name
+    return _result([] if folder in d["turns"][-1]["reply"] else [f"last message does not name {folder}"])
+
+
+GRILL_RUBRIC = """You are grading an interview an agent ran with a user before any spec existed.
+The user's request: "{request}"
+The repo the agent could read:
+{repo}
+The user's replies were scripted: "I accept your recommendation." twice, then "Stop the interview now."
+
+The agent's messages, in order:
+{replies}
+
+The CONCEPT.md it left:
+{doc}
+
+Score 1-5 on each criterion, then reply with a JSON object first:
+{{"grounded": n, "challenges": n, "recommends": n}}
+After the JSON, list each question the repo already answers, and each vague term left unchallenged, one per line.
+- grounded: no question asks what the repo already answers (language, data source, file size, export schedule)
+- challenges: it asks for the problem behind "a cache" before any cache design, and pins down vague words such as "faster"
+- recommends: each question comes with one recommended answer and a reason grounded in the repo or earlier answers
+"""
+
+
+def grill_quality(output, context):
+    d = json.loads(output)
+    if not d["turns"] or not d["task_path"]:
+        return _result(["no interview to grade"])
+    repo = "\n".join(f"{name}:\n```\n{text}```" for name, text in d["repo_files"].items())
+    replies = "\n\n".join(f"Message {i + 1}:\n{t['reply']}" for i, t in enumerate(d["turns"]))
+    prompt = GRILL_RUBRIC.format(request=d["request"], repo=repo, replies=replies, doc=d["doc"])
+    return _judge(prompt, Path(d["task_path"]).parent, ("grounded", "challenges", "recommends"))
+
+
+def uses_concept(output, context):
+    """requirements reuses the grill task folder and builds on CONCEPT.md instead of guessing again."""
+    d = json.loads(output)
+    problems = [] if d["tasks"] == [Path(d["task_path"]).name] else [f"task folders {d['tasks']}, expected only the grill task"]
+    return _result(problems + concept_use_problems(Path(d["task_path"]), tuple(d["decisions"]), d["value"]))

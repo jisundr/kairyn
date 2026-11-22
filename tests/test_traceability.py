@@ -37,3 +37,8 @@ def test_no_criteria_is_a_problem():
 def test_backticked_assumption_label_counts_as_defined():
     text = "- `A1`: The flag is global.\n- [ ] Flag works. (A1)\n"
     assert traceability_problems(text) == []
+
+
+def test_grill_decision_counts_as_source():
+    text = ASSUMPTIONS + "- [ ] Repeat run under 1 second. (D2)\n- [ ] Report on stdout. (D1, A1)\n"
+    assert traceability_problems(text) == []

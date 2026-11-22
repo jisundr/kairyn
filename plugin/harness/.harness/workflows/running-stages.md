@@ -18,7 +18,7 @@ A stage:
 2. writes its output to `docs/tasks/<date>-<slug>/<STAGE>.md`
 3. updates `STATE.md` and appends to `.kairyn/learnings.md`
 
-An optional stage (`optional: true` in its front matter) is not in the default stage list. Run it on a task only when it fits, for example `MODEL-ROUTING.md` after `requirements` to cut model cost. It adds itself to the task's `stages`.
+An optional stage (`optional: true` in its front matter) is not in the default stage list. Run it on a task only when it fits: `GRILL.md` (`/kairyn:grill`) before `requirements` when a request is vague, `MODEL-ROUTING.md` after it to cut model cost. It adds itself to the task's `stages`.
 
 ## Add a stage
 
