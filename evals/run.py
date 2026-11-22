@@ -95,6 +95,21 @@ def score_gates(data: dict) -> list[tuple[str, int, dict]]:
     return list(gates.values())
 
 
+def cost_lines(results_dir: Path) -> list[str]:
+    """Cost per scenario and in total, from the cost.jsonl files each run leaves (runner.record_cost)."""
+    lines, total = [], 0.0
+    for scenario in sorted(p for p in results_dir.glob("*") if p.is_dir()):
+        runs = [f for f in sorted(scenario.glob("*/cost.jsonl"))]
+        if not runs:
+            continue
+        rows = [json.loads(line) for f in runs for line in f.read_text().splitlines() if line.strip()]
+        usd = sum(r["usd"] for r in rows)
+        judge = sum(r["usd"] for r in rows if r["role"] == "judge")
+        total += usd
+        lines.append(f"cost  {scenario.name}: ${usd:.2f} over {len(runs)} run{'s' if len(runs) != 1 else ''} (judge ${judge:.2f})")
+    return lines + [f"cost  total: ${total:.2f}"] if lines else []
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("names", nargs="*", help="eval names (init, check, requirements); default: all")
@@ -142,6 +157,8 @@ def main(argv=None) -> int:
             record = record_pass(record, name, current)
             save_record(PASSED_RECORD, record)
 
+    if results_dir.exists():
+        summary += cost_lines(results_dir)
     print("\n== eval summary ==\n" + "\n".join(summary))
     if results_dir.exists():
         (results_dir / "summary.md").write_text("\n".join(f"- {s}" for s in summary) + "\n")

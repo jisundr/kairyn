@@ -1,5 +1,6 @@
 ---
 description: Set up kairyn in this repo (creates .kairyn/ and docs/tasks/)
+model: haiku
 allowed-tools: Bash(bash:*), Read
 ---
 
