@@ -45,6 +45,7 @@ Out:
 - A7: Each new markdown file gets a budget in `.harness/budgets.yml`. `running-stages.md` explains the agents.
 - A8: A plugin change raises the plugin version, as `upgrade.md` requires.
 - A9: Running a stage without its agent, as today, keeps working.
+- A10: The agents playbook allows a separate agent only for isolated context, different permissions, or parallel work. A model per stage is not one of these reasons.
 
 ## Acceptance criteria
 
@@ -60,6 +61,7 @@ Out:
 - [ ] An eval runs the `requirements` stage through its generated agent and passes the stage's existing checks. It fails before the script exists. (request, A2)
 - [ ] Following a stage file in the main session, without an agent, still passes the existing evals. (A9)
 - [ ] `claude plugin validate plugin` and `uv run pytest` pass. Every new markdown file is under a budget in `.harness/budgets.yml`. (A7)
+- [ ] Design names which A10 reason each stage agent meets, or replaces agents with skills. (A10)
 - [ ] `running-stages.md` explains the agents and the stage `model` key in the same commit. The plugin version goes up. (A7, A8)
 
 ## Open questions and answers
@@ -68,3 +70,4 @@ Out:
 - Q2: Fixed agent files or agents made on the fly? A: Generated files, one per stage, built-in or user-added (user).
 - Q3: Which stages get agents? A: Every stage file in `.kairyn/stages/` (user, follows from Q2).
 - Q4: Run the MODEL-ROUTING stage on this task? A: No. kairyn makes no LLM API calls (user).
+- Q5: Which A10 reason justifies stage agents? A: Open. Design answers it (playbook update, 2026-11-22).
