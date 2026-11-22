@@ -78,4 +78,4 @@ Out:
 - Q1: Delete, or freeze and index? A: Delete, and keep a changelog (user).
 - Q2: Which artifacts? A: ADRs, a changelog entry, and a release tag instead of a published page (user).
 
-Approval: pending
+Approval: Jayson De los Reyes, 2026-11-22T12:36:15Z, "Approve both"

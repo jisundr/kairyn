@@ -78,4 +78,4 @@ Out:
 - Q2: Where does the cost go? A: Both evals and stage runs. About $400 is already spent; the goal is to cut what new runs cost (user).
 - Q3: Which stages? A: The built-in stages; user-added stages keep the file route (Claude, follows from Q1).
 
-Approval: pending
+Approval: Jayson De los Reyes, 2026-11-22T12:36:15Z, "Approve both"
