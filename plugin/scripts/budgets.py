@@ -12,6 +12,9 @@ Every markdown file must match a pattern; a new file with no budget fails.
 Set `strict: false` at the top of budgets.yml to ignore files that match no pattern
 (for projects whose other markdown files are not ours to budget).
 
+Files that kairyn installs have fallback budgets (FALLBACK_BUDGETS), checked after the
+repo's own patterns, so a repo with its own strict budgets.yml still passes after init.
+
 Usage:
     python budgets.py [--root DIR]   # DIR defaults to the current directory; exit 1 on any problem
 """
@@ -33,7 +36,19 @@ class Budget(NamedTuple):
 
 
 SKIP_DIRS = {".git", ".venv", ".pytest_cache", "__pycache__", "node_modules"}
-SKIP_PREFIXES = ("evals/results/",)
+SKIP_PREFIXES = ("evals/results/", ".kairyn/.base/")   # .base/ holds upgrade merge bases, not docs
+
+# Checked after the repo's patterns, so the repo's own limit wins.
+FALLBACK_BUDGETS = [
+    Budget(".kairyn/stages/*.md", 500, "runtime"),
+    Budget(".kairyn/templates/*.md", 200, "runtime"),
+    Budget(".kairyn/learnings.md", 2000, "runtime"),
+    Budget("docs/tasks/*/*.md", 1500, "runtime"),
+    Budget(".harness/README.md", 600, "on-demand"),
+    Budget(".harness/workflows/running-stages.md", 800, "on-demand"),
+    Budget(".harness/workflows/task-lifecycle.md", 800, "on-demand"),
+    Budget(".harness/workflows/keeping-docs-lean.md", 800, "on-demand"),
+]
 
 
 def estimate_tokens(text: str) -> int:
@@ -52,6 +67,10 @@ def load_config(path: Path) -> tuple[list[Budget], bool]:
             raise ValueError(f"bad budget entry {entry!r}: load must be one of {LOAD_CLASSES}")
         budgets.append(Budget(pattern, limit, load))
     return budgets, options.get("strict", True) is not False
+
+
+def with_fallbacks(budgets: list[Budget]) -> list[Budget]:
+    return budgets + FALLBACK_BUDGETS
 
 
 def load_budgets(path: Path) -> list[Budget]:
@@ -109,6 +128,7 @@ def root_from_args(argv: list[str]) -> Path:
 def main(argv: list[str]) -> int:
     root = root_from_args(argv)
     budgets, strict = load_config(root / ".harness" / "budgets.yml")
+    budgets = with_fallbacks(budgets)
     print("tokens/budget  load       file")
     print("\n".join(report(root, budgets, strict)))
     problems = check(root, budgets, strict)

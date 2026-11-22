@@ -84,7 +84,7 @@ def replace_block(text: str, new: str) -> str:
     pattern = re.compile(re.escape(START) + r".*?" + re.escape(END), re.S)
     if not pattern.search(text):
         raise ValueError(f"missing {START} ... {END} markers")
-    return pattern.sub(lambda _: f"{START}\n{new}\n{END}", text, count=1)
+    return pattern.sub(lambda _: f"{START}\n{new}\n{END}", text)   # every pair, e.g. a repo index and the kairyn block
 
 
 def _targets(root: Path, entries):

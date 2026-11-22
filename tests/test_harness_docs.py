@@ -190,3 +190,10 @@ def test_cli_checks_the_given_root(tmp_path):
     assert subprocess.run(cmd, capture_output=True, text=True).returncode == 1          # stale indexes
     assert subprocess.run(cmd + ["--write"], capture_output=True, text=True).returncode == 0
     assert subprocess.run(cmd, capture_output=True, text=True).returncode == 0
+
+
+def test_replace_block_refreshes_every_marker_pair():
+    text = BLOCK + "middle\n" + BLOCK
+    out = replace_block(text, "new")
+    assert "old" not in out and out.count("\nnew\n") == 2
+    assert out.startswith("intro\n") and "outro\nmiddle\nintro\n" in out

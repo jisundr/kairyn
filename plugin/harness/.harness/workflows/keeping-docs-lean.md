@@ -20,7 +20,7 @@ load: on-demand
 
 `load` says when a file is read: `always` (every session), `on-demand` (when `read_when` matches) or `runtime` (when a command or stage runs).
 
-Size limits per file pattern are in `.harness/budgets.yml` (estimated tokens, characters / 4).
+Size limits per file pattern are in `.harness/budgets.yml` (estimated tokens, characters / 4). Files that kairyn installs also have built-in limits, checked after your patterns, so your own limit wins.
 
 ## Commands
 
