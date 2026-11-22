@@ -40,3 +40,5 @@ Every metric passed in both runs. Plain language for `requirements` went from 1/
 | `grill` | sonnet | pass; `challenges` 4.0 (gate 4), `recommends` 4.2, min 3 | `20261122T130058Z` |
 | `model-routing` | sonnet | pass; `well_formed` 9/10, quality 4.7, min 4 | `20261122T204013Z` |
 | `requirements` | sonnet | fail; `well_formed` 8/10 (guessed `updated:` times), `plain_language` 6/10 ("would", long lines) | `20261122T204013Z` |
+| `requirements` | opus | pass after two fixes: EARS subject in step 5 (`specified` 7/10 → 10/10), judge told the run's no-questions instruction; quality 4.4, min 4 | `20261122T230826Z` |
+| `upgrade` | haiku | pass, 10/10 | `20261122T223407Z` |
