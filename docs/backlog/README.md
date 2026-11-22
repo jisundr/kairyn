@@ -4,7 +4,7 @@ Options, not commitments. Each file is one idea, named `<YYYYMMDDHHMMSS>-<slug>.
 
 ## Triage digest (2026-11-22)
 
-Eleven ideas are `inbox` and need a keep, park or drop decision. Requirements gaps is `committed` to task `2026-11-22-requirements-gaps`. Grill in requirements is `dropped`: #17 shipped it. Problem statements are AI drafts.
+Eleven ideas are `inbox` and need a keep, park or drop decision. Requirements gaps and exit strategy are `committed`. Grill in requirements is `dropped`: #17 shipped it.
 
 | Idea | Playbook | Depends on | AI note |
 |---|---|---|---|
@@ -19,8 +19,9 @@ Eleven ideas are `inbox` and need a keep, park or drop decision. Requirements ga
 | [Grill in rounds](20261122105739-grill-rounds.md) | Agents | | From Matt Pocock's grilling skill |
 | [Plain-English outputs](20261122080759-plain-english-outputs.md) | Agents 01 | | |
 | [Pointer-following checks](20261122080759-instruction-file-checks.md) | Agents 02 | | Partly done |
-| [Skill checks](20261122103416-skill-checks.md) | Agents 02 | | Bears on the stage-agents task |
+| [Skill checks](20261122103416-skill-checks.md) | Agents 02 | | Bears on the stage-skills task |
 | [Multi-repo support](20261122080759-multi-repo.md) | Agents 03 | | Park candidate, no evidence yet |
+| [Exit strategy](20261122123120-exit-strategy.md) | Topic | | Committed |
 
 Merged: "task is marked `done` after requirements only" into [design-stage](20261122080759-design-stage.md). Not added: `Inference/01 Adding Model Routing`, already the optional `MODEL-ROUTING` stage.
 
