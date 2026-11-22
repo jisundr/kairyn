@@ -6,9 +6,9 @@ import yaml
 
 from helpers import PLUGIN, split_front_matter
 
-STAGE_SKILLS = {"requirements": "REQUIREMENTS", "grill": "GRILL", "model-routing": "MODEL-ROUTING"}
+STAGE_SKILLS = {"requirements": "REQUIREMENTS", "grill": "GRILL", "model-routing": "MODEL-ROUTING", "exit": "EXIT"}
 MODELS = {"haiku", "sonnet", "opus", "inherit"}
-SCRIPT_COMMANDS = ("init", "check", "upgrade")
+SCRIPT_COMMANDS = ("init", "check", "upgrade", "release")
 
 
 def skill(name):

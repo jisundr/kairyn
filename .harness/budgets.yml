@@ -19,5 +19,7 @@ budgets:
   - {pattern: ".kairyn/learnings.md", max_tokens: 1000, load: runtime}
   - {pattern: "docs/tasks/*/*.md", max_tokens: 1500, load: runtime}
   - {pattern: "docs/backlog/*.md", max_tokens: 600, load: on-demand}
+  - {pattern: "docs/adr/*.md", max_tokens: 500, load: on-demand}
+  - {pattern: CHANGELOG.md, max_tokens: 2000, load: on-demand}
   # Frozen test data (a v0.1.0 consumer repo for upgrade tests). Never loaded; budgeted so it stays small.
   - {pattern: "tests/fixtures/*", max_tokens: 1000, load: on-demand}

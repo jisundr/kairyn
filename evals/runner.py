@@ -339,3 +339,58 @@ def run_requirements_approval(repo: Path) -> dict:
         *APPROVAL_ANSWERS], repo, model=MODEL, on_turn=snapshot)
     tasks = task_dirs(repo)
     return {"task": tasks[0] if len(tasks) == 1 else None, "turns": turns, "start": start, "end": utcnow()}
+
+
+# --- exit stage --------------------------------------------------------------------
+# Two done, approved tasks: one with a load-bearing decision (D1 → an ADR), one with none (no ADR).
+EXIT_DECISION_TASK = "2026-01-07-history-store"
+EXIT_PLAIN_TASK = "2026-01-08-help-typo"
+EXIT_KEYWORD = "SQLite"
+EXIT_TASKS = {
+    EXIT_DECISION_TASK: ("Keep a history of report runs.",
+                         "- R1: When a report runs, the CLI shall store its totals in `data/history.db`. (D1)",
+                         "- D1: Store history in SQLite, not a JSON file. A JSON file is rewritten in full on each run, "
+                         "and SQLite adds no dependency to Python 3.12. (user)"),
+    EXIT_PLAIN_TASK: ("Fix the typo 'totla' in the --help text.",
+                      "- R1: The --help text shall spell 'total' correctly. (request)", ""),
+}
+
+
+def exit_task_files(task: str) -> dict[str, str]:
+    request, req, decision = EXIT_TASKS[task]
+    state = (f"---\ntask: {task}\ntitle: {request}\nstage: requirements\nstatus: done\nstages:\n  requirements: done\n"
+             f"created: 2026-01-07T09:00:00Z\nupdated: 2026-01-07T10:00:00Z\n---\n\n# Log\n\n"
+             f"2026-01-07T09:00:00Z [requirements] Task created. {request}\n"
+             f"2026-01-07T10:00:00Z [build] Built and merged in pull request #4.\n")
+    reqs = (f"---\ntask: {task}\nstage: requirements\nsummary: \"{request}\"\n---\n\n# Requirements\n\n"
+            f"## Problem statement\n{request}\n\n## Requirements\n{req}\n\n## Acceptance criteria\n- [ ] R1 holds. (R1)\n\n"
+            f"## Open questions and answers\n{decision or 'None.'}\n\n"
+            f"Approval: Eval User, 2026-01-07T09:30:00Z, \"Approved\"\n")
+    return {"STATE.md": state, "REQUIREMENTS.md": reqs}
+
+
+def make_exit_repo(repo: Path, task: str) -> Path:
+    folder = repo / "docs" / "tasks" / task
+    folder.mkdir(parents=True)
+    for name, text in exit_task_files(task).items():
+        (folder / name).write_text(text)
+    backlog = repo / "docs" / "backlog"
+    backlog.mkdir(parents=True)
+    item = "---\ntitle: {t}\nstatus: {s}\n---\n\n# {t}\n\n{b}\n\n# Log\n"
+    (backlog / "1-linked.md").write_text(item.format(t="Linked", s="committed", b=f"Task [{task}](../tasks/{task}/REQUIREMENTS.md)."))
+    (backlog / "2-parked.md").write_text(item.format(t="Parked", s="parked", b="Later."))
+    subprocess.run(["git", "add", "-A"], cwd=repo, check=True)
+    subprocess.run(["git", "-c", "user.name=Eval User", "-c", "user.email=eval@example.com", "commit", "-qm", "fixture"],
+                   cwd=repo, check=True)
+    return repo
+
+
+def run_exit(repo: Path, task: str) -> dict:
+    claude(f"/kairyn:exit {task}", repo, plugin=True, model=MODEL)
+    adr_dir = repo / "docs" / "adr"
+    log = repo / "CHANGELOG.md"
+    return {"task": task, "task_exists": (repo / "docs" / "tasks" / task).exists(),
+            "changelog": log.read_text() if log.is_file() else "",
+            "adrs": {p.name: p.read_text() for p in sorted(adr_dir.glob("*.md"))} if adr_dir.is_dir() else {},
+            "backlog_left": sorted(p.name for p in (repo / "docs" / "backlog").glob("*.md")),
+            "learnings": (repo / ".kairyn" / "learnings.md").read_text()}

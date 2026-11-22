@@ -426,3 +426,42 @@ def concept_use_problems(task: Path, decisions: tuple[str, ...], must_mention: s
     if must_mention.lower() not in text.lower():
         problems.append(f"decided value {must_mention!r} missing")
     return problems
+
+
+# --- exit stage -------------------------------------------------------------------
+
+ADR_SECTIONS = ("## Status", "## Context", "## Decision", "## Consequences")
+
+
+def exit_problems(e: dict, expect_adr: bool, keyword: str = "") -> list[str]:
+    """What /kairyn:exit must leave: no task folder, a changelog entry, closed backlog gone, ADRs only when due.
+
+    e: {"task", "task_exists", "changelog", "adrs": {name: text}, "backlog_left": [names]}
+    """
+    problems = []
+    if e["task_exists"]:
+        problems.append("task folder still exists")
+    log = e["changelog"]
+    unreleased = log.split("## Unreleased", 1)[1].split("\n## ", 1)[0] if "## Unreleased" in log else ""
+    if not re.search(rf"^- .+\({re.escape(e['task'])}\)\s*$", unreleased, re.M):
+        problems.append("no changelog entry for the task under ## Unreleased")
+    if "1-linked.md" in e["backlog_left"]:
+        problems.append("linked committed backlog file not deleted")
+    if "2-parked.md" not in e["backlog_left"]:
+        problems.append("parked backlog file deleted")
+    adrs = e["adrs"]
+    if expect_adr and not adrs:
+        problems.append("no ADR for a load-bearing decision")
+    if not expect_adr and adrs:
+        problems.append(f"ADR written for a task with no load-bearing decision: {sorted(adrs)}")
+    for name, text in adrs.items():
+        if not re.fullmatch(r"\d{4}-[a-z0-9-]+\.md", name):
+            problems.append(f"{name}: not named <NNNN>-<slug>.md")
+        missing = [s for s in ADR_SECTIONS if s not in text.splitlines()]
+        if missing:
+            problems.append(f"{name}: missing {', '.join(missing)}")
+        if e["task"] not in text:
+            problems.append(f"{name}: does not name the task")
+        if keyword and keyword.lower() not in text.lower():
+            problems.append(f"{name}: does not mention {keyword}")
+    return problems
