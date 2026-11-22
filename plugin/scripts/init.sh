@@ -4,6 +4,7 @@
 #   docs/tasks/
 #   .harness/  workflow docs and budgets (existing files are kept)
 #   CLAUDE.md  created, or a marked kairyn block appended (the rest is never touched)
+#   .kairyn/manifest.json and .kairyn/.base/  the version and a copy of each file init wrote
 # Usage: init.sh [repo-dir]   (default: current directory)
 # Never overwrites: if .kairyn/ already exists it changes nothing and exits 0.
 set -eu
@@ -20,26 +21,36 @@ fi
 mkdir -p "$repo/.kairyn/stages" "$repo/.kairyn/templates" "$repo/docs/tasks"
 cp "$plugin"/stages/* "$repo/.kairyn/stages/"
 cp "$plugin"/templates/* "$repo/.kairyn/templates/"
+# Repo paths of the files init writes; kairyn_files.py records them at the end.
+installed=()
+for kind in stages templates; do
+  for src in "$plugin/$kind"/*; do installed+=(".kairyn/$kind/$(basename "$src")"); done
+done
 printf '# Learnings\n\nStages append here.\n' > "$repo/.kairyn/learnings.md"
 
 # .harness/: add files that do not exist yet; never overwrite a user's file.
 harness="$plugin/harness"
-(cd "$harness/.harness" && find . -type f | sort) | while read -r f; do
+while read -r f; do
   f="${f#./}"
   if [ -e "$repo/.harness/$f" ]; then
     echo "KEPT: .harness/$f already exists"
   else
     mkdir -p "$(dirname "$repo/.harness/$f")"
     cp "$harness/.harness/$f" "$repo/.harness/$f"
+    installed+=(".harness/$f")
   fi
-done
+done < <(cd "$harness/.harness" && find . -type f | sort)
 
 # CLAUDE.md: create it, or append the kairyn block once. Nothing else is touched.
 if [ ! -e "$repo/CLAUDE.md" ]; then
   cp "$harness/CLAUDE.block.md" "$repo/CLAUDE.md"
+  installed+=("CLAUDE.md#kairyn")
 elif ! grep -q '<!-- kairyn:start -->' "$repo/CLAUDE.md"; then
   printf '\n' >> "$repo/CLAUDE.md"
   cat "$harness/CLAUDE.block.md" >> "$repo/CLAUDE.md"
+  installed+=("CLAUDE.md#kairyn")
 fi
 
-echo "CREATED: .kairyn/ (stages, templates, learnings), docs/tasks, .harness/, CLAUDE.md block"
+python3 "$plugin/scripts/kairyn_files.py" manifest "$repo" "${installed[@]}"
+
+echo "CREATED: .kairyn/ (stages, templates, learnings, manifest.json, .base/), docs/tasks, .harness/, CLAUDE.md block"

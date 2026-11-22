@@ -6,8 +6,9 @@ import pytest
 from helpers import make_good_repo, run_verify
 
 
-def test_good_layout_passes(good_repo):
-    result = run_verify(good_repo)
+@pytest.mark.parametrize("fresh", [False, True], ids=["in-use", "fresh"])
+def test_good_layout_passes(good_repo, fresh):
+    result = run_verify(good_repo, fresh=fresh)
     assert result.returncode == 0, result.stdout
     assert "OK" in result.stdout
 
@@ -17,32 +18,71 @@ def _rm_stage(r): (r / ".kairyn" / "stages" / "REQUIREMENTS.md").unlink()
 def _rm_template(r): (r / ".kairyn" / "templates" / "STATE.md").unlink()
 def _drift(r):
     with open(r / ".kairyn" / "stages" / "REQUIREMENTS.md", "a") as f: f.write("x\n")
+def _template_drift(r):
+    with open(r / ".kairyn" / "templates" / "STATE.md", "a") as f: f.write("x\n")
 def _rm_learnings(r): (r / ".kairyn" / "learnings.md").unlink()
 def _bad_heading(r): (r / ".kairyn" / "learnings.md").write_text("hello\n")
 def _stray_task(r): (r / "docs" / "tasks" / "2026-01-01-x").mkdir()
 def _no_kairyn(r): shutil.rmtree(r / ".kairyn")
+def _no_manifest(r): (r / ".kairyn" / "manifest.json").unlink()
 
 
+# Broken in both modes.
 BROKEN = {
     "missing docs/tasks": (_rmdir_tasks, "docs/tasks/ missing"),
     "missing stage file": (_rm_stage, "REQUIREMENTS.md missing"),
     "missing STATE template": (_rm_template, "STATE.md missing"),
-    "modified stage copy": (_drift, "differs from plugin copy"),
+    "modified STATE template (plugin-owned)": (_template_drift, "differs from plugin copy"),
     "missing learnings.md": (_rm_learnings, "learnings.md missing"),
     "wrong learnings heading": (_bad_heading, "# Learnings"),
-    "non-empty docs/tasks": (_stray_task, "should be empty"),
     "missing .kairyn": (_no_kairyn, ".kairyn/ missing"),
+    "missing manifest": (_no_manifest, "manifest.json missing"),
+}
+
+# Normal in a repo in use; wrong right after init.
+FRESH_ONLY = {
+    "modified stage copy": (_drift, "differs from plugin copy"),
+    "non-empty docs/tasks": (_stray_task, "should be empty"),
 }
 
 
+@pytest.mark.parametrize("fresh", [False, True], ids=["in-use", "fresh"])
 @pytest.mark.parametrize("breakage", BROKEN, ids=list(BROKEN))
-def test_broken_layout_fails(tmp_path, breakage):
+def test_broken_layout_fails(tmp_path, breakage, fresh):
     mutate, expected = BROKEN[breakage]
     repo = make_good_repo(tmp_path / "repo")
     mutate(repo)
-    result = run_verify(repo)
+    result = run_verify(repo, fresh=fresh)
     assert result.returncode == 1
     assert expected in result.stdout
+
+
+@pytest.mark.parametrize("breakage", FRESH_ONLY, ids=list(FRESH_ONLY))
+def test_fresh_mode_rejects_a_repo_in_use(tmp_path, breakage):
+    mutate, expected = FRESH_ONLY[breakage]
+    repo = make_good_repo(tmp_path / "repo")
+    mutate(repo)
+    result = run_verify(repo, fresh=True)
+    assert result.returncode == 1
+    assert expected in result.stdout
+
+
+def test_default_mode_passes_a_repo_in_use(tmp_path):
+    """Tasks exist and the user edited a stage: both are normal once kairyn is in use."""
+    repo = make_good_repo(tmp_path / "repo")
+    _stray_task(repo)
+    (repo / "docs" / "tasks" / "2026-01-01-x" / "STATE.md").write_text("x\n")
+    _drift(repo)
+    result = run_verify(repo)
+    assert result.returncode == 0, result.stdout
+
+
+def test_unknown_option_fails(tmp_path):
+    import subprocess
+    from helpers import VERIFY
+    result = subprocess.run(["bash", str(VERIFY), "--frsh", str(make_good_repo(tmp_path / "repo"))],
+                            capture_output=True, text=True)
+    assert result.returncode == 2 and "usage" in (result.stdout + result.stderr).lower()
 
 
 def test_empty_repo_fails(tmp_path):
@@ -66,7 +106,7 @@ def test_init_creates_verified_layout(tmp_path):
     result = run_init(tmp_path)
     assert result.returncode == 0, result.stderr
     assert "CREATED" in result.stdout
-    assert run_verify(tmp_path).returncode == 0
+    assert run_verify(tmp_path, fresh=True).returncode == 0
 
 
 def test_init_never_overwrites(tmp_path):

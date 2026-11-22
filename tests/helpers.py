@@ -16,9 +16,11 @@ def make_good_repo(dest: Path) -> Path:
     return dest
 
 
-def run_verify(repo: Path) -> subprocess.CompletedProcess:
+def run_verify(repo: Path, fresh: bool = False) -> subprocess.CompletedProcess:
+    """fresh=True checks a just-initialized repo (what /kairyn:init promises); default checks a repo in use."""
+    flags = ["--fresh"] if fresh else []
     return subprocess.run(
-        ["bash", str(VERIFY), str(repo), str(PLUGIN)], capture_output=True, text=True
+        ["bash", str(VERIFY), *flags, str(repo), str(PLUGIN)], capture_output=True, text=True
     )
 
 

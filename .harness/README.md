@@ -19,6 +19,7 @@ How work gets done in this repo: the workflows for developing kairyn itself. Rea
 | [Running stages](workflows/running-stages.md) | running a stage, or editing or adding stage instructions |
 | [Task lifecycle](workflows/task-lifecycle.md) | changing STATE.md, task folders or timestamps |
 | [Testing and evals](workflows/testing-and-evals.md) | running, writing or interpreting tests or evals, or touching evals/ |
+| [Upgrade](workflows/upgrade.md) | changing upgrades or the plugin version |
 <!-- harness-docs:end -->
 
 ## Principles
@@ -27,7 +28,8 @@ How work gets done in this repo: the workflows for developing kairyn itself. Rea
 2. **Tests before code, evals before instructions.** Write the failing test or eval first, then make it pass.
 3. **Evidence over claims.** A passing eval leaves its outputs and scores in `evals/results/`. Don't report a pass you can't point to.
 4. **Never trust the model with the clock or with overwriting user files.** Timestamps come from `date`. Init never overwrites.
-5. **Lean files.** What an AI reads has a size budget (`budgets.yml`, estimated tokens). Tests fail when a file is over or has no budget. For people, `uv run python plugin/scripts/budgets_html.py` builds a readable report (`.harness/budgets.html`, git-ignored) from `budgets.yml`.
+5. **Playbooks guide kairyn's own work.** The SDLC playbooks in the author's knowledge base (`03 Playbooks/`) drive how this repo is built. They are not shipped to consumers. A stage that kairyn lacks, such as design, is done by hand from its playbook.
+6. **Lean files.** What an AI reads has a size budget (`budgets.yml`, estimated tokens). Tests fail when a file is over or has no budget. For people, `uv run python plugin/scripts/budgets_html.py` builds a readable report (`.harness/budgets.html`, git-ignored) from `budgets.yml`.
 
 ## Doc format
 

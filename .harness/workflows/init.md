@@ -15,16 +15,20 @@ load: on-demand
    - If `.kairyn/` exists, it prints `ALREADY INITIALIZED`, changes nothing and exits 0.
    - Otherwise it creates `.kairyn/stages/`, `.kairyn/templates/` and `docs/tasks/`, copies every file from `plugin/stages/` and `plugin/templates/`, and writes `.kairyn/learnings.md` with the `# Learnings` heading.
    - It also installs the consumer harness: the files in `plugin/harness/.harness/` go to the repo's `.harness/` (an existing file is kept and reported as `KEPT`), and `plugin/harness/CLAUDE.block.md` is appended to `CLAUDE.md` between kairyn markers, once. If `CLAUDE.md` does not exist it is created. Nothing else in it is touched.
-2. `plugin/scripts/verify-init.sh .` checks the result. The command must not report success until it prints `OK`.
+   - Last, `plugin/scripts/kairyn_files.py manifest` records the files init wrote: `.kairyn/manifest.json` (plugin version, sha256 and owner per file) and an exact copy of each in `.kairyn/.base/`, the merge base for upgrades. A file the user already had is not recorded. `kairyn_files.py` holds the file table and owners.
+2. `plugin/scripts/verify-init.sh --fresh .` checks the result. The command must not report success until it prints `OK`.
 
 ## What verify-init.sh checks
 
+Two modes. The default checks a repo in use. `--fresh` checks a repo right after init (the command, CI and the init eval use it).
+
 - `.kairyn/`, `.kairyn/stages/`, `.kairyn/templates/` and `docs/tasks/` exist.
-- Every shipped stage and template exists in `.kairyn/` and is byte-identical to the plugin copy.
+- Every shipped stage and template exists in `.kairyn/`. Templates (plugin-owned) match the plugin copy byte for byte. Stages (repo-owned) are compared only with `--fresh`.
 - Every file shipped in `plugin/harness/.harness/` exists in the repo (existence only, since users may edit them).
 - `CLAUDE.md` exists and has the kairyn block.
 - `learnings.md` exists and starts with `# Learnings`.
-- `docs/tasks/` is empty (init creates no tasks).
+- `.kairyn/manifest.json` is valid and every `.base/` copy matches its recorded hash (`kairyn_files.py check`).
+- `--fresh` only: `docs/tasks/` is empty (init creates no tasks).
 
 It exits 1 and prints a `FAIL:` line per problem.
 

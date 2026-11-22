@@ -1,10 +1,22 @@
 #!/usr/bin/env bash
-# Deterministic check that `/kairyn:init` left a repo in the expected state.
-# Usage: verify-init.sh <repo-dir> [plugin-dir]
-# Exit 0 if everything is in place, 1 otherwise (prints each problem).
+# Deterministic check of a repo's kairyn layout.
+# Usage: verify-init.sh [--fresh] <repo-dir> [plugin-dir]
+#   default  a repo in use: everything kairyn installs is present and recorded in
+#            .kairyn/manifest.json. Tasks may exist and repo-owned files
+#            (.kairyn/stages/) may be edited.
+#   --fresh  right after /kairyn:init: also stages match the plugin byte for byte and
+#            docs/tasks/ is empty.
+# Exit 0 if everything is in place, 1 otherwise (prints each problem), 2 on bad usage.
 set -u
 
-repo="${1:?usage: verify-init.sh <repo-dir> [plugin-dir]}"
+usage="usage: verify-init.sh [--fresh] <repo-dir> [plugin-dir]"
+fresh=0
+case "${1:-}" in
+  --fresh) fresh=1; shift ;;
+  -*) echo "$usage" >&2; exit 2 ;;
+esac
+[ $# -ge 1 ] || { echo "$usage" >&2; exit 2; }
+repo="$1"
 plugin="${2:-$(cd "$(dirname "$0")/.." && pwd)}"
 fail=0
 
@@ -15,7 +27,8 @@ problem() { echo "FAIL: $1"; fail=1; }
 [ -d "$repo/.kairyn/templates" ]  || problem ".kairyn/templates/ missing"
 [ -d "$repo/docs/tasks" ]         || problem "docs/tasks/ missing"
 
-# Every shipped stage and template must be copied into the repo.
+# Every shipped stage and template must be in the repo. Templates are plugin-owned, so they
+# must match the plugin. Stages are repo-owned: compared only in --fresh mode.
 for kind in stages templates; do
   for src in "$plugin/$kind"/*; do
     [ -e "$src" ] || continue
@@ -23,7 +36,7 @@ for kind in stages templates; do
     dest="$repo/.kairyn/$kind/$name"
     if [ ! -f "$dest" ]; then
       problem ".kairyn/$kind/$name missing"
-    elif ! cmp -s "$src" "$dest"; then
+    elif { [ "$kind" = templates ] || [ "$fresh" -eq 1 ]; } && ! cmp -s "$src" "$dest"; then
       problem ".kairyn/$kind/$name differs from plugin copy"
     fi
   done
@@ -50,9 +63,22 @@ elif [ "$(head -n 1 "$learn")" != "# Learnings" ]; then
   problem ".kairyn/learnings.md must start with '# Learnings'"
 fi
 
+# The record of what was installed: .kairyn/manifest.json and matching .kairyn/.base/ copies.
+if [ -d "$repo/.kairyn" ]; then
+  if ! out="$(python3 "$plugin/scripts/kairyn_files.py" check "$repo")"; then
+    echo "$out"
+    fail=1
+  fi
+fi
+
 # init must not create tasks or other output.
-if [ -d "$repo/docs/tasks" ] && [ -n "$(find "$repo/docs/tasks" -mindepth 1 -not -name .gitkeep 2>/dev/null | head -n 1)" ]; then
+if [ "$fresh" -eq 1 ] && [ -d "$repo/docs/tasks" ] && [ -n "$(find "$repo/docs/tasks" -mindepth 1 -not -name .gitkeep 2>/dev/null | head -n 1)" ]; then
   problem "docs/tasks/ should be empty after init"
+fi
+
+# A newer plugin than the installed files: a warning, not a failure.
+if [ -d "$repo/.kairyn" ]; then
+  python3 "$plugin/scripts/version_check.py" --root "$repo" --plugin "$plugin" | sed 's/^/WARN: /'
 fi
 
 if [ "$fail" -eq 0 ]; then echo "OK: kairyn init layout verified"; fi

@@ -13,7 +13,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
-from helpers import make_good_repo, run_verify  # noqa: E402
+from helpers import PLUGIN, ROOT, make_good_repo, run_verify  # noqa: E402
 from runner import (MODEL, REQUEST, RESULTS, ROUTING_REQUEST, claude, make_routing_repo, new_repo,  # noqa: E402
                     run_model_routing, run_requirements, tree_hash)
 
@@ -31,7 +31,7 @@ def _save(scenario: str, run_id: str, name: str, text: str) -> None:
 def init_fresh(work: Path, scenario: str, run_id: str) -> dict:
     repo = new_repo(work, "repo")
     claude("/kairyn:init", repo, plugin=True, model=MODEL)
-    result = run_verify(repo)
+    result = run_verify(repo, fresh=True)
     _save(scenario, run_id, "verify.txt", f"exit={result.returncode}\n{result.stdout}")
     return {"verify_exit": result.returncode, "verify_out": result.stdout}
 
@@ -87,8 +87,26 @@ def model_routing(work: Path, scenario: str, run_id: str) -> dict:
             "start": run["start"].strftime(TS), "end": run["end"].strftime(TS)}
 
 
+HAND_MADE = "hand-made template\n"
+
+
+def upgrade_conflict(work: Path, scenario: str, run_id: str) -> dict:
+    """A v0.1.0 repo (no manifest) with one hand-made template: one CONFLICT, the rest upgrades."""
+    repo = new_repo(work, "repo")
+    shutil.copytree(ROOT / "tests" / "fixtures" / "consumer-v0.1.0", repo, dirs_exist_ok=True)
+    (repo / ".kairyn" / "templates" / "STATE.md").write_text(HAND_MADE)
+    reply = claude("/kairyn:upgrade", repo, plugin=True, model=MODEL)
+    _save(scenario, run_id, "reply.txt", reply)
+    stage = repo / ".kairyn" / "stages" / "REQUIREMENTS.md"
+    return {"reply": reply,
+            "manifest": (repo / ".kairyn" / "manifest.json").is_file(),
+            "stage_upgraded": stage.read_bytes() == (PLUGIN / "stages" / "REQUIREMENTS.md").read_bytes(),
+            "template_kept": (repo / ".kairyn" / "templates" / "STATE.md").read_text() == HAND_MADE,
+            "kairyn_new": (repo / ".kairyn" / "templates" / "STATE.md.kairyn-new").is_file()}
+
+
 SCENARIOS = {f.__name__: f for f in (init_fresh, init_keeps_edits, init_keeps_claude_md, check_broken_doc, requirements,
-                                     model_routing)}
+                                     model_routing, upgrade_conflict)}
 
 
 def call_api(prompt, options, context):

@@ -154,3 +154,48 @@ def test_cli_passes_on_a_clean_root(tmp_path):
     write(tmp_path, "CLAUDE.md", "x" * 40)
     result = run_cli("--root", str(tmp_path))
     assert result.returncode == 0 and "OK" in result.stdout
+
+
+# --- fallback budgets for files kairyn installs (consumer repos with a strict budgets.yml) ---
+
+from budgets import FALLBACK_BUDGETS, with_fallbacks
+
+STRICT_CLAUDE_ONLY = "budgets:\n  - {pattern: CLAUDE.md, max_tokens: 2000, load: always}\n"
+
+
+def test_fallbacks_come_after_the_users_patterns():
+    user = [Budget(".kairyn/learnings.md", 10, "runtime")]
+    merged = with_fallbacks(user)
+    assert merged[0] == user[0] and merged[1:] == FALLBACK_BUDGETS
+    assert budget_for(".kairyn/learnings.md", merged).max_tokens == 10   # the user's limit wins
+
+
+def test_fallbacks_cover_every_markdown_file_init_installs(tmp_path):
+    from helpers import make_good_repo
+    repo = make_good_repo(tmp_path / "repo")
+    write(repo, "docs/tasks/2026-01-01-x/STATE.md", "x")
+    unbudgeted = [rel for rel in find_docs(repo) if rel != "CLAUDE.md" and budget_for(rel, FALLBACK_BUDGETS) is None]
+    assert unbudgeted == []
+
+
+def test_find_docs_skips_the_upgrade_base_copies(tmp_path):
+    write(tmp_path, ".kairyn/.base/.kairyn/stages/A.md", "x")
+    write(tmp_path, ".kairyn/stages/A.md", "x")
+    assert find_docs(tmp_path) == [".kairyn/stages/A.md"]
+
+
+def test_cli_passes_after_init_in_a_repo_with_a_strict_budgets_yml(tmp_path):
+    from helpers import make_good_repo
+    repo = tmp_path / "repo"
+    write(repo, ".harness/budgets.yml", STRICT_CLAUDE_ONLY)
+    make_good_repo(repo)
+    write(repo, "docs/tasks/2026-01-01-x/STATE.md", "x")
+    result = run_cli("--root", str(repo))
+    assert result.returncode == 0, result.stdout
+
+
+def test_cli_still_enforces_fallback_limits(tmp_path):
+    write(tmp_path, ".harness/budgets.yml", STRICT_CLAUDE_ONLY)
+    write(tmp_path, ".kairyn/stages/BIG.md", "x" * 4000)
+    result = run_cli("--root", str(tmp_path))
+    assert result.returncode == 1 and ".kairyn/stages/BIG.md" in result.stdout and "over by" in result.stdout

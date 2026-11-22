@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from html import escape
 from pathlib import Path
 
-from budgets import Budget, budget_for, estimate_tokens, find_docs, load_config, root_from_args
+from budgets import Budget, budget_for, estimate_tokens, find_docs, load_config, root_from_args, with_fallbacks
 
 CLASS_LABELS = {
     "always": ("Always loaded", "in every session"),
@@ -122,6 +122,7 @@ def main(argv: list[str]) -> int:
     root = root_from_args(argv)
     out = Path(argv[argv.index("--out") + 1]) if "--out" in argv else root / ".harness" / "budgets.html"
     budgets, strict = load_config(root / ".harness" / "budgets.yml")
+    budgets = with_fallbacks(budgets)
     write_html(root, budgets, out, strict=strict)
     print(f"wrote {out}")
     return 0

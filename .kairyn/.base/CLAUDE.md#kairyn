@@ -1,0 +1,10 @@
+<!-- kairyn:start -->
+## kairyn
+
+Work runs through stages. Instructions: `.kairyn/stages/`. Task state and outputs: `docs/tasks/<YYYY-MM-DD>-<slug>/`. Learnings: `.kairyn/learnings.md`. Timestamps come from `date`, never from memory.
+
+Read a doc only when the task matches; `head -6 <file>` shows its header.
+
+<!-- harness-docs:start -->
+<!-- harness-docs:end -->
+<!-- kairyn:end -->

@@ -40,9 +40,20 @@ jobs:
         run: |
           repo="$(mktemp -d)"
           bash plugin/scripts/init.sh "$repo"
-          bash plugin/scripts/verify-init.sh "$repo"
+          bash plugin/scripts/verify-init.sh --fresh "$repo"
           python plugin/scripts/harness_docs.py --root "$repo"
           python plugin/scripts/budgets.py --root "$repo"
+
+  version-bump:
+    # A change under plugin/ must ship with a newer plugin.json version, or consumers never get it.
+    # Only for pull requests into main: stacked pull requests share the version of the one below.
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - run: python3 scripts/check_version_bump.py "origin/${{ github.base_ref }}"
 
   shellcheck:
     runs-on: ubuntu-latest

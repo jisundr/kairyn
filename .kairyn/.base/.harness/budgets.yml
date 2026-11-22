@@ -1,0 +1,11 @@
+# Size budgets for markdown files, in estimated tokens (characters / 4).
+# load = when a file is read: always (every session), on-demand (when its
+# read_when matches), runtime (read when a command or stage runs).
+# strict: false means only files matching a pattern below are checked.
+# First matching pattern wins. Over budget? Cut or split before raising a limit.
+strict: false
+budgets:
+  - {pattern: .harness/README.md, max_tokens: 600, load: on-demand}
+  - {pattern: ".harness/workflows/*.md", max_tokens: 800, load: on-demand}
+  # Uncomment to budget your CLAUDE.md (loaded every session):
+  # - {pattern: CLAUDE.md, max_tokens: 1000, load: always}
