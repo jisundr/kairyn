@@ -1,0 +1,22 @@
+# Backlog
+
+Options, not commitments. Each file is one idea, named `<YYYYMMDDHHMMSS>-<slug>.md` from its capture time (UTC), following the playbook `knowledge-base/03 Playbooks/SDLC/00 Managing the Idea Backlog.md`. Status: `inbox` → `triaged` → `shaping` → `shaped` → `committed`, or `parked` / `dropped`. Agents capture and draft; a human triages, sets the appetite and commits.
+
+## Triage digest (2026-11-22)
+
+All ten ideas are `inbox` and need a keep, park or drop decision. Problem statements are AI drafts.
+
+| Idea | Playbook | Depends on | AI note |
+|---|---|---|---|
+| [Design stage](20261122080759-design-stage.md) | SDLC 02 | | Named as next gap in learnings |
+| [Build stage](20261122080759-build-stage.md) | SDLC 03 | design-stage | |
+| [Quality gates stage](20261122080759-gates-stage.md) | SDLC 04 | build-stage | May need a CI-reading script |
+| [Review and merge stage](20261122080759-review-stage.md) | SDLC 05 | gates-stage | Should own `status: done` |
+| [Release and monitoring stage](20261122080759-release-stage.md) | SDLC 06 | review-stage | Maybe optional |
+| [Backlog stage](20261122080759-backlog-stage.md) | SDLC 00 | | This file is a manual run of it |
+| [Requirements gaps](20261122080759-requirements-gaps.md) | SDLC 01 | | Approval line first |
+| [Plain-English outputs](20261122080759-plain-english-outputs.md) | Agents 01 | | |
+| [Pointer-following checks](20261122080759-instruction-file-checks.md) | Agents 02 | | Partly done |
+| [Multi-repo support](20261122080759-multi-repo.md) | Agents 03 | | Park candidate, no evidence yet |
+
+Merged: "task is marked `done` after requirements only" into [design-stage](20261122080759-design-stage.md). Not added: `Inference/01 Adding Model Routing`, already the optional `MODEL-ROUTING` stage.
