@@ -61,6 +61,36 @@ def ste_rate(text: str) -> float:
     return round(100 * len(ste_problems(text)) / words, 2) if words else 0.0
 
 
+OUTPUT_HEADER_KEYS = {"task", "stage", "summary"}   # identity only; task state lives in STATE.md
+SUMMARY_MAX = 160
+
+
+def output_header_problems(text: str, task: str, stage: str) -> list[str]:
+    """A stage output starts with front matter naming its task and stage, plus a one-line summary."""
+    if not text.startswith("---\n") or text.count("---\n") < 2:
+        return ["no front matter"]
+    try:
+        data = yaml.safe_load(text.split("---\n", 2)[1]) or {}
+    except yaml.YAMLError as e:
+        return [f"front matter invalid: {e}"]
+    if not isinstance(data, dict):
+        return ["front matter invalid: not a mapping"]
+    problems = []
+    if str(data.get("task")) != task:
+        problems.append(f"front matter task {data.get('task')!r} != folder {task!r}")
+    if data.get("stage") != stage:
+        problems.append(f"front matter stage {data.get('stage')!r} != {stage!r}")
+    summary = str(data.get("summary") or "").strip()
+    if not summary:
+        problems.append("front matter summary missing")
+    elif len(summary) > SUMMARY_MAX:
+        problems.append(f"front matter summary over {SUMMARY_MAX} characters")
+    extra = sorted(set(data) - OUTPUT_HEADER_KEYS)
+    if extra:
+        problems.append(f"front matter has state or unknown keys {extra} (state belongs in STATE.md)")
+    return problems
+
+
 def timestamp_problems(data: dict, body: str, start: datetime, end: datetime) -> list[str]:
     """Timestamps must come from the real clock, not from the model's memory."""
     lo, hi = start - CLOCK_SLACK, end + CLOCK_SLACK
@@ -119,6 +149,7 @@ def structural_problems(run: dict) -> list[str]:
     if TASK_DIR_RE.match(task.name) and task.name[:10] not in run_days:
         problems.append(f"task folder date {task.name[:10]} is not today ({sorted(run_days)})")
     text = req.read_text()
+    problems += output_header_problems(text, task.name, "requirements")
     for section in ("problem statement", "scope", "acceptance criteria", "open questions"):
         if section not in text.lower():
             problems.append(f"REQUIREMENTS.md missing {section!r}")

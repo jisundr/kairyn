@@ -20,6 +20,7 @@ purpose: Turn a request into clear, scoped requirements with acceptance criteria
 
 ## Output
 Write to `docs/tasks/<YYYY-MM-DD>-<slug>/REQUIREMENTS.md`:
+- Front matter: `task`, `stage: requirements` and `summary` (see `_template.md`, Output)
 - Problem statement
 - Scope (in / out)
 - Acceptance criteria
