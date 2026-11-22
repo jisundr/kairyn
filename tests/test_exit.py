@@ -116,7 +116,7 @@ def test_close_removes_index_rows_of_deleted_files(repo):
 def test_close_reports_links_to_the_deleted_task(repo):
     (repo / "docs" / "notes.md").write_text(f"See docs/tasks/{TASK}/REQUIREMENTS.md\n")
     r = run(repo, "close", TASK, "--entry", "x")
-    assert "LINK: docs/notes.md" in r.stdout
+    assert f"LINK: docs/notes.md still links tasks/{TASK}/" in r.stdout
     assert (repo / "docs" / "notes.md").exists()
 
 
@@ -150,3 +150,9 @@ def test_release_refuses_an_empty_unreleased_or_a_taken_tag(repo):
     (repo / "CHANGELOG.md").write_text("# Changelog\n\n## Unreleased\n\n- A. (t)\n")
     git(repo, "commit", "-qam", "c2"); git(repo, "tag", "v0.6.0")
     assert run(repo, "release", "0.6.0").returncode == 1
+
+
+def test_close_reports_links_to_deleted_backlog_files(repo):
+    (repo / "docs" / "backlog" / "4-inbox.md").write_text(backlog("inbox", "Split from [dropped](2-dropped.md)."))
+    r = run(repo, "close", TASK, "--entry", "x")
+    assert "LINK: docs/backlog/4-inbox.md still links 2-dropped.md" in r.stdout

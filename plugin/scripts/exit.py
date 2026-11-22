@@ -106,14 +106,15 @@ def closed_backlog(root: Path, task: str) -> list[Path]:
     return out
 
 
-def links_to(root: Path, task: str) -> list[str]:
+def links_to(root: Path, targets: list[str]) -> list[tuple[str, str]]:
+    """(file, target) for each markdown file that still names a deleted path."""
     hits = []
     for path in sorted(root.rglob("*.md")):
         rel = path.relative_to(root).as_posix()
-        if rel.startswith((".git/", "node_modules/", f"docs/tasks/{task}/")) or rel == CHANGELOG:
+        if rel.startswith((".git/", "node_modules/")) or rel == CHANGELOG or not path.is_file():
             continue
-        if f"tasks/{task}" in path.read_text(errors="ignore"):
-            hits.append(rel)
+        text = path.read_text(errors="ignore")
+        hits += [(rel, t) for t in targets if t in text]
     return hits
 
 
@@ -140,8 +141,8 @@ def cmd_close(root: Path, task: str, entry: str) -> int:
         print(f"DELETED {path.relative_to(root).as_posix()}")
     shutil.rmtree(root / "docs" / "tasks" / task)
     print(f"DELETED docs/tasks/{task}/")
-    for rel in links_to(root, task):
-        print(f"LINK: {rel} still links docs/tasks/{task}/")
+    for rel, target in links_to(root, [f"tasks/{task}/"] + [p.name for p in gone]):
+        print(f"LINK: {rel} still links {target}")
     return 0
 
 
