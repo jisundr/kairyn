@@ -15,21 +15,23 @@ purpose: Turn a request into clear, scoped requirements with acceptance criteria
 2. Restate the request in one paragraph.
 3. Skim the relevant parts of the repo to ground the request in existing code.
 4. List open questions; ask the user only those you cannot resolve from the repo.
-5. Write the scope: what is in, what is explicitly out.
-6. Write acceptance criteria as a checklist a reviewer could verify.
+5. Do not add what the request does not ask for (docs, tests, output wording, design). If a detail is necessary and the request does not give it, record it as a labeled assumption: `A1`, `A2`.
+6. Write the scope. Each "in" item comes from the request or an assumption. Put other ideas in "out".
+7. Write acceptance criteria as a checklist a reviewer could verify. End each criterion with its source: `(request)` or its labels, for example `(A2)`.
 
 ## Output
 Write to `docs/tasks/<YYYY-MM-DD>-<slug>/REQUIREMENTS.md`:
-- Front matter: `task`, `stage: requirements` and `summary` (see `_template.md`, Output)
-- Problem statement
+- Front matter with `stage: requirements` (see `_template.md`, Output)
+- Problem statement (only what the request says)
 - Scope (in / out)
+- Assumptions (`A1`, `A2`, ...)
 - Acceptance criteria
 - Open questions and the answers given
 
 Write it in ASD-STE100, about 80% of the way (see `_template.md`, Writing). The next stage reads it as its only input.
 
 ## Exit criteria
-- [ ] Every acceptance criterion is verifiable.
+- [ ] Every acceptance criterion is verifiable and names its source.
 - [ ] No unresolved open questions remain.
 
 ## State update

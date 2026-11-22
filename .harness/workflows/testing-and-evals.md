@@ -7,7 +7,7 @@ load: on-demand
 
 # Testing and evals
 
-Two layers, kept apart because they behave differently.
+Two layers, kept apart.
 
 | | Tests (`tests/`) | Evals (`evals/`) |
 |---|---|---|
@@ -22,7 +22,7 @@ Two layers, kept apart because they behave differently.
 uv run pytest
 ```
 
-Covers the plugin's static shape, the init scripts, the pure eval checks, the selector and the pass-rate gate. It never calls `claude`. Write the test first and watch it fail.
+Covers the plugin's shape, init scripts, pure eval checks, selector and gates. It never calls `claude`. Write the test first and watch it fail.
 
 ## Evals
 
@@ -40,7 +40,8 @@ Each test declares its thresholds as `metadata.min_pass_rate: {metric: fraction}
 | init | keeps_claude_md | 100% keep the original text and add exactly one kairyn block |
 | check | names_broken_doc | at least 90% of replies name the doc that lost its header |
 | requirements | well_formed | at least 90% leave a valid task folder, `STATE.md` and `REQUIREMENTS.md` with real timestamps |
-| requirements | quality | judge scores (verifiable, scope, no_invention) average at least 4, none below 3 |
+| requirements | quality | judge scores (verifiable, scope, no_invention) average at least 4, none below 3; `no_invention` alone at least 4 |
+| requirements | traceable | 90% of runs tag every acceptance criterion `(request)` or `(A<n>)` |
 | requirements | plain_language | 80% of runs have at most 1.0 ASD-STE100 violations per 100 words (`checks.ste_problems`) |
 
 ### Running only what changed
@@ -61,11 +62,11 @@ uv run python evals/run.py --concurrency 4      # parallel claude sessions
 ```
 
 - A hash is recorded only when every metric met its threshold, and only at the full run count (`KAIRYN_EVAL_RUNS` below 10 never vouches).
-- Add every plugin file an eval relies on to its `# depends:` header, or a change there will not trigger a re-run.
+- List every plugin file an eval relies on in its `# depends:` header.
 
 ### Evidence and summary
 
-Each run saves to `evals/results/<run-id>/`: promptfoo's `<name>.json`, per-run evidence and `summary.md`. Check these before claiming a result.
+Each run saves promptfoo's `<name>.json`, per-run evidence and `summary.md` to `evals/results/<run-id>/`. Check them before claiming a result.
 
 ### Settings
 

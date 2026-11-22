@@ -61,6 +61,27 @@ def ste_rate(text: str) -> float:
     return round(100 * len(ste_problems(text)) / words, 2) if words else 0.0
 
 
+# No invention: each acceptance criterion ends with its source, "(request)" or "(A1, A3)",
+# and every assumption it cites is defined as a labeled assumption (a line that starts with A<n>).
+_CRITERION = re.compile(r"^\s*- \[[ x]\] (.*)$", re.M)
+_SOURCE_TAG = re.compile(r"\(((?:request|A\d+)(?:\s*[,;]\s*(?:request|A\d+))*)\)", re.I)
+_ASSUMPTION_DEF = re.compile(r"^\s*(?:[-*]|\d+\.|\|)?\s*[*`]*\s*(A\d+)\b", re.M)
+
+
+def traceability_problems(text: str) -> list[str]:
+    criteria = _CRITERION.findall(text)
+    if not criteria:
+        return ["no acceptance criteria to trace"]
+    defined = set(_ASSUMPTION_DEF.findall(text))
+    problems = []
+    for c in criteria:
+        tags = [t for m in _SOURCE_TAG.finditer(c) for t in re.split(r"\s*[,;]\s*", m.group(1))]
+        if not tags:
+            problems.append(f"no source: {c[:60]}")
+        problems += [f"undefined {t}: {c[:40]}" for t in tags if t.lower() != "request" and t not in defined]
+    return problems
+
+
 OUTPUT_HEADER_KEYS = {"task", "stage", "summary"}   # identity only; task state lives in STATE.md
 SUMMARY_MAX = 160
 

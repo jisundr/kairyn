@@ -60,7 +60,7 @@ def gate(outcomes: dict) -> list[str]:
 
 
 def score_gate(results_dir: Path, scenario: str, total: int, gate_cfg: dict) -> list[str]:
-    """Judge-score gate from the judge.json files assertions save per run (mean and floor over all scores)."""
+    """Judge-score gate from the judge.json files assertions save per run: overall mean, floor, per-criterion means."""
     scores = [json.loads(f.read_text()) for f in sorted((results_dir / scenario).glob("*/judge.json"))]
     values = [v for s in scores for v in s.values()]
     need = math.floor(total * gate_cfg["min_gradable"] + 1e-9)
@@ -72,6 +72,11 @@ def score_gate(results_dir: Path, scenario: str, total: int, gate_cfg: dict) -> 
     mean = sum(values) / len(values) if values else 0
     if mean < gate_cfg["mean"]:
         problems.append(f"mean {mean:.2f} < {gate_cfg['mean']}")
+    for key, minimum in gate_cfg.get("criteria", {}).items():   # a weak criterion must not hide in the overall mean
+        crit = [s[key] for s in scores if key in s]
+        crit_mean = sum(crit) / len(crit) if crit else 0
+        if crit_mean < minimum:
+            problems.append(f"{key} mean {crit_mean:.2f} < {minimum}")
     detail = ", ".join(f"{k} {sum(s[k] for s in scores) / len(scores):.1f}" for k in scores[0]) if scores else "no scores"
     status = "FAIL" if problems else "PASS"
     return [f"{status}  quality           mean {mean:.1f} (need {gate_cfg['mean']}), min {min(values, default=0):g} (need {gate_cfg['floor']}); {detail}"] \

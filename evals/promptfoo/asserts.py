@@ -9,7 +9,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
-from checks import TS_FORMAT, ste_problems, ste_rate, structural_problems  # noqa: E402
+from checks import TS_FORMAT, ste_problems, ste_rate, structural_problems, traceability_problems  # noqa: E402
 from runner import JUDGE_MODEL, claude  # noqa: E402
 
 
@@ -61,11 +61,18 @@ def plain_language(output, context):
             "reason": f"{rate} violations/100 words (max {STE_MAX_RATE}); " + ", ".join(problems[:5])}
 
 
+def traceable(output, context):
+    """No invention, checked: every acceptance criterion cites the request or a labeled assumption."""
+    doc = json.loads(output)["requirements_md"]
+    return _result(traceability_problems(doc) if doc else ["no REQUIREMENTS.md to trace"])
+
+
 RUBRIC = """You are grading a REQUIREMENTS.md written for this request:
 "{request}"
 
-Score 1-5 on each criterion, then reply with ONLY a JSON object:
+Score 1-5 on each criterion, then reply with a JSON object first:
 {{"verifiable": n, "scope": n, "no_invention": n}}
+After the JSON, list each item you counted as invented, one per line.
 - verifiable: every acceptance criterion could be checked pass/fail by a reviewer
 - scope: in-scope and out-of-scope are both explicit and sensible
 - no_invention: nothing beyond the request is added without being flagged as an assumption
