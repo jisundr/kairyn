@@ -16,3 +16,10 @@ tests:
       - {type: python, value: "file://asserts.py:quality", metric: quality}
       - {type: python, value: "file://asserts.py:plain_language", metric: plain_language}
       - {type: python, value: "file://asserts.py:traceable", metric: traceable}
+  - description: Requirements stage on a task that grill already shaped (CONCEPT.md exists)
+    vars: {scenario: requirements_with_concept}
+    metadata:
+      min_pass_rate: {uses_concept: 0.9, traceable: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:uses_concept", metric: uses_concept}
+      - {type: python, value: "file://asserts.py:traceable", metric: traceable}

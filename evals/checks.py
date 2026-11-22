@@ -65,10 +65,10 @@ def ste_rate(text: str) -> float:
     return round(100 * len(ste_problems(text)) / words, 2) if words else 0.0
 
 
-# No invention: each acceptance criterion ends with its source, "(request)" or "(A1, A3)",
+# No invention: each acceptance criterion ends with its source, "(request)", "(A1, A3)" or a grill decision "(D2)",
 # and every assumption it cites is defined as a labeled assumption (a line that starts with A<n>).
 _CRITERION = re.compile(r"^\s*- \[[ x]\] (.*)$", re.M)
-_SOURCE_TAG = re.compile(r"\(((?:request|A\d+)(?:\s*[,;]\s*(?:request|A\d+))*)\)", re.I)
+_SOURCE_TAG = re.compile(r"\(((?:request|[AD]\d+)(?:\s*[,;]\s*(?:request|[AD]\d+))*)\)", re.I)
 _ASSUMPTION_DEF = re.compile(r"^\s*(?:[-*]|\d+\.|\|)?\s*[*`]*\s*(A\d+)\b", re.M)
 
 
@@ -82,7 +82,8 @@ def traceability_problems(text: str) -> list[str]:
         tags = [t for m in _SOURCE_TAG.finditer(c) for t in re.split(r"\s*[,;]\s*", m.group(1))]
         if not tags:
             problems.append(f"no source: {c[:60]}")
-        problems += [f"undefined {t}: {c[:40]}" for t in tags if t.lower() != "request" and t not in defined]
+        # D<n> are grill decisions, defined in CONCEPT.md, not here.
+        problems += [f"undefined {t}: {c[:40]}" for t in tags if t[0] in "Aa" and t not in defined]
     return problems
 
 
@@ -233,4 +234,107 @@ def routing_problems(run: dict) -> list[str]:
             problems.append(f"MODEL-ROUTING.md missing section {section!r}")
     if next_routing_stage(text) is None:
         problems.append("Next stage section does not start with 'Stage <n>'")
+    return problems
+
+
+# --- grill stage ---------------------------------------------------------------
+# The stage interviews the user one question at a time and keeps the shared concept in CONCEPT.md.
+GRILL_STAGE = "grill"
+CONCEPT_SECTIONS = ("concept", "decisions", "terms", "open branches")
+_QUESTION = re.compile(r"^\W*(?:Q\d+|Question)\b[^:\n]*:", re.M | re.I)
+_RECOMMENDED = re.compile(r"^\W*Recommended\b[^:\n]*:", re.M | re.I)
+_NONE_ITEM = re.compile(r"^\W*(none|n/a|-)\W*$", re.I)
+MAX_QUESTION_MARKS = 2   # the question, plus at most one inside the recommendation
+
+
+def section_text(text: str, name: str) -> str:
+    """Body of the `## <name>` section, up to the next `## ` heading."""
+    m = re.search(rf"^##\s+{re.escape(name)}\b[^\n]*\n(.*?)(?=^##\s|\Z)", text, re.M | re.I | re.S)
+    return m.group(1) if m else ""
+
+
+def section_items(text: str, name: str) -> list[str]:
+    """List items and table rows of a section, leaving out table headers and "None"."""
+    items = []
+    for line in section_text(text, name).splitlines():
+        line = line.strip()
+        if re.fullmatch(r"[|\s:-]+", line) or not re.match(r"([-*+]|\d+\.|\|)\s*", line):
+            continue
+        item = re.sub(r"^([-*+]|\d+\.)\s+", "", line).strip("| ")
+        if item and not _NONE_ITEM.match(item):
+            items.append(item)
+    return items[1:] if section_text(text, name).lstrip().startswith("|") else items
+
+
+def decision_labels(text: str) -> set[str]:
+    return set(re.findall(r"\bD\d+\b", section_text(text, "decisions")))
+
+
+def grill_reply_problems(reply: str) -> list[str]:
+    """One question per message, with a recommended answer."""
+    problems = []
+    questions = len(_QUESTION.findall(reply))
+    if questions != 1:
+        problems.append(f"{questions} question markers, expected 1")
+    if not _RECOMMENDED.search(reply):
+        problems.append("no recommended answer")
+    marks = reply.count("?")
+    if marks > MAX_QUESTION_MARKS:
+        problems.append(f"{marks} question marks, more than one question")
+    return problems
+
+
+def state_fields(state_text: str) -> dict:
+    """{"stage", "status", "stages"} from a STATE.md, or {} when it does not parse."""
+    try:
+        data = yaml.safe_load(split_front_matter(state_text)[0]) or {}
+    except (AssertionError, yaml.YAMLError):
+        return {}
+    return {"stage": data.get("stage"), "status": data.get("status"), "stages": data.get("stages") or {}}
+
+
+def grill_problems(run: dict, stopped: bool = True) -> list[str]:
+    """Final state after an interview. run = {"task": Path | None, "start": datetime, "end": datetime}.
+    stopped=True: the user stopped early, so open branches remain."""
+    task, start, end = run["task"], run["start"], run["end"]
+    if task is None:
+        return ["expected exactly one task folder"]
+    problems = [] if TASK_DIR_RE.match(task.name) else [f"bad task folder name {task.name!r}"]
+    state, doc = task / "STATE.md", task / "CONCEPT.md"
+    if not state.exists() or not doc.exists():
+        return problems + ["STATE.md or CONCEPT.md missing"]
+    try:
+        fm, body = split_front_matter(state.read_text())
+        data = yaml.safe_load(fm)
+    except (AssertionError, yaml.YAMLError) as e:
+        return problems + [f"STATE.md front matter invalid: {e}"]
+    stages = data.get("stages") or {}
+    if stages.get(GRILL_STAGE) != "done":
+        problems.append(f"stages.{GRILL_STAGE} is {stages.get(GRILL_STAGE)!r}, expected done")
+    if data.get("stage") != "requirements" or data.get("status") != "in-progress":
+        problems.append(f"stage {data.get('stage')!r} status {data.get('status')!r}, expected requirements in-progress")
+    if not any(log_line_re(GRILL_STAGE).match(line) for line in body.splitlines()):
+        problems.append(f"no timestamped [{GRILL_STAGE}] log line")
+    problems += timestamp_problems(data, body, start, end, GRILL_STAGE)
+    text = doc.read_text()
+    problems += output_header_problems(text, task.name, GRILL_STAGE)
+    for section in CONCEPT_SECTIONS:
+        if not re.search(rf"^##\s+{section}\b", text, re.M | re.I):
+            problems.append(f"CONCEPT.md missing section {section!r}")
+    if not decision_labels(text):
+        problems.append("no D<n> decision in CONCEPT.md")
+    if stopped and not section_items(text, "open branches"):
+        problems.append("stopped early but no open branch listed")
+    return problems
+
+
+def concept_use_problems(task: Path, decisions: tuple[str, ...], must_mention: str) -> list[str]:
+    """requirements ran on a task that grill already shaped: same folder, decisions cited, decided value kept."""
+    req = task / "REQUIREMENTS.md"
+    if not req.exists():
+        return ["REQUIREMENTS.md missing in the grill task folder"]
+    text = req.read_text()
+    problems = [f"{d} not cited" for d in decisions if not re.search(rf"\b{d}\b", text)]
+    if must_mention.lower() not in text.lower():
+        problems.append(f"decided value {must_mention!r} missing")
     return problems

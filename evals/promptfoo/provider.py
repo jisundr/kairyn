@@ -14,8 +14,9 @@ HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
 from helpers import PLUGIN, ROOT, make_good_repo, run_verify  # noqa: E402
-from runner import (MODEL, REQUEST, RESULTS, ROUTING_REQUEST, claude, make_routing_repo, new_repo,  # noqa: E402
-                    run_model_routing, run_requirements, tree_hash)
+from runner import (CONCEPT_DECISIONS, CONCEPT_TASK, CONCEPT_VALUE, GRILL_APP, GRILL_README, GRILL_REQUEST, MODEL, REQUEST, RESULTS, ROUTING_REQUEST,  # noqa: E402
+                    claude, make_concept_repo, make_grill_repo, make_routing_repo, new_repo, run_grill, run_model_routing,
+                    run_requirements, run_requirements_with_concept, tree_hash)
 
 TS = "%Y-%m-%dT%H:%M:%SZ"
 ORIGINAL_CLAUDE_MD = "# My project\n\nMy own rules.\n"
@@ -87,6 +88,35 @@ def model_routing(work: Path, scenario: str, run_id: str) -> dict:
             "start": run["start"].strftime(TS), "end": run["end"].strftime(TS)}
 
 
+def grill(work: Path, scenario: str, run_id: str) -> dict:
+    repo = make_grill_repo(make_good_repo(new_repo(work, "repo")))
+    run = run_grill(repo)
+    out = {"request": GRILL_REQUEST, "repo_files": {"report.py": GRILL_APP, "README.md": GRILL_README},
+           "turns": run["turns"], "task_path": None, "doc": "",
+           "start": run["start"].strftime(TS), "end": run["end"].strftime(TS)}
+    run_dir = RESULTS / scenario / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+    (run_dir / "turns.json").write_text(json.dumps(run["turns"], indent=2))
+    if run["task"] is not None:
+        kept = run_dir / run["task"].name
+        shutil.copytree(run["task"], kept)   # temp repo is deleted; assertions read this copy
+        out["task_path"] = str(kept)
+        doc = kept / "CONCEPT.md"
+        out["doc"] = doc.read_text() if doc.exists() else ""
+    return out
+
+
+def requirements_with_concept(work: Path, scenario: str, run_id: str) -> dict:
+    repo = make_concept_repo(make_good_repo(new_repo(work, "repo")))
+    tasks = run_requirements_with_concept(repo)["tasks"]
+    kept = RESULTS / scenario / run_id / CONCEPT_TASK
+    if (repo / "docs" / "tasks" / CONCEPT_TASK).is_dir():
+        shutil.copytree(repo / "docs" / "tasks" / CONCEPT_TASK, kept)
+    req = kept / "REQUIREMENTS.md"
+    return {"tasks": [t.name for t in tasks], "task_path": str(kept), "decisions": list(CONCEPT_DECISIONS),
+            "value": CONCEPT_VALUE, "requirements_md": req.read_text() if req.exists() else ""}
+
+
 HAND_MADE = "hand-made template\n"
 
 
@@ -106,7 +136,7 @@ def upgrade_conflict(work: Path, scenario: str, run_id: str) -> dict:
 
 
 SCENARIOS = {f.__name__: f for f in (init_fresh, init_keeps_edits, init_keeps_claude_md, check_broken_doc, requirements,
-                                     model_routing, upgrade_conflict)}
+                                     model_routing, grill, requirements_with_concept, upgrade_conflict)}
 
 
 def call_api(prompt, options, context):
