@@ -26,7 +26,7 @@ uv run python evals/run.py         # only evals whose dependencies changed
 
 `.github/workflows/ci.yml` runs on every PR and on pushes to `main`:
 - `tests`: `uv run pytest` on Linux and macOS (catches shell portability bugs)
-- `consumer install`: init and the checkers with plain Python 3.10 and no dependencies, as a user would run them
+- `consumer install`: init and the checkers with plain Python 3.9 (the minimum; macOS's `/usr/bin/python3`) and the latest 3.x, no dependencies, as a user would run them
 - `shellcheck`: the shell scripts
 
 Evals are **not** in CI: they need credentials and cost tokens. Run them locally and put the summary in the PR.

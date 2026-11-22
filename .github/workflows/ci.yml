@@ -29,13 +29,18 @@ jobs:
 
   consumer-python:
     # A user's machine has python3 and nothing else. Prove init and the checkers work that way.
-    name: consumer install (plain python3)
+    # 3.9 is the minimum: macOS ships it as /usr/bin/python3.
+    name: consumer install (plain python3 ${{ matrix.python }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.x"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python }}
       - name: Init and check a fresh repo with no dependencies installed
         run: |
           repo="$(mktemp -d)"

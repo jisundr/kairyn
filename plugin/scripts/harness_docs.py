@@ -16,6 +16,8 @@ Usage:
     python harness_docs.py [--root DIR] --write    # regenerate the index tables
 DIR defaults to the current directory.
 """
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path

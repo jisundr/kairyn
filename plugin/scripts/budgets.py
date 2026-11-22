@@ -18,6 +18,8 @@ repo's own patterns, so a repo with its own strict budgets.yml still passes afte
 Usage:
     python budgets.py [--root DIR]   # DIR defaults to the current directory; exit 1 on any problem
 """
+from __future__ import annotations
+
 import fnmatch
 import math
 import sys
