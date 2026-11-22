@@ -101,3 +101,16 @@ def test_cost_lines_sum_per_scenario_and_total(tmp_path):
     assert "cost  requirements: $1.25 over 2 runs (judge $0.05)" in lines
     assert lines[-1] == "cost  total: $2.25"
     assert cost_lines(tmp_path / "empty") == []
+
+
+def test_concurrency_defaults_to_parallel_sessions():
+    from run import DEFAULT_CONCURRENCY, concurrency
+    assert DEFAULT_CONCURRENCY > 1, "one session at a time makes a 10-run gate take hours"
+    assert concurrency(None, {}) == DEFAULT_CONCURRENCY
+
+
+def test_concurrency_flag_beats_env_and_floors_at_one():
+    from run import concurrency
+    assert concurrency(None, {"KAIRYN_EVAL_CONCURRENCY": "2"}) == 2
+    assert concurrency(6, {"KAIRYN_EVAL_CONCURRENCY": "2"}) == 6
+    assert concurrency(0, {}) == 1

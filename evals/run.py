@@ -24,6 +24,9 @@ from selector import deps_hash, load_record, needs_run, parse_depends, record_pa
 
 PROMPTFOO = "promptfoo@0.125.1"
 DEFAULT_RUNS = 10
+# Parallel claude sessions. promptfoo starts one Python worker process per slot and times each
+# call from when its worker picks it up, so queued runs do not time out and module state is not shared.
+DEFAULT_CONCURRENCY = 4
 CONFIGS = HERE / "promptfoo"
 PASSED_RECORD = HERE / "results" / "passed.json"
 
@@ -110,14 +113,21 @@ def cost_lines(results_dir: Path) -> list[str]:
     return lines + [f"cost  total: ${total:.2f}"] if lines else []
 
 
+def concurrency(flag, env) -> int:
+    """--concurrency, else KAIRYN_EVAL_CONCURRENCY, else DEFAULT_CONCURRENCY; never below 1."""
+    value = flag if flag is not None else int(env.get("KAIRYN_EVAL_CONCURRENCY", DEFAULT_CONCURRENCY))
+    return max(1, value)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("names", nargs="*", help="eval names (init, check, requirements); default: all")
     ap.add_argument("--all-evals", action="store_true", help="ignore the unchanged-since-last-pass record")
-    ap.add_argument("--concurrency", type=int, default=1, help="parallel claude sessions (default 1)")
+    ap.add_argument("--concurrency", type=int, help=f"parallel claude sessions (default {DEFAULT_CONCURRENCY})")
     args = ap.parse_args(argv)
 
     runs = int(os.environ.get("KAIRYN_EVAL_RUNS", DEFAULT_RUNS))
+    jobs = concurrency(args.concurrency, os.environ)
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     results_dir = HERE / "results" / run_id
     record = load_record(PASSED_RECORD)
@@ -141,7 +151,7 @@ def main(argv=None) -> int:
                "PROMPTFOO_DISABLE_TELEMETRY": "1", "PROMPTFOO_DISABLE_UPDATE": "1"}
         # promptfoo exits non-zero when any single run fails; the pass-rate gate below decides instead.
         subprocess.run(["npx", "--yes", PROMPTFOO, "eval", "-c", str(cfg), "--repeat", str(runs), "--no-cache",
-                        "--no-progress-bar", "-j", str(args.concurrency), "-o", str(out_json)], env=env, cwd=HERE)
+                        "--no-progress-bar", "-j", str(jobs), "-o", str(out_json)], env=env, cwd=HERE)
         if not out_json.exists():
             summary.append(f"{name}: FAIL promptfoo produced no results")
             failed = True
