@@ -44,6 +44,8 @@ When a stage finishes it sets its own stage to `done`, updates `updated`, then:
 
 Open questions are not tracked in `STATE.md`. They live in `REQUIREMENTS.md`, and waiting on the user is expressed with `status: blocked`.
 
+`requirements` always ends blocked: `REQUIREMENTS.md` ends with `Approval: pending` until the user approves in chat. The agent then writes `Approval: <git user.name>, <timestamp>, "<the user's words>"` and moves on (`status: done` while it is the last stage). `checks.approval_problems` enforces both forms.
+
 ## Time
 
 The model cannot see the clock, and invented timestamps showed up as `T00:00:00Z`. Stages must get them from the system:

@@ -10,3 +10,4 @@ Stages append here.
 - 2026-11-22 [build] Headless `claude -p --permission-mode acceptEdits` refuses Bash beyond simple read-only commands: a globbed `grep` "requires approval". Stage steps that must work in evals use Read and Glob, not shell pipelines.
 - 2026-11-22 [build] On macOS the filesystem ignores case: `GRILL.md` and `grill.md` in one folder are the same file. Draft stage and command files in separate folders.
 - 2026-11-22 [requirements] `evals/checks.py` requires `status: done` after requirements, so a stage that waits for approval (`status: blocked`) fails the eval until the check changes.
+- 2026-11-22 [build] A template that lists every section makes the model fill every section. Asking for all four non-functional needs made it invent them (judge no_invention 3.7); "state only what a source states, else not applicable" brought it to 4.1.

@@ -20,6 +20,10 @@ A stage:
 
 An optional stage (`optional: true` in its front matter) is not in the default stage list. Run it on a task only when it fits: `GRILL.md` (`/kairyn:grill`) before `requirements` when a request is vague, `MODEL-ROUTING.md` after it to cut model cost. It adds itself to the task's `stages`.
 
+## Approve requirements
+
+`requirements` ends with `status: blocked` and `Approval: pending` in `REQUIREMENTS.md`. Read it, then approve in chat. Claude writes `Approval: <your git name>, <timestamp>, "<your words>"` and moves the task on. A reply that does not approve changes nothing. The sections to fill are in `.kairyn/templates/REQUIREMENTS.md`.
+
 ## Add a stage
 
 Copy `.kairyn/stages/_template.md`, give it the next `order`, and list it under `stages:` in `.kairyn/templates/STATE.md`. Required sections: Inputs, Steps, Output, Exit criteria, State update, Learnings.

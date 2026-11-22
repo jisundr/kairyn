@@ -278,3 +278,28 @@ def run_requirements_with_concept(repo: Path) -> dict:
         repo, model=MODEL,
     )
     return {"tasks": task_dirs(repo)}
+
+
+# requirements, then approval in the same conversation: a reply that does not approve, then one that does.
+APPROVER = "Eval User"
+APPROVAL_WORDS = "Approved"
+APPROVAL_ANSWERS = ["Thanks. I will read it later.", f"{APPROVAL_WORDS}."]
+
+
+def run_requirements_approval(repo: Path) -> dict:
+    """Three turns: the stage, a non-approval, an approval. Snapshots STATE.md and REQUIREMENTS.md per turn."""
+    subprocess.run(["git", "config", "user.name", APPROVER], cwd=repo, check=True)
+    turns = []
+
+    def snapshot(i, reply):
+        tasks = task_dirs(repo)
+        read = lambda name: (tasks[0] / name).read_text() if len(tasks) == 1 and (tasks[0] / name).exists() else ""
+        turns.append({"reply": reply, "state": read("STATE.md"), "requirements": read("REQUIREMENTS.md")})
+
+    start = utcnow()
+    claude_session([
+        "Follow the stage definition in .kairyn/stages/REQUIREMENTS.md exactly. "
+        f"Request: {REQUEST} Do not ask clarifying questions; make reasonable assumptions and record them.",
+        *APPROVAL_ANSWERS], repo, model=MODEL, on_turn=snapshot)
+    tasks = task_dirs(repo)
+    return {"task": tasks[0] if len(tasks) == 1 else None, "turns": turns, "start": start, "end": utcnow()}
