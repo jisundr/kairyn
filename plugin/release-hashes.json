@@ -323,5 +323,52 @@
   "CLAUDE.md#kairyn": [
    "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
   ]
+ },
+ "0.7.1": {
+  ".harness/README.md": [
+   "efe793519875f2a1f87dffa403f7308f3dc1380aa2d2b452b2b1ad442289b139"
+  ],
+  ".harness/budgets.yml": [
+   "f46d476c01b092e688b6faf124130b39e218017875e65db27a0f706c1f2c0d31"
+  ],
+  ".harness/workflows/keeping-docs-lean.md": [
+   "f0b1bb0b5abe012a8a402a9a30d53ce24fd96783e8463905eeea58990258d2b4"
+  ],
+  ".harness/workflows/running-stages.md": [
+   "5916033a892435918865cb5474dfc7ef7545adb1c0d3d4ff591c76de5f1e5edd"
+  ],
+  ".harness/workflows/task-lifecycle.md": [
+   "76f8c8004ea83a8c5f256a8abf55608f15a56667b2eade3300c4adee47e8ad53"
+  ],
+  ".kairyn/stages/DESIGN.md": [
+   "a92dff69ff20983d3270057eebcd27f67ba2d0d2a0ee26b8fbef7b9e8bc08bd2"
+  ],
+  ".kairyn/stages/EXIT.md": [
+   "a0bd8202dc72cee634da7ca3bc81b344abb46d11a65c94658ef8d2644be74ec1"
+  ],
+  ".kairyn/stages/GRILL.md": [
+   "47a97ff7ef2f2e8d9bac45e6d0e7c2936121a123ff935e9e0c75d5cfbfe87ba5"
+  ],
+  ".kairyn/stages/MODEL-ROUTING.md": [
+   "97d2fb57693d76e0769f0b03c23d9cdd6b764856a5e9597f549809e2882fd0fb"
+  ],
+  ".kairyn/stages/REQUIREMENTS.md": [
+   "3cf14b8608276d9c1157a4c219b2820769a26fd6bef0859ce545a93b1bdc83e4"
+  ],
+  ".kairyn/stages/_template.md": [
+   "158ad5956fe090568017cf9402ec22cec2755e7d51da5fa2909d4979a08723e2"
+  ],
+  ".kairyn/templates/DESIGN.md": [
+   "e23c1c7fc3c829854e0c9dab2a2fe33206c8c7f132810f1c8bf48f63a92a54bc"
+  ],
+  ".kairyn/templates/REQUIREMENTS.md": [
+   "460795fc6f84d8212232dd779f84f7e2c22f391e682dea290942941e691b320c"
+  ],
+  ".kairyn/templates/STATE.md": [
+   "7b9c8634c40335504aeccbe9fa9c355cf12a81c4a70cf958593ceaec1153df71"
+  ],
+  "CLAUDE.md#kairyn": [
+   "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
+  ]
  }
 }
