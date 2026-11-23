@@ -17,7 +17,7 @@ Stages append here.
 - 2026-11-23 [exit] pytest collects any imported function whose name starts with `test_`. Name check functions in `evals/checks.py` without that prefix (`design_test_plan_problems`).
 - 2026-11-23 [exit] A path check must accept a later mention of a file marked `(new)` once. Designs name a created file again in the test plan without the mark.
 - 2026-11-23 [requirements] To name a hedge word in a stage output, put it in backticks. `checks.ste_problems` skips inline code but counts a quoted "word".
-- 2026-11-23 [design] A plugin skill added during a session is not loaded until the next session (`Unknown skill: kairyn:design`). Follow `.kairyn/stages/<STAGE>.md` directly until then.
 - 2026-11-23 [exit] The writing rule aims at ASD-STE100 about 80% of the way. A hedge that only quotes the eval request does not block a task when `plain_language` passes its gate.
 - 2026-11-23 [exit] A line in `_template.md` Writing changes every stage. Run all five dependent evals at 10 runs, not only the eval of the stage you meant to fix.
 - 2026-11-23 [exit] `/run-evals` with no arguments runs every eval whose dependencies changed, at 10 runs. `--all-evals` with names runs only those names. For a cheap check, name the eval and add `--runs 2`.
+- 2026-11-23 [exit] Give every stage output a template. Without one, grill on Sonnet wrote `# Concept` for `## Concept` in 2 of 10 runs. Read the failure reasons before you blame the model.
