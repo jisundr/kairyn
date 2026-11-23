@@ -4,7 +4,7 @@ Options, not commitments. Each file is one idea, named `<YYYYMMDDHHMMSS>-<slug>.
 
 ## Triage digest (2026-11-22)
 
-Twelve ideas are `inbox` and need a keep, park or drop decision. Closed ideas are in `CHANGELOG.md`.
+Fifteen ideas are `inbox` and need a keep, park or drop decision. Closed ideas are in `CHANGELOG.md`.
 
 | Idea | Playbook | Depends on | AI note |
 |---|---|---|---|
@@ -16,6 +16,9 @@ Twelve ideas are `inbox` and need a keep, park or drop decision. Closed ideas ar
 | [Grill in rounds](20261122105739-grill-rounds.md) | Agents | | From Matt Pocock's grilling skill |
 | [Approval gates hand off](20261123004258-approval-handoff.md) | Agents | | Grill concept gets an approval line |
 | [Eval request hedge](20261123022801-eval-request-hedge.md) | Agents 02 | | Small: reword one eval request |
+| [Evals in a subagent](20261123030659-eval-subagent.md) | Agents | | Dev harness, not shipped |
+| [Retro stage](20261123033554-retro-stage.md) | Agents | | learnings.md at 969/1000 |
+| [Grill on Sonnet](20261123042551-grill-on-sonnet.md) | Agents | | Grill fails 10-run gate on Sonnet |
 | [Plain-English outputs](20261122080759-plain-english-outputs.md) | Agents 01 | | |
 | [Pointer-following checks](20261122080759-instruction-file-checks.md) | Agents 02 | | Partly done |
 | [Skill checks](20261122103416-skill-checks.md) | Agents 02 | | Bears on the stage-skills task |
