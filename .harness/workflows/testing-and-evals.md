@@ -26,21 +26,9 @@ No `claude` calls.
 
 Evals use promptfoo (`npx`, pinned in `evals/run.py`), one `evals/promptfoo/<name>.yaml` each, each test repeated N times. Each repeat calls `provider.py`: one headless `claude` session in a fresh repo, evidence as JSON. `asserts.py` checks it with `evals/checks.py` and a `claude` judge (scores 1 to 5).
 
-Each test sets `metadata.min_pass_rate: {metric: fraction}`; `evals/run.py` fails a metric below it.
+Each eval's gates live in its `evals/promptfoo/<name>.yaml`, the only source: `metadata.min_pass_rate: {metric: fraction}` per metric, `score_gate` for the judge. `evals/run.py` fails a metric below its rate, rounded up: a 2-run smoke needs 2 of 2.
 
 Judge gate: criterion scores average at least 4, none below 3. Plain language: at most 1.0 ASD-STE100 violations per 100 words.
-
-| Eval | Pass when |
-|---|---|
-| init | 90% pass `verify-init.sh --fresh`; 100% keep `.kairyn/` and `CLAUDE.md` (one kairyn block) |
-| check | 90% name the doc that lost its header |
-| requirements | 90%: `well_formed` (ends blocked on approval, real timestamps), `traceable` (criteria cite `request`, `A<n>`, `D<n>` or `R<n>`), `specified` (EARS, non-functional needs, owners), `waits_for_approval`, `uses_concept`; over 3 turns `approval_gate` and `records_approval`; 80% plain language; judge, `no_invention` at least 4 |
-| design | 90%: `design_` well_formed, traceable, options, grounded (paths exist or say `(new)`), waits; over 4 turns approval_gate, `rewrites_option`, records_approval; judge |
-| model-routing | 90%: `well_formed`, `starts_with_baseline` (stage 0), `waits_for_human` (open `D<n>`); 80% plain language; judge |
-| grill | 90% over 4 scripted turns: `well_formed`, `one_question` (with a recommendation), `records_answers`, `waits_for_answer`, `hands_off` (names the folder); 80% plain language; judge |
-| upgrade | 90% upgrade a v0.1.0 repo, name its conflict |
-| exit | 90%: task and closed backlog gone, changelog line, ADR only when due; full learnings start retro |
-| retro | 90%: one right action per learning, no change before approval, each action applied after |
 
 ### Running only what changed
 
@@ -53,9 +41,9 @@ Each config starts with a header naming the plugin files it exercises:
 The selector skips an eval when their hash equals the one saved at its last pass (`evals/results/passed.json`, git-ignored).
 
 ```bash
-/run-evals                   # only evals whose dependencies changed
-/run-evals init --runs 2     # one eval, 2 runs
-/run-evals --all-evals       # everything (a release)
+/run-evals                   # every eval whose dependencies changed, at 10 runs
+/run-evals init --runs 2     # a cheap smoke: one eval, 2 runs
+/run-evals --all-evals       # everything (a release); with names, only those
 /run-evals 20261123T035336Z  # report on a past run
 ```
 
@@ -78,3 +66,7 @@ Each run saves `<name>.json`, evidence and `summary.md` to `evals/results/<run-i
 1. Write `evals/promptfoo/<name>.yaml`: `# depends:` header, thresholds, a `metric` per assertion.
 2. Add a scenario function to `provider.py` and its checks to `asserts.py`.
 3. Run it on current instructions; confirm it can fail.
+4. The fixture must pass the repo's own checks. After adding a harness doc, run `harness_docs.py --write`, or the agent cannot find it.
+5. Give an LLM judge every file the stage could read. A judge given only `report.py` scored true README facts as invented.
+
+To lint a stage output by hand, import `evals/checks.py` with `evals` and `tests` on `sys.path`: it imports `tests/helpers.py`.

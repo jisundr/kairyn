@@ -2,4 +2,4 @@
 
 ## Unreleased
 
-- A test fails when a module in evals/ names a function test_* or a class Test*, which pytest would run by accident. (no-test-prefix-in-checks)
+- testing-and-evals.md points to each eval's yaml for its gates and now holds four eval rules from the first retro. (split-testing-and-evals)
