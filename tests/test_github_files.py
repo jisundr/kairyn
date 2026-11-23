@@ -56,3 +56,18 @@ def test_workflows_exist():
 @pytest.mark.parametrize("workflow", WORKFLOWS, ids=lambda p: p.name)
 def test_workflow_actions_pinned_by_sha(workflow):
     assert unpinned(workflow.read_text()) == []
+
+
+DEPENDABOT = ROOT / ".github" / "dependabot.yml"
+
+
+@pytest.mark.parametrize("ecosystem", ["github-actions", "uv"])
+def test_dependabot_weekly_version_updates(ecosystem):
+    import yaml
+
+    config = yaml.safe_load(DEPENDABOT.read_text())
+    assert config["version"] == 2
+    entries = [u for u in config["updates"] if u["package-ecosystem"] == ecosystem]
+    assert len(entries) == 1
+    assert entries[0]["directory"] == "/"
+    assert entries[0]["schedule"]["interval"] == "weekly"
