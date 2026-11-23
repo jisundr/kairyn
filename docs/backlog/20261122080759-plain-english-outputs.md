@@ -1,6 +1,6 @@
 ---
 title: Stage outputs are not checked for plain English
-status: inbox
+status: dropped
 requester: Jayson
 date: 2026-11-22
 appetite:
@@ -22,3 +22,4 @@ review_by:
 # Log
 
 2026-11-22T08:07:59Z [capture] Created from the playbook by Claude. Status inbox, waiting for triage.
+2026-11-23T09:50:02Z [triage] Dropped as done: the requirements, design, grill and model-routing evals gate `plain_language`. Status dropped. Decided by Jayson De los Reyes.

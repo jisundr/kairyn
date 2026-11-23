@@ -1,9 +1,9 @@
 ---
 title: Parallel tasks can conflict on learnings.md
-status: inbox
+status: triaged
 requester: Jayson
 date: 2026-11-23
-appetite:
+appetite: small batch
 review_by:
 ---
 
@@ -23,3 +23,5 @@ review_by:
 # Log
 
 2026-11-23T09:39:00Z [capture] Created from the playbook by Claude. Status inbox, waiting for triage.
+2026-11-23T09:50:02Z [triage] Kept: small. Status triaged. Decided by Jayson De los Reyes.
+2026-11-23T09:55:02Z [appetite] Set to small batch. Decided by Jayson De los Reyes.

@@ -1,9 +1,9 @@
 ---
 title: No check that agents follow context pointers
-status: inbox
+status: triaged
 requester: Jayson
 date: 2026-11-22
-appetite:
+appetite: small batch
 review_by:
 ---
 
@@ -17,8 +17,12 @@ review_by:
 - Already covered: size budgets (`budgets.yml`), `read_when` headers, the generated index (`harness_docs.py`).
 - Not covered: playbook step 8 (follow the pointer) and step 6 (no dynamic values in the prefix).
 
+**Merged in:** [skill-checks](20261122103416-skill-checks.md). Commands and stage headers are not checked as skills: stage `purpose` says what, not when, and no test checks name format, description length or triggering. One eval can check both: a sample prompt loads the right doc or skill.
+
 **Notes:** Partly done. Inference: small appetite.
 
 # Log
 
 2026-11-22T08:07:59Z [capture] Created from the playbook by Claude. Status inbox, waiting for triage.
+2026-11-23T09:50:02Z [triage] Kept, with skill-checks merged in. Status triaged. Decided by Jayson De los Reyes.
+2026-11-23T09:55:02Z [appetite] Set to small batch. Decided by Jayson De los Reyes.
