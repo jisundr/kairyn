@@ -21,6 +21,5 @@ Next: build-stage. Parked ideas are reviewed by 2027-02-23. Closed ideas are in 
 | [Multi-repo support](20261122080759-multi-repo.md) | parked | | | |
 | [Hedges in backticks](20261123110952-hedge-words-in-backticks.md) | parked | | | |
 | [Shared harness docs](20261123110952-shared-harness-docs.md) | parked | | | |
-| [Split testing-and-evals.md](20261123112203-split-testing-and-evals.md) | triaged | small | | 4 merged |
 
 Rechecked 2026-11-23 against knowledge-base `be5dbfa`.
