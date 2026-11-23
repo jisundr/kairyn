@@ -14,12 +14,12 @@ The repo is on GitHub (`jisundr/kairyn`), so changes go through pull requests, n
 ```bash
 uv run pytest                       # tests, fast
 claude plugin validate plugin       # manifest and component validation
-uv run python evals/run.py         # only evals whose dependencies changed
+/run-evals                         # evals whose dependencies changed, in a subagent
 ```
 
 - If you changed a file that init installs (stages, templates, `plugin/harness/`), run `uv run python scripts/release_hashes.py --write`. A test fails until `plugin/release-hashes.json` has the new hashes. It needs full git history.
-- If you changed anything under `plugin/`, run the evals that depend on it. Skipped evals are fine only when the selector says the dependencies are unchanged.
-- Before a release, run everything with `uv run python evals/run.py --all-evals`.
+- If you changed anything under `plugin/`, run the evals that depend on it with `/run-evals`. Skipped evals are fine only when the selector says the dependencies are unchanged.
+- Before a release, run everything with `/run-evals --all-evals`.
 - Put the eval summary in the PR description when evals ran. Quote numbers, not "passed".
 
 ## CI

@@ -7,14 +7,12 @@ load: on-demand
 
 # Testing and evals
 
-Two layers.
-
 | | Tests (`tests/`) | Evals (`evals/`) |
 |---|---|---|
 | Result | Same every time | A pass rate over N runs |
 | Speed and cost | Under a second, free | 3 to 7 minutes per eval, uses tokens |
 | Runs | Always | Only when dependencies changed |
-| Command | `uv run pytest` | `uv run python evals/run.py` |
+| Command | `uv run pytest` | `/run-evals` |
 
 ## Tests
 
@@ -22,11 +20,11 @@ Two layers.
 uv run pytest
 ```
 
-Plugin shape, scripts, eval checks, selector, gates. Never calls `claude`.
+Plugin shape, scripts, eval checks, selector, gates. No `claude` calls.
 
 ## Evals
 
-Evals use promptfoo (via `npx`, pinned in `evals/run.py`), one `evals/promptfoo/<name>.yaml` each, each test repeated N times (default 10). Each repeat calls `provider.py`: one headless `claude` session in a fresh repo, evidence as JSON. `asserts.py` checks it with `evals/checks.py` and a `claude` judge (1 to 5 per criterion).
+Evals use promptfoo (via `npx`, pinned in `evals/run.py`), one `evals/promptfoo/<name>.yaml` each, each test repeated N times. Each repeat calls `provider.py`: one headless `claude` session in a fresh repo, evidence as JSON. `asserts.py` checks it with `evals/checks.py` and a `claude` judge (1 to 5 per criterion).
 
 Each test sets `metadata.min_pass_rate: {metric: fraction}`; `evals/run.py` fails a metric below it.
 
@@ -36,9 +34,9 @@ Judge gate: criterion scores average at least 4, none below 3. Plain language: a
 |---|---|
 | init | 90% pass `verify-init.sh --fresh`; 100% keep `.kairyn/` and `CLAUDE.md` (one kairyn block) |
 | check | 90% name the doc that lost its header |
-| requirements | `requirements` runs via its skill. 90%: `well_formed` (ends blocked on approval, real timestamps), `traceable` (criteria cite `request`, `A<n>`, `D<n>` or `R<n>`), `specified` (EARS, non-functional needs, owners), `waits_for_approval`, `uses_concept`; over 3 turns `approval_gate` and `records_approval`; 80% plain language; judge, `no_invention` at least 4 |
-| design | Via its skill, 90%: `design_` well_formed, traceable, options, grounded (paths exist or say `(new)`), waits; over 4 turns approval_gate, `rewrites_option`, records_approval; judge |
-| model-routing | Via its skill. 90%: `well_formed`, `starts_with_baseline` (stage 0), `waits_for_human` (open `D<n>`); 80% plain language; judge |
+| requirements | 90%: `well_formed` (ends blocked on approval, real timestamps), `traceable` (criteria cite `request`, `A<n>`, `D<n>` or `R<n>`), `specified` (EARS, non-functional needs, owners), `waits_for_approval`, `uses_concept`; over 3 turns `approval_gate` and `records_approval`; 80% plain language; judge, `no_invention` at least 4 |
+| design | 90%: `design_` well_formed, traceable, options, grounded (paths exist or say `(new)`), waits; over 4 turns approval_gate, `rewrites_option`, records_approval; judge |
+| model-routing | 90%: `well_formed`, `starts_with_baseline` (stage 0), `waits_for_human` (open `D<n>`); 80% plain language; judge |
 | grill | 90% over 4 scripted turns: `well_formed`, `one_question` (with a recommendation), `records_answers`, `waits_for_answer`, `hands_off` (names the folder); 80% plain language; judge |
 | upgrade | 90% upgrade a v0.1.0 repo, name its conflict |
 | exit | 90%: task and closed backlog gone, changelog line, ADR only when due |
@@ -54,10 +52,13 @@ Each config starts with a header naming the plugin files it exercises:
 The selector skips an eval when their hash equals the one saved at its last pass (`evals/results/passed.json`, git-ignored).
 
 ```bash
-uv run python evals/run.py                      # only evals whose dependencies changed
-uv run python evals/run.py init                 # a named eval
-uv run python evals/run.py --all-evals          # everything, e.g. before a release
+/run-evals                   # only evals whose dependencies changed
+/run-evals init --runs 2     # one eval, 2 runs
+/run-evals --all-evals       # everything (a release)
+/run-evals 20261123T035336Z  # report on a past run
 ```
+
+`/run-evals` forks into `.claude/agents/eval-runner.md` (no Edit or Write), runs `evals/run.py` in the background and returns failures, evidence, cost.
 
 A hash is saved only when every metric passed at 10 runs. List every plugin file an eval uses in `# depends:`.
 
