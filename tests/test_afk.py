@@ -132,7 +132,7 @@ def test_slice1_afk_yml_sections():
 def test_slice1_order_resume(repo):
     result = run(repo, "run", TASK)
     assert result.returncode == 0, result.stdout + result.stderr
-    prompts = calls(repo)
+    prompts = [p for p in calls(repo) if "reviewer" not in p]
     assert [re.search(r"\bT\d\b", p).group(0) for p in prompts[:2]] == ["T1", "T2"]
     assert all("BUILD.md" in p for p in prompts[:2]) and "REVIEW.md" in prompts[2] and len(prompts) == 3
     state = task_file(repo, "STATE.md")
@@ -141,7 +141,7 @@ def test_slice1_order_resume(repo):
     assert git(worktree(repo), "branch", "--show-current").strip() == f"kairyn/{TASK}"
     # A blocked task does not run again.
     again = run(repo, "run", TASK)
-    assert again.returncode == 0 and len(calls(repo)) == 3
+    assert again.returncode == 0 and len(calls(repo)) == 4
     assert "blocked" in again.stdout
 
 
@@ -208,3 +208,81 @@ def test_slice1_approve(repo):
 def test_slice1_approve_needs_a_pending_decision(repo):
     result = run(repo, "approve", TASK, "--words", "Ship it")
     assert result.returncode == 1 and result.stdout.startswith("FAIL:")
+
+
+# --- slice 2: reviewer, one fix round, flags ---------------------------------------------------
+
+
+def reviewer_calls(repo):
+    return [p for p in calls(repo) if "reviewer" in p]
+
+
+def test_slice2_reviewer_runs_read_only_after_build(repo):
+    assert run(repo, "run", TASK).returncode == 0
+    prompts = calls(repo)
+    order = ["T1" if "T1" in p and "BUILD.md" in p else "T2" if "T2" in p and "BUILD.md" in p else
+             "reviewer" if "reviewer" in p else "review" for p in prompts]
+    assert order == ["T1", "T2", "reviewer", "review"]
+    args = (repo.parent / "stub.log.args").read_text().splitlines()[2]
+    assert "--disallowedTools" in args and "Edit" in args and "Write" in args
+    assert "bypassPermissions" not in args
+    assert "Findings: none" in task_file(repo, "BUILD.md")
+
+
+def test_slice2_fix_round_clears_a_finding(repo):
+    assert run(repo, "run", TASK, mode="review_fixable").returncode == 0
+    assert sum("fix round" in p for p in calls(repo)) == 1 and len(reviewer_calls(repo)) == 2
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("review", "blocked"), "the run reached review"
+    assert "fix: cover VALUE 0" in git(worktree(repo), "log", "--format=%s")
+    assert "feature_t1.VALUE has no test for 0." in task_file(repo, "BUILD.md")
+
+
+def test_slice2_escalates(repo):
+    """D3: one fix round only. A finding that stays blocks the run with the finding."""
+    assert run(repo, "run", TASK, mode="review_stuck").returncode == 0
+    assert sum("fix round" in p for p in calls(repo)) == 1 and len(reviewer_calls(repo)) == 2
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("build", "blocked")
+    assert re.search(r"\[build\] Blocked: .*fix round.*feature_t1.VALUE has no test for 0", state)
+
+
+def test_slice2_fix_round_must_stay_green(repo, tmp_path):
+    """D3: after the fix round each done command must still exit 0."""
+    (repo / "docs" / "tasks" / TASK / "DESIGN.md").write_text(
+        DESIGN.format(task=TASK).replace("`python3 check_t2.py`", "`python3 check_t2.py && grep -vq fixed feature_t1.py`"))
+    git(repo, "commit", "-qam", "green check that the fix breaks")
+    assert run(repo, "run", TASK, mode="review_fixable").returncode == 0
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("build", "blocked")
+    assert re.search(r"\[build\] Blocked: .*T2.*after the fix round", state)
+
+
+def test_slice2_flags(repo):
+    """D12, D19: a feat commit that edits a test file, and an added escape hatch, are listed for the reviewer."""
+    assert run(repo, "run", TASK, mode="weaken").returncode == 0
+    build = task_file(repo, "BUILD.md")
+    assert re.search(r"test edit: `check_t1.py` in feat\(T1\)", build)
+    assert "check_t1.py" in reviewer_calls(repo)[0]
+
+
+def test_slice2_escape_hatch_flag(repo):
+    assert run(repo, "run", TASK, mode="noqa").returncode == 0
+    build = task_file(repo, "BUILD.md")
+    assert re.search(r"escape hatch: `feature_t1.py:1` `# noqa` in feat\(T1\)", build)
+    assert "# noqa" in reviewer_calls(repo)[0]
+
+
+def test_slice2_escape_hatches_come_from_afk_yml():
+    sys.path.insert(0, str(PLUGIN / "scripts"))
+    import afk
+    assert "# noqa" in afk.escape_patterns({})
+    assert afk.escape_patterns({"escape_hatches": ["TODO"]}) == ["TODO"]
+
+
+def test_slice2_review_and_retro_turn_findings_into_constraints():
+    """D20: review writes leftover findings to learnings as constraints; retro sends them to the backlog."""
+    review = (PLUGIN / "stages" / "REVIEW.md").read_text()
+    assert "learnings.md" in review.split("## Learnings", 1)[1] and "lint rule" in review
+    steps = (PLUGIN / "stages" / "RETRO.md").read_text().split("## Steps", 1)[1]
+    assert "agent-written code" in steps and "lint rule" in steps

@@ -22,6 +22,8 @@ purpose: Build one slice T<n> of an approved DESIGN.md test-first, in two commit
 
 Never edit, skip or weaken a test from step 3 to get exit 0. Never add a lint suppression to get exit 0.
 
+A fix round prompt lists reviewer findings instead of a `T<n>`. Fix them in one `fix: <what>` commit, and keep every test.
+
 ## Output
 Two commits on the task branch. Change no file in `docs/tasks/`: `afk.py` owns them.
 
