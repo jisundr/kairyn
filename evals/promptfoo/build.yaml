@@ -1,0 +1,15 @@
+# depends: plugin/scripts/afk.py, plugin/stages/BUILD.md, plugin/templates/BUILD.md, plugin/templates/STATE.md, plugin/scripts/init.sh, plugin/harness/**/*, evals/afk_fixtures.py, evals/afk_claude.py
+description: build stage (afk.py, one slice, reviewer)
+prompts: ["{{scenario}}"]
+providers:
+  - id: file://provider.py
+    config: {timeout: 3600000}
+tests:
+  - description: afk.py builds one slice test-first, keeps the old test, and stops before review
+    vars: {scenario: afk_build}
+    metadata:
+      min_pass_rate: {afk_build_green: 0.9, afk_build_test_first: 0.9, afk_build_tests_kept: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:afk_build_green", metric: afk_build_green}
+      - {type: python, value: "file://asserts.py:afk_build_test_first", metric: afk_build_test_first}
+      - {type: python, value: "file://asserts.py:afk_build_tests_kept", metric: afk_build_tests_kept}

@@ -9,7 +9,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
-from checks import (retro_applied_problems, retro_proposal_problems, retro_scope_problems, chosen_option, design_run_problems, design_test_plan_problems, grounded_problems, options_problems,  # noqa: E402
+from checks import (build_row_problems, flags_problems, gate_row, new_constraint_lines, output_header_problems, red_before_code_problems, review_gap_problems,  # noqa: E402
+                    retro_applied_problems, retro_proposal_problems, retro_scope_problems, chosen_option, design_run_problems, design_test_plan_problems, grounded_problems, options_problems,  # noqa: E402
                     exit_problems, TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_reply_problems, next_routing_stage,  # noqa: E402
                     open_decisions, routing_problems, state_fields, ste_problems, ste_rate, structural_problems,
                     traceability_problems)
@@ -486,3 +487,88 @@ def exit_starts_retro(output, context):
         problems.append("RETRO.md does not wait for approval")
     problems += [f"learning removed before approval: {e[:50]}" for e in d["entries"] if e not in d["learnings"]]
     return _result(problems)
+
+
+# --- AFK stages ------------------------------------------------------------------------------------
+def _front(text: str, key: str) -> str:
+    m = re.search(rf"^{key}:\s*(\S+)", text, re.M)
+    return m.group(1) if m else ""
+
+
+def afk_build_green(output, context):
+    d = json.loads(output)
+    problems = build_row_problems(d["build"])
+    if "[build] All 1 tasks green" not in d["state"]:
+        problems.append("build did not finish: " + (d["state"].strip().splitlines() or ["no STATE.md"])[-1][:160])
+    subjects = [c.split(" ", 1)[1] for c in d["commits"]]
+    if not any(s.startswith("test(T1)") for s in subjects) or not any(s.startswith("feat(T1)") for s in subjects):
+        problems.append(f"no test(T1) and feat(T1) commits: {subjects}")
+    return _result(problems)
+
+
+def afk_build_test_first(output, context):
+    d = json.loads(output)
+    session = next((s for s in d["sessions"] if "BUILD.md" in s["prompt"] and "T1" in s["prompt"]), None)
+    if session is None:
+        return _result(["no build session for T1"])
+    return _result(red_before_code_problems(session["events"], "textstats.py", "test_lines"))
+
+
+def afk_build_tests_kept(output, context):
+    d = json.loads(output)
+    problems = flags_problems(d["build"])
+    if d["test_textstats_changed"]:
+        problems.append("the existing test_textstats.py changed")
+    return _result(problems)
+
+
+def _gate(d: dict, want: str) -> list:
+    row = gate_row(d["gates"], "observability")
+    if not row:
+        return ["GATES.md has no observability row"]
+    problems = [] if row[0] == want else [f"observability is {row[0]}, expected {want}: {' '.join(row[2:])[:160]}"]
+    if not row[2:] or not row[2].startswith("check:"):
+        problems.append("the observability gate ran no check")
+    return problems
+
+
+def afk_gate_check_passes(output, context):
+    d = json.loads(output)
+    problems = _gate(d, "pass")
+    if _front(d["state"], "stage") != "review":
+        problems.append(f"stage is {_front(d['state'], 'stage')}, expected review")
+    return _result(problems)
+
+
+def afk_gate_check_fails(output, context):
+    d = json.loads(output)
+    problems = _gate(d, "fail")
+    if "[gates] Blocked: gate observability check failed" not in d["state"]:
+        problems.append("the run did not block at the failed check")
+    return _result(problems)
+
+
+def afk_review_waits(output, context):
+    d = json.loads(output)
+    review = d["review"]
+    if not review:
+        return _result(["no REVIEW.md"])
+    problems = output_header_problems(review, Path(d["task_path"]).name, "review")
+    if review.strip().splitlines()[-1].strip() != "Decision: pending":
+        problems.append("REVIEW.md does not end with Decision: pending")
+    if (_front(d["state"], "stage"), _front(d["state"], "status")) != ("review", "blocked"):
+        problems.append("STATE.md is not review blocked")
+    return _result(problems)
+
+
+def afk_review_names_gaps(output, context):
+    return _result(review_gap_problems(json.loads(output)["review"]))
+
+
+def afk_review_learnings(output, context):
+    d = json.loads(output)
+    lines = new_constraint_lines(d["learnings_before"], d["learnings"])
+    if not lines:
+        return _result(["review appended no line to learnings.md"])
+    ok = [line for line in lines if re.search(r"lint rule|gate", line, re.I)]
+    return _result([] if ok else [f"no new learning is a lint rule or gate: {lines[0][:120]}"])

@@ -24,7 +24,7 @@ No `claude` calls.
 
 ## Evals
 
-Evals use promptfoo (`npx`, pinned in `evals/run.py`), one `evals/promptfoo/<name>.yaml` each, each test repeated N times. Each repeat calls `provider.py`: one headless `claude` session in a fresh repo, evidence as JSON. `asserts.py` checks it with `evals/checks.py` and a `claude` judge (scores 1 to 5).
+Evals use promptfoo (`npx`, pinned in `evals/run.py`), one `evals/promptfoo/<name>.yaml` each, each test repeated N times. Each repeat calls `provider.py`: one headless `claude` session in a fresh repo, evidence as JSON. `asserts.py` checks it with `evals/checks.py` and a `claude` judge (scores 1 to 5). The `build`, `gates` and `review` evals run `afk.py` with `evals/afk_claude.py` as its `claude`: it keeps each session's transcript and cost.
 
 Each eval's gates live in its `evals/promptfoo/<name>.yaml`, the only source: `metadata.min_pass_rate: {metric: fraction}` per metric, `score_gate` for the judge. `evals/run.py` fails a metric below its rate, rounded up: a 2-run smoke needs 2 of 2.
 

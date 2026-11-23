@@ -242,7 +242,47 @@ def upgrade_conflict(work: Path, scenario: str, run_id: str) -> dict:
             "kairyn_new": (repo / ".kairyn" / "templates" / "STATE.md.kairyn-new").is_file()}
 
 
-SCENARIOS = {f.__name__: f for f in (init_fresh, init_keeps_edits, init_keeps_claude_md, check_broken_doc, requirements,
+# --- AFK stages: afk.py runs them; the asserts read its files and the session transcripts --------------
+from afk_fixtures import make_afk_repo, make_built_branch, run_afk  # noqa: E402
+
+PASSING_CHECK = "observability: textstats.py reads a --lines option and prints the number of lines from stdin.\n"
+FAILING_CHECK = "observability: Each function in textstats.py has a docstring.\n"
+
+
+def _afk(work: Path, scenario: str, run_id: str, **fixture) -> dict:
+    run_dir = RESULTS / scenario / run_id
+    stage = fixture.pop("stage", None)
+    repo = make_afk_repo(work, **fixture)
+    if stage:
+        make_built_branch(repo, stage)
+    out = run_afk(repo, run_dir)
+    for name in ("STATE", "BUILD", "GATES", "REVIEW"):
+        if out[name.lower()]:
+            _save(scenario, run_id, f"{name}.md", out[name.lower()])
+    _save(scenario, run_id, "afk.txt", out["stdout"])
+    out["doc"] = out["review"]
+    return out
+
+
+def afk_build(work: Path, scenario: str, run_id: str) -> dict:
+    return _afk(work, scenario, run_id)
+
+
+def afk_gates_pass(work: Path, scenario: str, run_id: str) -> dict:
+    return _afk(work, scenario, run_id, stage="gates", extra_gates="  observability: true\n",
+                checks="checks:\n  " + PASSING_CHECK)
+
+
+def afk_gates_fail(work: Path, scenario: str, run_id: str) -> dict:
+    return _afk(work, scenario, run_id, stage="gates", extra_gates="  observability: true\n",
+                checks="checks:\n  " + FAILING_CHECK)
+
+
+def afk_review(work: Path, scenario: str, run_id: str) -> dict:
+    return _afk(work, scenario, run_id, stage="review", review_usd=1, chars=True)
+
+
+SCENARIOS = {f.__name__: f for f in (afk_build, afk_gates_pass, afk_gates_fail, afk_review, init_fresh, init_keeps_edits, init_keeps_claude_md, check_broken_doc, requirements,
                                      model_routing, grill, requirements_with_concept, requirements_approval,
                                      upgrade_conflict, exit_decision, exit_plain, design, design_approval,
                                      retro, retro_approval, exit_retro)}
