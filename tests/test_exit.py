@@ -221,3 +221,16 @@ def test_check_reads_the_approval_of_the_last_stage(tmp_path):
     (d / "REQUIREMENTS.md").write_text(REQS.format(task="2026-01-11-plan", approval=APPROVED))
     r = run(tmp_path, "check", "2026-01-11-plan")
     assert r.returncode == 1 and "no approval line in DESIGN.md" in r.stdout, r.stdout
+
+
+def test_check_accepts_a_review_task_with_a_decision(tmp_path):
+    """D11: review records the merge decision as `Decision:`, not `Approval:`."""
+    make_stage_task(tmp_path, "2026-01-12-loop", "review", 'Decision: Eval User, 2026-01-12T10:00:00Z, "Ship it"')
+    r = run(tmp_path, "check", "2026-01-12-loop")
+    assert r.returncode == 0 and r.stdout.strip() == "OK", r.stdout
+
+
+def test_check_refuses_a_review_task_still_pending(tmp_path):
+    make_stage_task(tmp_path, "2026-01-12-loop", "review", "Decision: pending")
+    r = run(tmp_path, "check", "2026-01-12-loop")
+    assert r.returncode == 1 and "no approval line in REVIEW.md" in r.stdout, r.stdout

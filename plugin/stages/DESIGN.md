@@ -13,10 +13,10 @@ purpose: Choose an approach for approved requirements and plan its tasks and tes
 ## Steps
 1. Read `REQUIREMENTS.md`. If its `Approval:` line is missing or `pending`, write nothing. Tell the user to approve the requirements first, and stop.
 2. Get timestamps from `date` (see `_template.md`, Time).
-3. Read the code that each acceptance criterion touches. Name only files you read. Mark each file to create `(new)`.
+3. Read the code each acceptance criterion touches. Name only files you read. Mark new files `(new)`.
 4. Take `CONCEPT.md` decisions as answers. Ask only what the repo leaves open.
 5. Propose 2 or 3 options, each with cost and risk. One is the smallest thing that meets the requirements. Choose one.
-6. Fill `.kairyn/templates/DESIGN.md`. Split the chosen option into small tasks `T<n>` in dependency order, each with a done condition.
+6. Fill `.kairyn/templates/DESIGN.md`. Cut the option into vertical slices `T<n>`, T1 the tracer bullet. Each slice crosses every layer, or says why not. Each has `after:` and `Done: `<command>``.
 7. Number the acceptance criteria `AC<n>` in their `REQUIREMENTS.md` order. Give each one a Test plan row with its tasks and a test.
 
 ## Output
@@ -31,7 +31,7 @@ Update `STATE.md` as in `_template.md`. Set `design` to `done`, then:
 - Until the user approves in chat: keep `Approval: pending`, set `status: blocked`, ask for approval. Never approve for the user.
 - A reply that neither approves nor names an option changes nothing.
 - The user names another option: rewrite `DESIGN.md` for it and keep `Approval: pending`.
-- When the user approves: replace the line with `Approval: <git config user.name>, <timestamp>, "<the user's words>"`. Design is the last stage: set `status: done`.
+- When the user approves: replace the line with `Approval: <git config user.name>, <timestamp>, "<the user's words>"`. Set `stage: build`, `status: in-progress`. `/kairyn:build <task>` starts the AFK run.
 
 ## Learnings
 Append what you learned about the repo to `.kairyn/learnings.md`.

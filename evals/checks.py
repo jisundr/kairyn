@@ -544,8 +544,24 @@ def rejected_option(text: str) -> str | None:
     return next((o for o in option_labels(text) if o != chosen), None) if chosen else None
 
 
+def slice_problems(text: str) -> list[str]:
+    """D13: the T<n> lines are slices afk.py can run: each has a `Done: `<command>``, the graph has no cycle,
+    and each slice after T1 names its blockers with `after:`."""
+    import sys
+    scripts = str(Path(__file__).resolve().parent.parent / "plugin" / "scripts")
+    if scripts not in sys.path:
+        sys.path.insert(0, scripts)
+    from afk import task_graph
+    tasks = section_text(text, "tasks")
+    try:
+        graph = task_graph(tasks)
+    except ValueError as e:
+        return [str(e)]
+    return [f"{t.id} has no after: line" for t in graph if t.id != "T1" and not t.after]
+
+
 def design_run_problems(run: dict, approved: bool = False) -> list[str]:
-    """run = {"task": Path, "start", "end"}. Design waits blocked on approval, then the task is done (last stage)."""
+    """run = {"task": Path, "start", "end"}. Design waits blocked on approval, then hands the task to build (D5)."""
     task = run["task"]
     doc, state = task / "DESIGN.md", task / "STATE.md"
     if not doc.exists():
@@ -556,7 +572,7 @@ def design_run_problems(run: dict, approved: bool = False) -> list[str]:
     except (OSError, AssertionError, yaml.YAMLError) as e:
         return [f"STATE.md unreadable: {e}"]
     problems = []
-    expected = ("design", "done" if approved else "blocked")
+    expected = ("build", "in-progress") if approved else ("design", "blocked")
     if (data.get("stage"), data.get("status")) != expected:
         problems.append(f"stage {data.get('stage')!r} status {data.get('status')!r}, expected {' '.join(expected)}")
     if (data.get("stages") or {}).get("design") != "done":
@@ -567,7 +583,7 @@ def design_run_problems(run: dict, approved: bool = False) -> list[str]:
     problems += timestamp_problems({"created": data.get("updated"), "updated": data.get("updated")}, body,
                                    run["start"], run["end"], stage="design")
     text = doc.read_text()
-    problems += output_header_problems(text, task.name, "design") + design_section_problems(text)
+    problems += output_header_problems(text, task.name, "design") + design_section_problems(text) + slice_problems(text)
     return problems
 
 

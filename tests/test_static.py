@@ -76,11 +76,30 @@ def test_command_has_description_and_valid_script_references(command):
 
 
 
-def test_state_template_lists_design_after_requirements():
-    """Design is a required stage after requirements (D4)."""
+def test_state_template_lists_the_afk_stages_after_design():
+    """Design is required after requirements (ADR 0006); build, gates and review follow it (D6)."""
     data = yaml.safe_load(split_front_matter((PLUGIN / "templates" / "STATE.md").read_text())[0])
-    assert list(data["stages"]) == ["requirements", "design"]
-    assert data["stages"]["design"] == "pending"
+    assert list(data["stages"]) == ["requirements", "design", "build", "gates", "review"]
+    assert set(data["stages"].values()) == {"pending"}
+
+
+def test_design_approval_hands_off_to_build():
+    """D5: design approval starts the AFK run."""
+    update = (PLUGIN / "stages" / "DESIGN.md").read_text().split("## State update", 1)[1]
+    assert "`stage: build`" in update and "status: done" not in update
+
+
+def test_design_cuts_vertical_slices():
+    """D13: T1 is the tracer bullet; each T<n> has an end-to-end done command and after: blockers."""
+    steps = (PLUGIN / "stages" / "DESIGN.md").read_text().split("## Steps", 1)[1].split("\n## ", 1)[0]
+    for word in ("tracer bullet", "after:", "Done: `"):
+        assert word in steps, word
+
+
+def test_afk_stages_follow_design_in_order():
+    orders = [yaml.safe_load(split_front_matter((PLUGIN / "stages" / f"{s}.md").read_text())[0])["order"]
+              for s in ("DESIGN", "BUILD", "GATES", "REVIEW")]
+    assert orders == sorted(orders) == [2, 3, 4, 5]
 
 
 def test_requirements_hands_off_to_design():

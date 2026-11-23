@@ -6,6 +6,9 @@ status: in-progress   # in-progress | blocked | done
 stages:
   requirements: pending   # pending | in-progress | done
   design: pending
+  build: pending
+  gates: pending
+  review: pending
 created: <YYYY-MM-DDTHH:MM:SSZ>
 updated: <YYYY-MM-DDTHH:MM:SSZ>
 ---
