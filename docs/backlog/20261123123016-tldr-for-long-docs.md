@@ -14,7 +14,7 @@ review_by:
 **Problem (AI draft, needs a human to confirm):** A long stage output, such as a `CONCEPT.md` with 20 decisions, makes the reader scan every section to get the gist before an approval. We would know it improved when each long output opens with a short TL;DR under its title.
 
 **Evidence:**
-- `docs/tasks/2026-11-23-build-stage/CONCEPT.md` holds 20 decisions. A TL;DR was added there by hand.
+- The build-stage task's `CONCEPT.md` held 20 decisions; a TL;DR was added there by hand. Exit deleted the folder; git history keeps it.
 - No template in `plugin/templates/` has a TL;DR line. The front matter `summary` is one line for agents, not a reader summary.
 
 **Notes:** Open: what counts as "very long" (a word count, a decision count), and which outputs get it. A template change re-runs the evals of each stage that fills it (`CLAUDE.md`: evals before instructions).
