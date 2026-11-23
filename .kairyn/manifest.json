@@ -18,7 +18,7 @@
     },
     ".kairyn/stages/GRILL.md": {
       "owner": "repo",
-      "sha256": "47a97ff7ef2f2e8d9bac45e6d0e7c2936121a123ff935e9e0c75d5cfbfe87ba5"
+      "sha256": "8bb52a2693cdf962cc46cf40e1e7f971c80c7606b3f8ec2892ae5b2f038babdd"
     },
     ".kairyn/stages/MODEL-ROUTING.md": {
       "owner": "repo",
@@ -31,6 +31,10 @@
     ".kairyn/stages/_template.md": {
       "owner": "repo",
       "sha256": "158ad5956fe090568017cf9402ec22cec2755e7d51da5fa2909d4979a08723e2"
+    },
+    ".kairyn/templates/CONCEPT.md": {
+      "owner": "plugin",
+      "sha256": "45b2e12479e4fa40934930be083828d4f79385d28b4db867304160219dc1be06"
     },
     ".kairyn/templates/DESIGN.md": {
       "owner": "plugin",
@@ -49,5 +53,5 @@
       "sha256": "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
     }
   },
-  "version": "0.7.1"
+  "version": "0.7.2"
 }
