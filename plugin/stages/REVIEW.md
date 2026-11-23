@@ -15,7 +15,7 @@ purpose: Check the built change against its requirements and hand the merge deci
 ## Steps
 1. Read the diff and each acceptance criterion in `REQUIREMENTS.md`.
 2. For each criterion, name its evidence: a test that passes, a `BUILD.md` row or a gate. If you find none, it is a finding.
-3. List each gate that is `not set` or failed, and each file where a defect costs most.
+3. List each gate that is `not set` or failed, each flag and reviewer finding in `BUILD.md`, and each file where a defect costs most.
 4. List findings: a criterion with no evidence, a change outside `DESIGN.md`, or a test that checks nothing.
 5. Fill `.kairyn/templates/REVIEW.md`. Keep its last line `Decision: pending`.
 
@@ -32,4 +32,4 @@ Change no code and no other file.
 None. `afk.py` sets `status: blocked`. The human reads the diff and `REVIEW.md`, then runs `/kairyn:review <task> approve "<words>"` or `reject "<reason>"`.
 
 ## Learnings
-Append what this review taught about the repo to `.kairyn/learnings.md`.
+Append one line to `.kairyn/learnings.md` for each finding and each flag left open, as a constraint: "Ban <X> with a lint rule or gate because <Y>".

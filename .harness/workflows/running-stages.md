@@ -28,7 +28,7 @@ An optional stage (`optional: true` in its front matter) is not in the default s
 
 ## The AFK run: build, gates, review
 
-`/kairyn:build <task>` runs `afk.py` in a worktree with no user turns. For each slice `T<n>`, a fresh `claude -p` follows `BUILD.md`: a `test(T<n>)` commit, then a `feat(T<n>)` commit. The script needs the done command to fail at the first and pass at the second. It then runs the `gates:` in `.kairyn/afk.yml`, and a `REVIEW.md` session. A failed check sets `status: blocked` with the reason. Run `/kairyn:build` again to resume. The run stops once for you: read the diff and `REVIEW.md`, then `/kairyn:review <task> approve "<words>"` or `reject "<reason>"`.
+`/kairyn:build <task>` runs `afk.py` in a worktree with no user turns. For each slice `T<n>`, a fresh `claude -p` follows `BUILD.md`: a `test(T<n>)` commit, then a `feat(T<n>)` commit. The script needs the done command to fail at the first and pass at the second. A read-only reviewer session then reads the diff and the flags (an edited test, an added lint suppression). Its findings get one fix round; if they stay, the run blocks. It then runs the `gates:` in `.kairyn/afk.yml`, and a `REVIEW.md` session. A failed check sets `status: blocked` with the reason. Run `/kairyn:build` again to resume. The run stops once for you: read the diff and `REVIEW.md`, then `/kairyn:review <task> approve "<words>"` or `reject "<reason>"`.
 
 ## Add a stage
 

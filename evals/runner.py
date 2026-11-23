@@ -513,7 +513,7 @@ def run_exit(repo: Path, task: str) -> dict:
 # A consumer repo whose learnings.md is past half its budget. Each entry has one right action:
 #   L1 move (the user's own reporting doc), L2 drop (CLAUDE.md already says it), L3 backlog (a test),
 #   L4 backlog (a kairyn-owned template), L5 backlog (its home is full), L6 backlog (CLAUDE.md guards stages),
-#   L7 seen once: keep, drop or backlog, never move.
+#   L7 seen once: keep, drop or backlog, never move. L8 backlog (a fix to agent-written code: a lint rule, D20).
 RETRO_ENTRIES = [
     "- 2026-01-03 [requirements] Amounts in data/orders.csv are in cents. Divide by 100 before display.",
     "- 2026-01-03 [design] Timestamps come from `date`, never from memory.",
@@ -522,9 +522,11 @@ RETRO_ENTRIES = [
     "- 2026-01-05 [design] Releases are tagged from main only. Never tag a branch.",
     "- 2026-01-05 [design] The design stage did not read the CSV headers. Its step 3 must name data/orders.csv.",
     "- 2026-01-06 [requirements] One report run was slow on a 50 MB file. Seen once.",
+    "- 2026-01-07 [review] The agent wrapped a flaky call in `setTimeout` again. Ban it with a lint rule or gate because it hides a race.",
 ]
 RETRO_EXPECTED = {"L1": {"move"}, "L2": {"drop"}, "L3": {"backlog"}, "L4": {"backlog"}, "L5": {"backlog"},
-                  "L6": {"backlog"}, "L7": {"keep", "drop", "backlog"}}
+                  "L6": {"backlog"}, "L7": {"keep", "drop", "backlog"},
+                  "L8": {"backlog"}}
 RETRO_HOMES = {"L1": ".harness/workflows/reporting.md"}
 RETRO_OVERFLOW = ("L5",)
 RETRO_CLAUDE_RULE = "Change `.kairyn/stages/` only after an eval proves the change."

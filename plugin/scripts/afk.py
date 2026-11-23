@@ -12,7 +12,9 @@ slice `T<n>` and per stage, each with a fresh context.
   - Worktree: <git common dir>/kairyn/worktrees/<task>, branch kairyn/<task>. STATE.md there is the truth.
   - build: one session per T<n> of DESIGN.md, in `after:` order. Each T<n> needs a test(T<n>)
     commit whose done command fails (red) and a feat(T<n>) commit where it exits 0 (green).
-    BUILD.md gets the SHAs and exit codes.
+    BUILD.md gets the SHAs and exit codes. Then the script lists flags (a later commit that edits a
+    test file, an added line that matches `escape_hatches:`), and a read-only reviewer session reads
+    the diff. Findings get one fix round. If a finding stays or a done command fails, the run blocks.
   - gates: each command in .kairyn/afk.yml `gates:`, in order. The exit code decides. An empty
     command is `not set`, never a pass. GATES.md gets one row per gate.
   - review: one session writes REVIEW.md with `Decision: pending`. The run then stops for the human.
@@ -35,7 +37,11 @@ from typing import NamedTuple
 
 PLUGIN = Path(__file__).resolve().parent.parent
 AFK_STAGES = ("build", "gates", "review")
-MODELS = {"build": "opus", "review": "opus"}
+MODELS = {"build": "opus", "reviewer": "opus", "review": "opus"}
+DEFAULT_ESCAPES = ["# noqa", "# type: ignore", "eslint-disable", "@ts-ignore", "@ts-expect-error",
+                   r"pytest\.mark\.skip", r"\.skip\(", r"\bxit\("]
+READ_ONLY = ["--disallowedTools", "Edit,Write,NotebookEdit",
+             "--allowedTools", "Read,Grep,Glob,Bash(git diff:*),Bash(git log:*),Bash(git show:*)"]
 _TASK_LINE = re.compile(r"^- (T\d+):(.*)$", re.M)
 _AFTER = re.compile(r"\bafter:\s*((?:T\d+\s*,?\s*)+)")
 _DONE = re.compile(r"\bDone:\s*`([^`]+)`")
@@ -122,6 +128,11 @@ def parse_afk(text: str) -> dict:
     return {k: (v if v is not None else {}) for k, v in data.items()}
 
 
+def escape_patterns(config: dict) -> list:
+    """The `escape_hatches:` regex list of afk.yml, or the defaults when it has none."""
+    return list(config.get("escape_hatches") or DEFAULT_ESCAPES)
+
+
 def now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -155,6 +166,7 @@ class Run:
         self.common = common if common.is_absolute() else (root / common).resolve()
         self.wt = self.common / "kairyn" / "worktrees" / task
         self.branch = f"kairyn/{task}"
+        self.rounds = []
 
     @property
     def folder(self) -> Path:
@@ -197,9 +209,10 @@ class Run:
         if subprocess.run(["git", "-C", str(self.wt), "diff", "--cached", "--quiet"]).returncode:
             git(self.wt, "commit", "-q", "-m", message)
 
-    def claude(self, stage: str, prompt: str) -> str:
+    def claude(self, stage: str, prompt: str, read_only: bool = False) -> str:
         binary = os.environ.get("KAIRYN_CLAUDE", "claude")
-        cmd = [binary, "-p", prompt, "--model", MODELS.get(stage, "sonnet"), "--permission-mode", "bypassPermissions"]
+        cmd = [binary, "-p", prompt, "--model", MODELS.get(stage, "sonnet")]
+        cmd += READ_ONLY if read_only else ["--permission-mode", "bypassPermissions"]
         result = subprocess.run(cmd, cwd=self.wt, capture_output=True, text=True)
         if result.returncode:
             raise Blocked(f"claude exited {result.returncode}: {(result.stderr or result.stdout).strip()[-300:]}")
@@ -217,6 +230,78 @@ class Run:
             return subprocess.run(command, shell=True, cwd=check, capture_output=True).returncode
         finally:
             subprocess.run(["git", "-C", str(self.root), "worktree", "remove", "--force", str(check)], capture_output=True)
+
+    def config(self) -> dict:
+        path = self.wt / ".kairyn" / "afk.yml"
+        return parse_afk(path.read_text()) if path.is_file() else {}
+
+    def base(self) -> str:
+        return git(self.wt, "merge-base", "HEAD", git(self.root, "rev-parse", "HEAD"))
+
+    def flags(self) -> list:
+        """Lines for BUILD.md: test files that a later commit edits, and added lines that match an escape hatch."""
+        commits = git(self.wt, "log", "--reverse", "--format=%h %s", f"{self.base()}..HEAD").splitlines()
+        patterns = [re.compile(p) for p in escape_patterns(self.config())]
+        tests, found = set(), []
+        for sha, subject in (c.split(" ", 1) for c in commits):
+            label = subject.split(":", 1)[0]
+            if label.startswith("kairyn("):
+                continue
+            files = git(self.wt, "show", "--name-only", "--format=", sha).splitlines()
+            if label.startswith("test("):
+                tests.update(files)
+                continue
+            found += [f"test edit: `{f}` in {label}" for f in files if f in tests]
+            name, line = None, 0
+            for diff_line in git(self.wt, "show", "-U0", "--format=", sha).splitlines():
+                if diff_line.startswith("+++ "):
+                    name = diff_line[6:] if diff_line.startswith("+++ b/") else None
+                elif diff_line.startswith("@@"):
+                    line = int(re.search(r"\+(\d+)", diff_line).group(1))
+                elif diff_line.startswith("+") and name:
+                    hit = next((m for m in (p.search(diff_line[1:]) for p in patterns) if m), None)
+                    if hit:
+                        found.append(f"escape hatch: `{name}:{line}` `{hit.group(0)}` in {label}")
+                    line += 1
+        return found
+
+    def reviewer(self, flags: list) -> list:
+        listed = "\n".join(f"- {f}" for f in flags) or "- none"
+        said = self.claude("reviewer", (
+            f"You are the reviewer for docs/tasks/{self.task}. Read its REQUIREMENTS.md and DESIGN.md and "
+            f"`git diff {self.base()[:12]}..HEAD`. Change nothing. Report each acceptance criterion with no test, "
+            "each change outside DESIGN.md, each test that checks nothing, and each flag below with no good reason. "
+            "Print one line per finding as `FINDING: <text>`, or `FINDINGS: none`.\nFlags:\n" + listed), read_only=True)
+        return [line.split(":", 1)[1].strip() for line in said.splitlines() if line.startswith("FINDING:")]
+
+    def write_sections(self, path: Path, flags: list, findings: list, round_: str) -> None:
+        text = path.read_text().split("\n## Flags\n", 1)[0].rstrip("\n")
+        text += "\n\n## Flags\n" + ("\n".join(f"- {f}" for f in flags) or "- None") + "\n"
+        self.rounds.append(f"- {round_}: " + ("; ".join(findings) if findings else "Findings: none"))
+        text += "\n## Review\n" + "\n".join(self.rounds) + "\n"
+        path.write_text(text)
+
+    def review_loop(self, graph: list, path: Path) -> None:
+        """D3: a read-only reviewer, one fix round, then escalation."""
+        flags = self.flags()
+        findings = self.reviewer(flags)
+        self.write_sections(path, flags, findings, "Review 1")
+        self.commit(f"kairyn({self.task}): review 1")
+        if not findings:
+            return
+        self.claude("build", f"Follow .kairyn/stages/BUILD.md for docs/tasks/{self.task}, fix round. "
+                             "Fix these review findings, keep every test, and commit as `fix: <what>`:\n"
+                             + "\n".join(f"- {f}" for f in findings))
+        for t in graph:
+            code = subprocess.run(t.done, shell=True, cwd=self.wt, capture_output=True).returncode
+            if code:
+                raise Blocked(f"{t.id}: done command exited {code} after the fix round")
+        flags = self.flags()
+        findings = self.reviewer(flags)
+        self.write_sections(path, flags, findings, "Review 2, after the fix round")
+        self.commit(f"kairyn({self.task}): review 2")
+        if findings:
+            raise Blocked("the reviewer still objects after the fix round: " + "; ".join(findings))
 
     def template(self, name: str) -> str:
         return (PLUGIN / "templates" / name).read_text().replace("<YYYY-MM-DD>-<slug>", self.task)
@@ -249,13 +334,13 @@ class Run:
                 raise Blocked(f"{t.id}: green check exited {green} at {feat}")
             path.write_text(path.read_text().rstrip("\n") + f"\n| {t.id} | {test} | {red} | {feat} | {green} |\n")
             self.commit(f"kairyn({self.task}): build {t.id} evidence")
+        self.review_loop(graph, path)
         self.update("build", f"All {len(graph)} tasks green. Next: gates.", stage_status="done", stage="gates")
 
     def gates(self) -> None:
-        config = self.wt / ".kairyn" / "afk.yml"
-        if not config.is_file():
+        if not (self.wt / ".kairyn" / "afk.yml").is_file():
             raise Blocked("no .kairyn/afk.yml with a gates: list")
-        gates = parse_afk(config.read_text()).get("gates") or {}
+        gates = self.config().get("gates") or {}
         path = self.folder / "GATES.md"
         rows = []
         try:
@@ -273,7 +358,7 @@ class Run:
 
     def review(self) -> None:
         self.update("review", "Review started.", stage_status="in-progress")
-        base = git(self.wt, "merge-base", "HEAD", git(self.root, "rev-parse", "HEAD"))
+        base = self.base()
         self.claude("review", f"Follow .kairyn/stages/REVIEW.md for docs/tasks/{self.task}. "
                               f"The change is `git diff {base[:12]}..HEAD`.")
         path = self.folder / "REVIEW.md"
