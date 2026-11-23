@@ -21,3 +21,4 @@ Stages append here.
 - 2026-11-23 [exit] A line in `_template.md` Writing changes every stage. Run all five dependent evals at 10 runs, not only the eval of the stage you meant to fix.
 - 2026-11-23 [exit] `/run-evals` with no arguments runs every eval whose dependencies changed, at 10 runs. `--all-evals` with names runs only those names. For a cheap check, name the eval and add `--runs 2`.
 - 2026-11-23 [exit] Give every stage output a template. Without one, grill on Sonnet wrote `# Concept` for `## Concept` in 2 of 10 runs. Read the failure reasons before you blame the model.
+- 2026-11-23 [requirements] This repo budgets `learnings.md` at 1000 tokens; consumers get the built-in 2000.
