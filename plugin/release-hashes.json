@@ -503,7 +503,8 @@
   ],
   ".kairyn/stages/DESIGN.md": [
    "726c4ea749a3211bc9d3d0866f86a09d317dbd835cf1e2e19fe1c6ca14774836",
-   "a92dff69ff20983d3270057eebcd27f67ba2d0d2a0ee26b8fbef7b9e8bc08bd2"
+   "a92dff69ff20983d3270057eebcd27f67ba2d0d2a0ee26b8fbef7b9e8bc08bd2",
+   "bfc624080c2af6a0a4fa1d09b49547d56a8a2f4867a26cfa937e464ae35f5d05"
   ],
   ".kairyn/stages/EXIT.md": [
    "cf1bb8a9c994546264d0d2c1309b228e0a22809913002a24872166b1f9334775"
@@ -558,6 +559,7 @@
    "7b9c8634c40335504aeccbe9fa9c355cf12a81c4a70cf958593ceaec1153df71"
   ],
   ".kairyn/templates/afk.yml": [
+   "0d708111e5a70df7ea3e16b8c0e3b1105e4b3b17581116405d1d239a2d692826",
    "994eaebf2b74e847e6266d12f745c5e31028b2700646184cd936087feb4902ee"
   ],
   "CLAUDE.md#kairyn": [

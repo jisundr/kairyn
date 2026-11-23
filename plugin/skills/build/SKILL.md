@@ -11,4 +11,5 @@ Start the AFK run for: $ARGUMENTS
 - The argument is a task folder in `docs/tasks/`. With none, use the task whose `STATE.md` has `stage: build`.
 - If `.kairyn/stages/BUILD.md` is missing, tell the user to run `/kairyn:upgrade`, and stop.
 - Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/afk.py run <task>` from the repo root, in the background. It runs for a long time.
+- With `approve T<n> "<words>"`: first run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/afk.py approve <task> --slice T<n> --words "<the user's words>"`. Only the user approves a slice.
 - Do not do its work by hand. When it ends, report its last line: `STOP:` or `BLOCKED:` with the reason.

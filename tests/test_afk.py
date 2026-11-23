@@ -400,3 +400,70 @@ def test_slice3_a_session_that_runs_out_of_budget_is_a_limit(repo):
     state = task_file(repo, "STATE.md")
     assert re.search(r"Blocked: limit build_usd \$10 reached in a session: Reached maximum budget \(\$0\.01\)\. "
                      r"Spent \$0\.13 in build", state)
+
+
+# --- slice 4: approval gates ---------------------------------------------------------------------
+
+
+def mark_t2_for_approval(repo):
+    design = repo / "docs" / "tasks" / TASK / "DESIGN.md"
+    design.write_text(design.read_text().replace("- T2: Widen it.", "- T2: Widen it (approval)."))
+    git(repo, "commit", "-qam", "mark T2")
+
+
+def test_slice4_task_graph_reads_approval_marks():
+    sys.path.insert(0, str(PLUGIN / "scripts"))
+    import afk
+    graph = afk.task_graph("- T1: a. Done: `x` exits 0.\n- T2: b (approval). after: T1. Done: `y` exits 0.\n")
+    assert [t.approval for t in graph] == [False, True]
+
+
+def test_slice4_approval(repo):
+    """D10: build stops before a marked slice; approve records the line and the next run builds it."""
+    mark_t2_for_approval(repo)
+    assert run(repo, "run", TASK).returncode == 0
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("build", "blocked")
+    assert re.search(r"\[build\] Blocked: T2 is marked \(approval\)", state)
+    assert not any("T2" in p for p in calls(repo)), "no session runs for T2 before the approval"
+    result = run(repo, "approve", TASK, "--slice", "T2", "--words", "Migration is fine")
+    assert result.returncode == 0, result.stdout
+    assert re.search(r'^Approval T2: Eval User, \d{4}-\d\d-\d\dT[\d:]+Z, "Migration is fine"$', task_file(repo, "BUILD.md"),
+                     re.M)
+    assert front(task_file(repo, "STATE.md"), "status") == "in-progress"
+    assert run(repo, "run", TASK).returncode == 0
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("review", "blocked")
+
+
+def test_slice4_approve_a_slice_needs_a_marked_slice(repo):
+    run(repo, "run", TASK)
+    result = run(repo, "approve", TASK, "--slice", "T9", "--words", "ok")
+    assert result.returncode == 1 and "T9" in result.stdout
+
+
+def test_slice4_backstop(repo):
+    """D10: a changed path that matches approval: with no approval blocks before the next stage."""
+    set_afk(repo, f"approval:\n  - '**/feature_t2.py'\ngates:\n  testing: {GOOD_GATE}\n")
+    assert run(repo, "run", TASK).returncode == 0
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("gates", "blocked")
+    assert re.search(r"\[gates\] Blocked: approval: `feature_t2.py` matches `\*\*/feature_t2.py` in feat\(T2\)", state)
+    assert not any("REVIEW.md" in p for p in calls(repo))
+    assert run(repo, "approve", TASK, "--slice", "T2", "--words", "ok").returncode == 0
+    assert run(repo, "run", TASK).returncode == 0
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("review", "blocked")
+
+
+def test_slice4_path_patterns():
+    sys.path.insert(0, str(PLUGIN / "scripts"))
+    import afk
+    assert afk.path_matches("db/migrations/001.sql", "**/migrations/**")
+    assert afk.path_matches("migrations/001.sql", "**/migrations/**")
+    assert not afk.path_matches("src/app.py", "**/migrations/**")
+
+
+def test_slice4_design_marks_approval_slices():
+    steps = (PLUGIN / "stages" / "DESIGN.md").read_text().split("## Steps", 1)[1].split("\n## ", 1)[0]
+    assert "(approval)" in steps and "approval:" in steps
