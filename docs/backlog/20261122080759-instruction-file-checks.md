@@ -17,7 +17,7 @@ review_by:
 - Already covered: size budgets (`budgets.yml`), `read_when` headers, the generated index (`harness_docs.py`).
 - Not covered: playbook step 8 (follow the pointer) and step 6 (no dynamic values in the prefix).
 
-**Merged in:** [skill-checks](20261122103416-skill-checks.md). Commands and stage headers are not checked as skills: stage `purpose` says what, not when, and no test checks name format, description length or triggering. One eval can check both: a sample prompt loads the right doc or skill.
+**Merged in:** skill-checks (deleted at exit; in git history). Commands and stage headers are not checked as skills: stage `purpose` says what, not when, and no test checks name format, description length or triggering. One eval can check both: a sample prompt loads the right doc or skill.
 
 **Notes:** Partly done. Inference: small appetite.
 

@@ -11,3 +11,4 @@
 - The shared writing rule now bans hedge words such as `would` in stage outputs, even when quoted from your request. (2026-11-23-eval-request-hedge)
 - Contributors run evals with /run-evals: a background subagent runs them and returns a short report with failures, evidence and cost. (2026-11-23-eval-subagent)
 - Grill fills a new CONCEPT.md template, so its four sections keep the same headings on every run. (2026-11-23-grill-on-sonnet)
+- Added /kairyn:retro: when learnings.md passes half its budget, exit proposes a home, drop or backlog idea for each learning, then applies it on approval. (2026-11-23-retro-stage)
