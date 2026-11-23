@@ -19,7 +19,6 @@ Next: build-stage. Parked ideas are reviewed by 2027-02-23. Closed ideas are in 
 | [Release and monitoring stage](20261122080759-release-stage.md) | parked | | review-stage | |
 | [Post-incident review stage](20261123093900-pir-stage.md) | parked | | release-stage | |
 | [Multi-repo support](20261122080759-multi-repo.md) | parked | | | |
-| [Eval agent early return](20261123110952-forked-eval-agent-early-return.md) | triaged | small | | |
 | [Hedges in backticks](20261123110952-hedge-words-in-backticks.md) | parked | | | |
 | [No test_ in checks](20261123110952-no-test-prefix-in-checks.md) | triaged | small | | |
 | [Shared harness docs](20261123110952-shared-harness-docs.md) | parked | | | |

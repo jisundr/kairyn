@@ -59,7 +59,7 @@ The selector skips an eval when their hash equals the one saved at its last pass
 /run-evals 20261123T035336Z  # report on a past run
 ```
 
-`/run-evals` forks into `.claude/agents/eval-runner.md` (no Edit or Write), runs `evals/run.py` in the background and returns failures, evidence, cost.
+`/run-evals` forks into `.claude/agents/eval-runner.md` (no Edit or Write), runs `evals/run.py` detached (`evals/bg.py`) and returns failures, evidence, cost.
 
 A hash is saved only when every metric passed at 10 runs. List every plugin file an eval uses in `# depends:`.
 

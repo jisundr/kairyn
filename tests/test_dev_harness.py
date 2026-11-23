@@ -36,3 +36,11 @@ def test_eval_runner_can_run_and_read_but_not_edit():
 
 def test_skill_passes_arguments_to_the_fork():
     assert "$ARGUMENTS" in SKILL.read_text()
+
+
+def test_eval_runner_starts_detached_and_waits_in_the_foreground():
+    """A background Bash job dies with the fork when it ends early; evals/bg.py runs the evals in their own session."""
+    text = AGENT.read_text()
+    assert "evals/bg.py start" in text and "evals/bg.py wait" in text
+    assert "run_in_background" not in text and "Monitor" not in text
+    assert "Monitor" not in tool_names(front(AGENT)["tools"])
