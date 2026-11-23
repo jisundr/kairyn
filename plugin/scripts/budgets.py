@@ -51,6 +51,7 @@ FALLBACK_BUDGETS = [
     Budget(".harness/workflows/running-stages.md", 800, "on-demand"),
     Budget(".harness/workflows/task-lifecycle.md", 800, "on-demand"),
     Budget(".harness/workflows/keeping-docs-lean.md", 800, "on-demand"),
+    Budget(".harness/workflows/afk-run.md", 800, "on-demand"),
 ]
 
 

@@ -15,12 +15,12 @@ claude plugin validate plugin       # manifest and component validation
 - **Evals cost real tokens.** Run them with `/run-evals`, only when asked or when `plugin/` changes; `--all-evals` only for a release. Before you start one, name the evals, runs and cost (from the last `summary.md`) and wait for a yes; a typed `/run-evals` or a run id needs none. `uv run pytest` never runs evals.
 - **Tests before code, evals before instructions.** Write the failing test or eval first and watch it fail.
 - **Script what must always work.** Reliable steps go in `plugin/scripts/`, not in model instructions.
-- **Init never overwrites** anything in a user's `.kairyn/`.
-- **Report evidence, not claims.** Quote numbers from `evals/results/<run-id>/summary.md`.
-- Stage files and their outputs are upper case (`REQUIREMENTS.md`); stage names and `STATE.md` values are lower case (`requirements`).
+- **Init never overwrites** a user's `.kairyn/`.
+- **Report evidence, not claims.** Quote numbers from the run's `summary.md`.
+- Stage files and outputs are upper case (`REQUIREMENTS.md`); stage names and `STATE.md` values are lower case.
 - **Keep files lean.** Every markdown file needs a token budget in `.harness/budgets.yml`. Over budget: cut or split, never raise the limit.
 
-If you change a workflow, update its `.harness` doc in the same commit. After adding or editing a `.harness` doc, run `uv run python plugin/scripts/harness_docs.py --write`.
+Change a workflow: update its `.harness` doc in the same commit, then run `uv run python plugin/scripts/harness_docs.py --write`.
 
 <!-- kairyn:start -->
 ## kairyn
@@ -33,6 +33,7 @@ Read a doc only when the task matches; `head -6 <file>` shows its header.
 | When you are... | Read |
 |---|---|
 | looking for the repo layout or principles | `.harness/README.md` |
+| running /kairyn:build or /kairyn:review, or editing afk.yml | `.harness/workflows/afk-run.md` |
 | editing or adding a stage in plugin/stages/ | `.harness/workflows/change-a-stage.md` |
 | changing /kairyn:init, init.sh or verify-init.sh | `.harness/workflows/init.md` |
 | adding or editing a harness doc, or when /kairyn:check fails | `.harness/workflows/keeping-docs-lean.md` |

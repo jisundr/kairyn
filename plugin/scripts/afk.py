@@ -28,6 +28,11 @@ blocks the run with the limit, the cost so far and the last failed command.
 Approval gates: build stops before a slice marked `(approval)` in DESIGN.md until BUILD.md has
 `Approval T<n>: ...`. Before gates and review, each changed path that matches afk.yml `approval:`
 needs an approval of the slice that changed it.
+Publish: with an `origin` remote, each stage ends with a push of kairyn/<task>. Build then opens one
+pull request with gh, review posts REVIEW.md on it, and approve merges it with a merge commit. With no
+remote or no gh, the run logs that and goes on; approve then only records the decision.
+A repo with no .kairyn/afk.yml gets one from the template, and the run stops so a person sets it.
+KAIRYN_GH overrides the gh binary (tests use a stub).
 KAIRYN_CLAUDE overrides the claude binary (tests use a stub).
 
 Standard library only: consumers run this with a plain python3 (3.9 on macOS).
@@ -557,7 +562,68 @@ class Run:
                 if code:
                     raise Blocked(f"readiness: gate {name} exits {code} on the base commit")
 
+    # publish
+    def gh(self) -> str | None:
+        path = os.environ.get("KAIRYN_GH")
+        if path:
+            return path if Path(path).is_file() else None
+        return shutil.which("gh")
+
+    def has_remote(self) -> bool:
+        return "origin" in git(self.root, "remote").split()
+
+    def pr_exists(self, gh: str) -> bool:
+        return subprocess.run([gh, "pr", "view", self.branch, "--json", "url"], cwd=self.root,
+                              capture_output=True).returncode == 0
+
+    def push(self) -> None:
+        result = subprocess.run(["git", "-C", str(self.wt), "push", "-q", "-u", "origin", self.branch],
+                                capture_output=True, text=True)
+        if result.returncode:
+            raise Blocked(f"git push failed: {' '.join(result.stderr.split())[-200:]}")
+
+    def publish(self, done: str) -> None:
+        """After a stage commit: push; after build, open the pull request; after review, post REVIEW.md."""
+        built = done == "build" and self.front("stage") == "gates"
+        if not self.has_remote():
+            if built:
+                self.update("build", "No remote: no push and no pull request.")
+                self.commit(f"kairyn({self.task}): no remote")
+            return
+        self.push()
+        gh = self.gh()
+        if built:
+            if not gh:
+                self.update("build", f"Pushed {self.branch}. No gh: no pull request.")
+            elif not self.pr_exists(gh):
+                base = git(self.root, "symbolic-ref", "--short", "HEAD")
+                title = re.search(r"^title:\s*(.+)$", self.state(), re.M)
+                result = subprocess.run([gh, "pr", "create", "--base", base, "--head", self.branch, "--title",
+                                         title.group(1) if title else self.task, "--body-file",
+                                         str(self.folder / "BUILD.md")], cwd=self.root, capture_output=True, text=True)
+                if result.returncode:
+                    raise Blocked(f"gh pr create failed: {' '.join(result.stderr.split())[-200:]}")
+                self.update("build", f"Pushed {self.branch}. Pull request: {result.stdout.strip()}")
+            self.commit(f"kairyn({self.task}): pull request")
+            self.push()
+        if done == "review" and gh and _DECISION_PENDING.search((self.folder / "REVIEW.md").read_text() if (
+                self.folder / "REVIEW.md").is_file() else "") and self.pr_exists(gh):
+            subprocess.run([gh, "pr", "comment", self.branch, "--body-file", str(self.folder / "REVIEW.md")],
+                           cwd=self.root, capture_output=True)
+
+    def ensure_config(self) -> bool:
+        """A repo set up before afk.yml existed gets it from the template. False: a person must set it first."""
+        target = self.root / ".kairyn" / "afk.yml"
+        if target.is_file():
+            return True
+        source = self.root / ".kairyn" / "templates" / "afk.yml"
+        shutil.copyfile(source if source.is_file() else PLUGIN / "templates" / "afk.yml", target)
+        print("BLOCKED: Created .kairyn/afk.yml. Set the testing gate command, commit the file, then run again.")
+        return False
+
     def run(self) -> int:
+        if not self.ensure_config():
+            return 1
         self.ensure_worktree()
         self.start_stage(self.front("stage") or "")
         if self.front("status") == "in-progress":
@@ -581,6 +647,12 @@ class Run:
                 self.update(stage, f"Blocked: {e}", status="blocked")
                 print(f"BLOCKED: {stage}: {e}")
             self.commit(f"kairyn({self.task}): {stage}")
+            try:
+                self.publish(stage)
+            except Blocked as e:
+                self.update(stage, f"Blocked: {e}", status="blocked")
+                print(f"BLOCKED: {stage}: {e}")
+                self.commit(f"kairyn({self.task}): {stage}")
 
     def decide(self, words: str, approve: bool) -> int:
         path = self.folder / "REVIEW.md"
@@ -590,12 +662,33 @@ class Run:
         name = git(self.root, "config", "user.name")
         line = f'Decision: {name}, {now()}, "{words}"'
         path.write_text(_DECISION_PENDING.sub(line.replace("\\", "\\\\"), path.read_text(), count=1))
-        if approve:
-            self.update("review", f"Approved by {name}.", stage_status="done", status="done")
-        else:
+        if not approve:
             self.update("review", f"Rejected by {name}: {words}", status="blocked")
+            self.commit(f"kairyn({self.task}): decision")
+            print(line)
+            return 0
+        self.update("review", f"Approved by {name}.", stage_status="done", status="done")
         self.commit(f"kairyn({self.task}): decision")
         print(line)
+        gh = self.gh()
+        if not self.has_remote():
+            return 0
+        try:
+            self.push()
+            if gh and self.pr_exists(gh):
+                result = subprocess.run([gh, "pr", "merge", self.branch, "--merge"], cwd=self.root,
+                                        capture_output=True, text=True)
+                if result.returncode:
+                    raise Blocked(f"gh pr merge failed: {' '.join((result.stderr or result.stdout).split())[-200:]}")
+                self.update("review", "Merged with gh pr merge --merge.")
+            else:
+                self.update("review", f"Pushed {self.branch}. No pull request to merge: merge it by hand.")
+        except Blocked as e:
+            self.update("review", f"Blocked: {e}", status="blocked")
+            self.commit(f"kairyn({self.task}): merge")
+            print(f"FAIL: {e}")
+            return 1
+        self.commit(f"kairyn({self.task}): merge")
         return 0
 
 
