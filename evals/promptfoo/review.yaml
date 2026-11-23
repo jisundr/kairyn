@@ -1,0 +1,16 @@
+# depends: plugin/scripts/afk.py, plugin/stages/REVIEW.md, plugin/stages/_template.md, plugin/templates/REVIEW.md, plugin/templates/STATE.md, plugin/scripts/init.sh, plugin/harness/**/*, evals/afk_fixtures.py, evals/afk_claude.py
+description: review stage (REVIEW.md and the merge stop)
+prompts: ["{{scenario}}"]
+providers:
+  - id: file://provider.py
+    config: {timeout: 1800000}
+tests:
+  - description: Review names the unset gate, the flag and the criterion with no code, then waits for the human
+    vars: {scenario: afk_review}
+    metadata:
+      min_pass_rate: {afk_review_waits: 0.9, afk_review_names_gaps: 0.9, afk_review_learnings: 0.8, plain_language: 0.8}
+    assert:
+      - {type: python, value: "file://asserts.py:afk_review_waits", metric: afk_review_waits}
+      - {type: python, value: "file://asserts.py:afk_review_names_gaps", metric: afk_review_names_gaps}
+      - {type: python, value: "file://asserts.py:afk_review_learnings", metric: afk_review_learnings}
+      - {type: python, value: "file://asserts.py:plain_language", metric: plain_language}

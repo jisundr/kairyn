@@ -8,7 +8,7 @@ stages:
   requirements: done   # pending | in-progress | done
   design: done
 created: 2026-11-23T11:38:32Z
-updated: 2026-11-23T13:43:50Z
+updated: 2026-11-23T20:28:56Z
 ---
 
 # Log
@@ -27,3 +27,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-23T13:29:56Z [build] T3 merged in PR #45. T4 built on the feat/afk-loop-t4-approval branch: (approval) marks, approve --slice, the approval: backstop. 487 tests pass.
 2026-11-23T13:34:25Z [build] T4 merged in PR #46. T5 built on the feat/afk-loop-t5-gates branch: security last, AI gate checks, gate summary. 491 tests pass.
 2026-11-23T13:43:50Z [build] T5 merged in PR #47. T6 built on the feat/afk-loop-t6-pr-and-install branch: push, gh pull request and merge, afk.yml from init, afk-run.md. 498 tests pass. Deviation: upgrade.py unchanged; afk.py creates a missing afk.yml from the upgraded template.
+2026-11-23T20:28:56Z [build] T6 merged in PR #48. T7 on the feat/afk-loop-t7-evals branch: build, gates and review evals, README. 505 tests pass. Waiting for the user to approve eval runs.

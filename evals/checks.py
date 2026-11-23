@@ -687,3 +687,73 @@ def retro_applied_problems(run: dict) -> list[str]:
         problems.append(f"retro status {state_fields(run['state']).get('status')!r}, expected done")
     return problems + approval_problems(run["retro"], approved=True, name=run["approver"], words=run["words"],
                                         start=run["start"], end=run["end"])
+
+
+# --- AFK stages: build, gates, review (afk.py drives them; evidence from evals/afk_fixtures.py) -------
+def _tool_calls(events: list) -> list:
+    """[(name, input, result_text, is_error)] in session order, from `claude -p --output-format stream-json`."""
+    calls, results = [], {}
+    for e in events:
+        for c in ((e.get("message") or {}).get("content") or []) if isinstance(e, dict) else []:
+            if not isinstance(c, dict):
+                continue
+            if c.get("type") == "tool_use":
+                calls.append((c.get("id"), c.get("name"), c.get("input") or {}))
+            elif c.get("type") == "tool_result":
+                body = c.get("content")
+                text = body if isinstance(body, str) else " ".join(
+                    b.get("text", "") for b in body or [] if isinstance(b, dict))
+                results[c.get("tool_use_id")] = (text, bool(c.get("is_error")))
+    return [(name, inp, *results.get(cid, ("", False))) for cid, name, inp in calls]
+
+
+_FAILED_RUN = re.compile(r"\b(FAILED|Error|Traceback|AssertionError)\b")
+
+
+def red_before_code_problems(events: list, code_file: str, test_word: str) -> list[str]:
+    """D12 inside one build session: a run of the test that fails comes before the first edit of the code file."""
+    calls = _tool_calls(events)
+    edit = next((i for i, (name, inp, _, _) in enumerate(calls)
+                 if name in ("Write", "Edit", "MultiEdit") and str(inp.get("file_path", "")).endswith(code_file)), None)
+    if edit is None:
+        return [f"the session never edited {code_file}"]
+    red = [i for i, (name, inp, text, err) in enumerate(calls[:edit])
+           if name == "Bash" and test_word in str(inp.get("command", "")) and (err or _FAILED_RUN.search(text))]
+    return [] if red else [f"no failing run of {test_word} before the first edit of {code_file}"]
+
+
+def build_row_problems(build: str, tid: str = "T1") -> list[str]:
+    row = re.search(rf"^\| {tid} \| (\w+) \| (\d+) \| (\w+) \| (\d+) \|", build, re.M)
+    if not row:
+        return [f"BUILD.md has no {tid} row"]
+    return ([f"red exit {row.group(2)} is 0"] if row.group(2) == "0" else []) + \
+        ([f"green exit {row.group(4)} is not 0"] if row.group(4) != "0" else [])
+
+
+def flags_problems(build: str) -> list[str]:
+    flags = build.split("\n## Flags\n", 1)[1].split("\n## ", 1)[0].strip() if "\n## Flags\n" in build else ""
+    return [] if flags == "- None" else [f"flags: {flags or 'no ## Flags section'}"]
+
+
+def gate_row(gates: str, name: str) -> list[str]:
+    row = re.search(rf"^\| {name} \|(.*)$", gates, re.M)
+    return [c.strip() for c in row.group(1).strip(" |").split("|")] if row else []
+
+
+def review_gap_problems(review: str) -> list[str]:
+    """The review fixture has a `not set` security gate, a `# noqa` flag and AC2 (--chars) with no code or test."""
+    low = review.lower()
+    problems = []
+    if "security" not in section_text(review, "gates").lower():
+        problems.append("## Gates does not name the security gate that is not set")
+    if "noqa" not in low:
+        problems.append("REVIEW.md does not name the # noqa flag")
+    findings = section_text(review, "findings")
+    if not re.search(r"AC2|--chars|\bchars\b", findings):
+        problems.append("## Findings does not name AC2 (--chars), which has no code and no test")
+    return problems
+
+
+def new_constraint_lines(before: str, after: str) -> list[str]:
+    old = set(before.splitlines())
+    return [line for line in after.splitlines() if line.startswith("- ") and line not in old]

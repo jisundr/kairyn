@@ -2,9 +2,7 @@
 
 An agentic SDLC that grows with your repo.
 
-**kairyn** is a Tagalized spelling of *cairn*: a pile of stacked stones that marks a trail. Each stage is a marker on the trail, and every run adds a stone back to your repo.
-
-> Early setup. More commands and stages are coming.
+**kairyn** is a Tagalized spelling of *cairn*: stacked stones that mark a trail. Each stage is a marker, and every run adds a stone to your repo.
 
 ## Install (Claude Code)
 
@@ -17,9 +15,11 @@ An agentic SDLC that grows with your repo.
 
 `/kairyn:init` sets up `.kairyn/` (stages, templates, learnings, a manifest), `docs/tasks/`, and a `.harness/` of short workflow docs with size budgets. It adds a marked block to your `CLAUDE.md` (created if needed) that points Claude to those docs. Nothing you already have is overwritten.
 
-`/kairyn:check` verifies doc headers and size budgets with only `python3`. `/kairyn:check write` also refreshes the indexes.
+`/kairyn:check` verifies doc headers and size budgets; `/kairyn:check write` also refreshes the indexes.
 
 `/kairyn:upgrade` brings those files up to a newer plugin and keeps your edits. A session-start hook tells you when to run it.
+
+After you approve a design, `/kairyn:build` builds, gates and reviews it with no user turns, then stops once: you approve the merge with `/kairyn:review`.
 
 ## Layout
 
@@ -31,9 +31,9 @@ An agentic SDLC that grows with your repo.
 │   ├── commands/                     # /kairyn:init, /kairyn:check, /kairyn:upgrade, /kairyn:release
 │   ├── skills/                       # one per stage: /kairyn:<stage>, e.g. /kairyn:design, /kairyn:retro
 │   ├── hooks/hooks.json              # SessionStart: warn when the repo's kairyn files are older
-│   ├── scripts/                      # init, verify, upgrade, version check, doc and budget checkers
+│   ├── scripts/                      # afk.py (the AFK run), init, verify, upgrade, checkers
 │   ├── harness/                      # .harness/ and CLAUDE.md block installed into your repo
-│   ├── stages/                       # copied into .kairyn/stages/: REQUIREMENTS, DESIGN, GRILL, MODEL-ROUTING, EXIT, RETRO, _template
+│   ├── stages/                       # copied into .kairyn/stages/: REQUIREMENTS, DESIGN, BUILD, GATES, REVIEW, GRILL, ...
 │   ├── templates/                    # STATE.md per task, one template per stage output
 │   └── release-hashes.json           # installed-file hashes per release
 ├── tests/                            # fast tests (pytest)

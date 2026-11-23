@@ -1,0 +1,19 @@
+# depends: plugin/scripts/afk.py, plugin/stages/GATES.md, plugin/templates/GATES.md, plugin/templates/STATE.md, plugin/scripts/init.sh, plugin/harness/**/*, evals/afk_fixtures.py, evals/afk_claude.py
+description: gates stage (AI gate checks)
+prompts: ["{{scenario}}"]
+providers:
+  - id: file://provider.py
+    config: {timeout: 1800000}
+tests:
+  - description: A gate check that the code meets passes, and the run goes on to review
+    vars: {scenario: afk_gates_pass}
+    metadata:
+      min_pass_rate: {afk_gate_check_passes: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:afk_gate_check_passes", metric: afk_gate_check_passes}
+  - description: A gate check that the code fails blocks the run with a reason
+    vars: {scenario: afk_gates_fail}
+    metadata:
+      min_pass_rate: {afk_gate_check_fails: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:afk_gate_check_fails", metric: afk_gate_check_fails}
