@@ -7,21 +7,20 @@ A Claude Code plugin: an agentic SDLC that grows with the user's repo. Shipped c
 ```bash
 uv run pytest                       # fast tests, no LLM, always safe
 claude plugin validate plugin       # manifest and component validation
-uv run python evals/run.py         # promptfoo evals: real claude runs, slow, costs tokens
+/run-evals <evals>                  # evals in a subagent, costs tokens
 ```
 
 ## Rules that always apply
 
-- **Evals cost real tokens (3 to 7 minutes each).** Run them only when asked or when `plugin/` changes; `--all-evals` only for a release. `uv run pytest` must never run them.
+- **Evals cost real tokens.** Run them with `/run-evals`, only when asked or when `plugin/` changes; `--all-evals` only for a release. Before you start one, name the evals, runs and cost (from the last `summary.md`) and wait for a yes; a typed `/run-evals` or a run id needs none. `uv run pytest` never runs evals.
 - **Tests before code, evals before instructions.** Write the failing test or eval first and watch it fail.
-- **Script what must always work.** Steps that need to be reliable go in `plugin/scripts/`, not in model instructions.
+- **Script what must always work.** Reliable steps go in `plugin/scripts/`, not in model instructions.
 - **Init never overwrites** anything in a user's `.kairyn/`.
 - **Report evidence, not claims.** Quote numbers from `evals/results/<run-id>/summary.md`.
 - Stage files and their outputs are upper case (`REQUIREMENTS.md`); stage names and `STATE.md` values are lower case (`requirements`).
 - **Keep files lean.** Every markdown file needs a token budget in `.harness/budgets.yml`. Over budget: cut or split, never raise the limit.
-- The remote is GitHub, so it is a pull request, not a merge request.
 
-If you change a workflow, update its `.harness` doc in the same commit. After adding or editing a `.harness` doc, run `uv run python plugin/scripts/harness_docs.py --write`. The doc index is in the kairyn block.
+If you change a workflow, update its `.harness` doc in the same commit. After adding or editing a `.harness` doc, run `uv run python plugin/scripts/harness_docs.py --write`.
 
 <!-- kairyn:start -->
 ## kairyn
