@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+"""A stand-in for `claude -p` in afk.py tests. It acts on the prompt, never calls a model.
+
+STUB_LOG: file that gets one line per call (the prompt).
+STUB_MODE: good (default) | no_red (the test passes before the code exists).
+Build prompts name `T<n>`: the stub makes the test(T<n>) and feat(T<n>) commits.
+Review prompts name REVIEW.md: the stub writes REVIEW.md with `Decision: pending`.
+"""
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+args = sys.argv[1:]
+prompt = args[args.index("-p") + 1] if "-p" in args else ""
+with open(os.environ["STUB_LOG"], "a") as log:
+    log.write(prompt.replace("\n", " ") + "\n")
+mode = os.environ.get("STUB_MODE", "good")
+
+
+def commit(msg, files):
+    for name, text in files.items():
+        Path(name).write_text(text)
+    subprocess.run(["git", "add", *files], check=True)
+    subprocess.run(["git", "commit", "-q", "-m", msg], check=True)
+
+
+task = re.search(r"docs/tasks/([\w-]+)", prompt).group(1)
+build = re.search(r"\b(T\d+)\b", prompt) if "BUILD.md" in prompt else None
+if build:
+    n = build.group(1).lower()
+    check = {f"check_{n}.py": f"import feature_{n}\n"}
+    feature = {f"feature_{n}.py": "VALUE = 1\n"}
+    if mode == "no_red":
+        commit(f"test({build.group(1)}): add check", {**check, **feature})
+        commit(f"feat({build.group(1)}): no-op", {f"feature_{n}.py": "VALUE = 2\n"})
+    else:
+        commit(f"test({build.group(1)}): add check", check)
+        commit(f"feat({build.group(1)}): add feature", feature)
+elif "REVIEW.md" in prompt:
+    Path(f"docs/tasks/{task}/REVIEW.md").write_text(
+        f"---\ntask: {task}\nstage: review\nsummary: \"stub review\"\n---\n\n# Review\n\nDecision: pending\n")

@@ -41,6 +41,12 @@ Evals are **not** in CI: they need credentials and cost tokens. Run them locally
 
 One logical change per commit, message in the imperative. Commits made with Claude Code end with a `Co-Authored-By` trailer, and PR descriptions end with the Claude Code attribution line.
 
+## Feature branches and reverts
+
+A large change merges in slices into one feature branch, then one pull request takes it to `main`. Every merge is a merge commit, never a squash. Then one `git revert -m 1 <merge>` undoes a slice or the whole feature.
+
+After you revert a merge, git counts its commits as merged. To merge that work again, first revert the revert, then merge the fixes.
+
 ## Do not
 
 - Commit `evals/results/`, `.venv/` or caches (all git-ignored).

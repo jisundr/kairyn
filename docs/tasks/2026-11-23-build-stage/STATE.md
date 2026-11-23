@@ -8,7 +8,7 @@ stages:
   requirements: done   # pending | in-progress | done
   design: done
 created: 2026-11-23T11:38:32Z
-updated: 2026-11-23T12:45:22Z
+updated: 2026-11-23T12:53:29Z
 ---
 
 # Log
@@ -42,3 +42,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-23T12:40:23Z [requirements] Approved by Jayson De los Reyes. Next: design.
 2026-11-23T12:42:00Z [design] Wrote DESIGN.md: option A (stdlib afk.py), T1 to T7 as vertical slices, 15 test plan rows. Blocked: waiting for approval in chat.
 2026-11-23T12:45:22Z [design] Approved by Jayson De los Reyes. Design is the last stage: status done. Next: build T1 by hand on a slice branch from the feat/afk-loop branch.
+2026-11-23T12:53:29Z [build] T1 built by hand on the feat/afk-loop-t1-tracer-bullet branch: 461 tests pass. Deviation from D6: afk.py, not each stage, writes STATE.md, BUILD.md and GATES.md, because a script must do what must always work (D7).

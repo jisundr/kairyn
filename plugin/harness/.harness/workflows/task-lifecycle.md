@@ -30,7 +30,7 @@ When a stage finishes: set it `done`, update `updated`, then
 - it was the last stage: leave `stage`, set `status: done`
 - waiting on the user: set `status: blocked` and log why (`requirements` and `design` wait here until the user approves their output)
 
-Each task runs `requirements`, then `design`. Design is the last stage for now, so its approval sets `status: done`.
+Each task runs `requirements`, `design`, `build`, `gates`, `review`. `afk.py` updates `STATE.md` for the last three. The merge decision in `REVIEW.md` sets `status: done`.
 
 ## Time
 

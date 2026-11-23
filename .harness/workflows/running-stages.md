@@ -24,7 +24,11 @@ An optional stage (`optional: true` in its front matter) is not in the default s
 
 ## Approve requirements and design
 
-`requirements` and `design` end with `status: blocked` and `Approval: pending` in their output. Read it, then approve in chat. Claude writes `Approval: <your git name>, <timestamp>, "<your words>"` and moves the task on: requirements to `design`, design to `done`. A reply that does not approve changes nothing. To design another way, name an option from `DESIGN.md`: Claude rewrites it. The sections are in `.kairyn/templates/`.
+`requirements` and `design` end with `status: blocked` and `Approval: pending` in their output. Read it, then approve in chat. Claude writes `Approval: <your git name>, <timestamp>, "<your words>"` and moves the task on: requirements to `design`, design to `build`. A reply that does not approve changes nothing. To design another way, name an option from `DESIGN.md`: Claude rewrites it. The sections are in `.kairyn/templates/`.
+
+## The AFK run: build, gates, review
+
+`/kairyn:build <task>` runs `afk.py` in a worktree with no user turns. For each slice `T<n>`, a fresh `claude -p` follows `BUILD.md`: a `test(T<n>)` commit, then a `feat(T<n>)` commit. The script needs the done command to fail at the first and pass at the second. It then runs the `gates:` in `.kairyn/afk.yml`, and a `REVIEW.md` session. A failed check sets `status: blocked` with the reason. Run `/kairyn:build` again to resume. The run stops once for you: read the diff and `REVIEW.md`, then `/kairyn:review <task> approve "<words>"` or `reject "<reason>"`.
 
 ## Add a stage
 
