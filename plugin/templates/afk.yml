@@ -1,0 +1,30 @@
+# AFK run settings for /kairyn:build (afk.py). Init writes this file once and never overwrites it.
+
+# Cost caps in USD (from each session's total_cost_usd) and minutes per stage. A limit blocks the run.
+limits:
+  build_usd: 10
+  gates_usd: 5
+  review_usd: 3
+  run_usd: 20
+  stage_minutes: 60
+
+# Gates run in this order; security stays last. The exit code decides. An empty command is
+# "not set": never a pass. The testing gate needs a command before an AFK run can start.
+gates:
+  testing:
+  contract:
+  accessibility:
+  performance:
+  observability:
+  security:
+
+# Regex patterns for added lines that turn off a check. afk.py lists each hit for the reviewer.
+escape_hatches:
+  - "# noqa"
+  - "# type: ignore"
+  - "eslint-disable"
+  - "@ts-ignore"
+  - "@ts-expect-error"
+  - 'pytest\.mark\.skip'
+  - '\.skip\('
+  - '\bxit\('

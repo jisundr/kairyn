@@ -19,6 +19,10 @@ slice `T<n>` and per stage, each with a fresh context.
     command is `not set`, never a pass. GATES.md gets one row per gate.
   - review: one session writes REVIEW.md with `Decision: pending`. The run then stops for the human.
 A failed check sets `status: blocked` and logs why. Running `run` again resumes at `stage:`.
+Readiness (before the first stage): the `testing` gate has a command, each set gate exits 0 on the
+base commit, and the worktree has no tracked changes. Limits (afk.yml `limits:`, else DEFAULT_LIMITS):
+a cost cap per stage and per run, from each session's `total_cost_usd`, and minutes per stage. A limit
+blocks the run with the limit, the cost so far and the last failed command.
 KAIRYN_CLAUDE overrides the claude binary (tests use a stub).
 
 Standard library only: consumers run this with a plain python3 (3.9 on macOS).
@@ -40,6 +44,7 @@ AFK_STAGES = ("build", "gates", "review")
 MODELS = {"build": "opus", "reviewer": "opus", "review": "opus"}
 DEFAULT_ESCAPES = ["# noqa", "# type: ignore", "eslint-disable", "@ts-ignore", "@ts-expect-error",
                    r"pytest\.mark\.skip", r"\.skip\(", r"\bxit\("]
+DEFAULT_LIMITS = {"build_usd": 10, "gates_usd": 5, "review_usd": 3, "run_usd": 20, "stage_minutes": 60}
 READ_ONLY = ["--disallowedTools", "Edit,Write,NotebookEdit",
              "--allowedTools", "Read,Grep,Glob,Bash(git diff:*),Bash(git log:*),Bash(git show:*)"]
 _TASK_LINE = re.compile(r"^- (T\d+):(.*)$", re.M)
@@ -86,7 +91,9 @@ def _value(raw: str):
     raw = raw.strip()
     if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in "\"'":
         return raw[1:-1]
-    return int(raw) if re.fullmatch(r"-?\d+", raw) else raw
+    if re.fullmatch(r"-?\d+", raw):
+        return int(raw)
+    return float(raw) if re.fullmatch(r"-?\d*\.\d+", raw) else raw
 
 
 def _strip_comment(line: str) -> str:
@@ -167,6 +174,8 @@ class Run:
         self.wt = self.common / "kairyn" / "worktrees" / task
         self.branch = f"kairyn/{task}"
         self.rounds = []
+        self.run_cost, self.stage_cost, self.stage_name, self.stage_start = 0.0, 0.0, "", 0.0
+        self.last_failed = "none"
 
     @property
     def folder(self) -> Path:
@@ -209,16 +218,80 @@ class Run:
         if subprocess.run(["git", "-C", str(self.wt), "diff", "--cached", "--quiet"]).returncode:
             git(self.wt, "commit", "-q", "-m", message)
 
-    def claude(self, stage: str, prompt: str, read_only: bool = False) -> str:
-        binary = os.environ.get("KAIRYN_CLAUDE", "claude")
-        cmd = [binary, "-p", prompt, "--model", MODELS.get(stage, "sonnet")]
-        cmd += READ_ONLY if read_only else ["--permission-mode", "bypassPermissions"]
-        result = subprocess.run(cmd, cwd=self.wt, capture_output=True, text=True)
-        if result.returncode:
-            raise Blocked(f"claude exited {result.returncode}: {(result.stderr or result.stdout).strip()[-300:]}")
-        return result.stdout.strip()
+    def limits(self) -> dict:
+        return {**DEFAULT_LIMITS, **(self.config().get("limits") or {})}
 
-    def run_at(self, sha: str, command: str) -> int:
+    def start_stage(self, name: str) -> None:
+        import time
+        self.stage_name, self.stage_cost, self.stage_start = name, 0.0, time.monotonic()
+
+    def limit_hit(self, what: str) -> Blocked:
+        return Blocked(f"limit {what} reached: spent ${self.stage_cost:.2f} in {self.stage_name}, "
+                       f"${self.run_cost:.2f} in this run. Last failed command: {self.last_failed}")
+
+    def seconds_left(self) -> float:
+        import time
+        minutes = self.limits()["stage_minutes"]
+        left = minutes * 60 - (time.monotonic() - self.stage_start)
+        if left <= 0:
+            raise Blocked(f"limit stage_minutes {minutes} reached in {self.stage_name}. "
+                          f"Last failed command: {self.last_failed}")
+        return left
+
+    def check_cost(self) -> None:
+        limits = self.limits()
+        stage_cap = limits.get(f"{self.stage_name}_usd")
+        if stage_cap is not None and self.stage_cost >= stage_cap:
+            raise self.limit_hit(f"{self.stage_name}_usd ${stage_cap}")
+        if self.run_cost >= limits["run_usd"]:
+            raise self.limit_hit(f"run_usd ${limits['run_usd']}")
+
+    def claude(self, stage: str, prompt: str, read_only: bool = False) -> str:
+        import json
+        self.check_cost()
+        limits = self.limits()
+        budget = min(limits.get(f"{self.stage_name}_usd", limits["run_usd"]) - self.stage_cost,
+                     limits["run_usd"] - self.run_cost)
+        binary = os.environ.get("KAIRYN_CLAUDE", "claude")
+        cmd = [binary, "-p", prompt, "--model", MODELS.get(stage, "sonnet"), "--output-format", "json",
+               "--max-budget-usd", f"{budget:.2f}"]
+        cmd += READ_ONLY if read_only else ["--permission-mode", "bypassPermissions"]
+        try:
+            result = subprocess.run(cmd, cwd=self.wt, capture_output=True, text=True, timeout=self.seconds_left())
+        except subprocess.TimeoutExpired:
+            raise Blocked(f"limit stage_minutes {limits['stage_minutes']} reached in {self.stage_name}. "
+                          f"Last failed command: {self.last_failed}")
+        try:
+            data = json.loads(result.stdout)
+        except ValueError:
+            data = {"result": result.stdout}
+        text, cost = str(data.get("result") or ""), float(data.get("total_cost_usd") or 0)
+        self.stage_cost += cost
+        self.run_cost += cost
+        errors = "; ".join(data.get("errors") or [])
+        if data.get("subtype") == "error_max_budget_usd":
+            cap = f"{self.stage_name}_usd ${limits[f'{self.stage_name}_usd']}" if f"{self.stage_name}_usd" in limits \
+                else f"run_usd ${limits['run_usd']}"
+            raise Blocked(f"limit {cap} reached in a session: {errors}. Spent ${self.stage_cost:.2f} in "
+                          f"{self.stage_name}, ${self.run_cost:.2f} in this run. Last failed command: {self.last_failed}")
+        if result.returncode:
+            raise Blocked(f"claude exited {result.returncode}: {(errors or result.stderr or text).strip()[-300:]}")
+        return text.strip()
+
+    def command(self, command: str, cwd: Path, label: str) -> int:
+        """Run a check command; remember it when it fails."""
+        try:
+            result = subprocess.run(command, shell=True, cwd=cwd, capture_output=True, text=True,
+                                    timeout=self.seconds_left())
+        except subprocess.TimeoutExpired:
+            raise Blocked(f"limit stage_minutes {self.limits()['stage_minutes']} reached in {self.stage_name}. "
+                          f"Last failed command: `{command}` {label}")
+        if result.returncode:
+            out = " ".join((result.stderr or result.stdout).split())[-200:]
+            self.last_failed = f"`{command}` exit {result.returncode} {label}: {out}"
+        return result.returncode
+
+    def run_at(self, sha: str, command: str, label: str) -> int:
         """Exit code of `command` in a detached checkout of `sha`."""
         check = self.common / "kairyn" / "check" / self.task
         if check.exists():
@@ -227,7 +300,7 @@ class Run:
         check.parent.mkdir(parents=True, exist_ok=True)
         git(self.root, "worktree", "add", "-q", "--detach", str(check), sha)
         try:
-            return subprocess.run(command, shell=True, cwd=check, capture_output=True).returncode
+            return self.command(command, check, label)
         finally:
             subprocess.run(["git", "-C", str(self.root), "worktree", "remove", "--force", str(check)], capture_output=True)
 
@@ -293,7 +366,7 @@ class Run:
                              "Fix these review findings, keep every test, and commit as `fix: <what>`:\n"
                              + "\n".join(f"- {f}" for f in findings))
         for t in graph:
-            code = subprocess.run(t.done, shell=True, cwd=self.wt, capture_output=True).returncode
+            code = self.command(t.done, self.wt, "after the fix round")
             if code:
                 raise Blocked(f"{t.id}: done command exited {code} after the fix round")
         flags = self.flags()
@@ -326,16 +399,19 @@ class Run:
             feat = next((s.split()[0] for s in subjects if s.split(" ", 1)[1].startswith(f"feat({t.id})")), None)
             if not test or not feat:
                 raise Blocked(f"{t.id}: no test({t.id}) and feat({t.id}) commits. Session said: {said[-300:]}")
-            red = self.run_at(test, t.done)
+            red = self.run_at(test, t.done, "at the red check")
             if red == 0:
                 raise Blocked(f"{t.id}: red check passed at {test}: the test did not fail before the code")
-            green = self.run_at(feat, t.done)
+            green = self.run_at(feat, t.done, "at the green check")
             if green:
                 raise Blocked(f"{t.id}: green check exited {green} at {feat}")
             path.write_text(path.read_text().rstrip("\n") + f"\n| {t.id} | {test} | {red} | {feat} | {green} |\n")
             self.commit(f"kairyn({self.task}): build {t.id} evidence")
+            self.check_cost()
         self.review_loop(graph, path)
-        self.update("build", f"All {len(graph)} tasks green. Next: gates.", stage_status="done", stage="gates")
+        self.check_cost()
+        self.update("build", f"All {len(graph)} tasks green. Cost ${self.stage_cost:.2f}. Next: gates.",
+                    stage_status="done", stage="gates")
 
     def gates(self) -> None:
         if not (self.wt / ".kairyn" / "afk.yml").is_file():
@@ -348,7 +424,7 @@ class Run:
                 if not command:
                     rows.append(f"| {name} | not set | - |")
                     continue
-                code = subprocess.run(str(command), shell=True, cwd=self.wt, capture_output=True).returncode
+                code = self.command(str(command), self.wt, f"at gate {name}")
                 rows.append(f"| {name} | {'pass' if code == 0 else 'fail'} | {code} |")
                 if code:
                     raise Blocked(f"gate {name} failed: `{command}` exited {code}")
@@ -364,16 +440,45 @@ class Run:
         path = self.folder / "REVIEW.md"
         if not path.is_file() or not _DECISION_PENDING.search(path.read_text()):
             raise Blocked("review wrote no REVIEW.md with `Decision: pending`")
-        self.update("review", f"Waiting for the merge decision: /kairyn:review {self.task} approve or reject.",
+        self.check_cost()
+        self.update("review", f"Cost ${self.stage_cost:.2f}. Waiting for the merge decision: /kairyn:review {self.task} approve or reject.",
                     status="blocked")
+
+    def readiness(self) -> None:
+        """D18: before the first stage. Untracked files (build output such as __pycache__/) do not count."""
+        out = subprocess.run(["git", "-C", str(self.wt), "status", "--porcelain", "--untracked-files=no"],
+                             check=True, capture_output=True, text=True).stdout
+        own = f"docs/tasks/{self.task}/"   # a person edits STATE.md to resume: that is not a change to the code
+        names = ", ".join(n for n in (line[3:] for line in out.splitlines()) if not n.startswith(own))
+        if names:
+            raise Blocked(f"readiness: the worktree has changes: {names}")
+        if self.front("stage") != "build" or (self.folder / "BUILD.md").exists():
+            return   # gates on the base commit run once, before the first build
+        gates = self.config().get("gates") or {}
+        if not gates.get("testing"):
+            raise Blocked("readiness: the testing gate in .kairyn/afk.yml has no command")
+        for name, command in gates.items():
+            if command:
+                code = self.command(str(command), self.wt, f"at gate {name} on the base commit")
+                if code:
+                    raise Blocked(f"readiness: gate {name} exits {code} on the base commit")
 
     def run(self) -> int:
         self.ensure_worktree()
+        self.start_stage(self.front("stage") or "")
+        if self.front("status") == "in-progress":
+            try:
+                self.readiness()
+            except Blocked as e:
+                self.update(self.front("stage"), f"Blocked: {e}", status="blocked")
+                print(f"BLOCKED: {e}")
+                self.commit(f"kairyn({self.task}): readiness")
         while True:
             stage, status = self.front("stage"), self.front("status")
             if status != "in-progress" or stage not in AFK_STAGES:
                 print(f"STOP: {self.task} is {status} at {stage}. Worktree: {self.wt}")
                 return 0
+            self.start_stage(stage)
             try:
                 getattr(self, stage)()
             except Blocked as e:
