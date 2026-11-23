@@ -71,3 +71,64 @@ def test_dependabot_weekly_version_updates(ecosystem):
     assert len(entries) == 1
     assert entries[0]["directory"] == "/"
     assert entries[0]["schedule"]["interval"] == "weekly"
+
+
+# --- outsider files (R9 to R13, R15) -----------------------------------------
+
+SECURITY = ROOT / "SECURITY.md"
+CONTRIBUTING = ROOT / "CONTRIBUTING.md"
+PR_TEMPLATE = ROOT / ".github" / "pull_request_template.md"
+BUG_FORM = ROOT / ".github" / "ISSUE_TEMPLATE" / "bug_report.yml"
+ISSUE_CONFIG = ROOT / ".github" / "ISSUE_TEMPLATE" / "config.yml"
+REPO_URL = "https://github.com/jisundr/kairyn"
+
+
+def test_security_md_points_to_private_reporting():
+    text = SECURITY.read_text()
+    assert f"{REPO_URL}/security/advisories/new" in text
+    assert "public issue" in text.lower()
+    assert "latest" in text.lower()
+
+
+def test_bug_report_form_asks_for_the_five_fields():
+    import yaml
+
+    form = yaml.safe_load(BUG_FORM.read_text())
+    assert form["name"] and form["description"]
+    ids = {item.get("id") for item in form["body"] if item["type"] != "markdown"}
+    assert {"kairyn-version", "claude-code-version", "os", "steps", "output"} <= ids
+    for item in form["body"]:
+        if item.get("id") in ids:
+            assert item["validations"]["required"] is True
+
+
+def test_issue_chooser_has_no_blank_issues():
+    import yaml
+
+    assert yaml.safe_load(ISSUE_CONFIG.read_text())["blank_issues_enabled"] is False
+
+
+def test_contributing_md_states_the_three_rules():
+    text = CONTRIBUTING.read_text()
+    lower = text.lower()
+    assert "open an issue" in lower and "before" in lower
+    assert "uv run pytest" in text
+    assert "maintainer" in lower and "evals" in lower
+
+
+def test_pull_request_template_has_the_checklist():
+    items = [line for line in PR_TEMPLATE.read_text().splitlines() if line.startswith("- [ ]")]
+    assert len(items) == 3
+    text = "\n".join(items)
+    assert "uv run pytest" in text
+    assert "issue" in text.lower()
+    assert "plugin/" in text and "version" in text.lower()
+
+
+@pytest.mark.parametrize("path", [SECURITY, CONTRIBUTING, PR_TEMPLATE], ids=lambda p: p.name)
+def test_new_markdown_has_its_own_budget(path):
+    from budgets import load_budgets
+
+    rel = path.relative_to(ROOT).as_posix()
+    patterns = [b.pattern for b in load_budgets(ROOT / ".harness" / "budgets.yml")]
+    assert rel in patterns
