@@ -15,6 +15,7 @@ Next: build-stage. Parked ideas are reviewed by 2027-02-23. Closed ideas are in 
 | [Backlog stage](20261122080759-backlog-stage.md) | triaged | big | | |
 | [Parallel learnings conflicts](20261123093900-parallel-learnings.md) | triaged | small | | |
 | [Pointer and skill checks](20261122080759-instruction-file-checks.md) | triaged | small | | |
+| [Public-ready hardening](20261123221958-public-ready.md) | inbox | | | |
 | [Quality gates stage](20261122080759-gates-stage.md) | parked | | build-stage | |
 | [Review and merge stage](20261122080759-review-stage.md) | parked | | gates-stage | |
 | [Release and monitoring stage](20261122080759-release-stage.md) | parked | | review-stage | |
