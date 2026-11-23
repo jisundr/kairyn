@@ -12,3 +12,5 @@ Stages append here.
 - build: `.harness/workflows/running-stages.md` (plugin copy) is at its 800-token budget. The next AFK-run text needs its own harness doc.
 - build: A user's PreToolUse hook can rewrite Bash commands (rtk turned `git diff` into `rtk git diff`), so an allowlist such as `Bash(git diff:*)` stops matching. A read-only session gets its input in the prompt, not from Bash.
 - 2026-11-24 [exit] Test a new AFK path with one real run on a fixture built to hit it. The build-stage stub tests passed, but one real reviewer run found three defects.
+- grill: "No Actions runs" on a new public repo was not billing. `gh workflow run` on a branch with `workflow_dispatch` and a draft PR proved runs start. Test a trigger before you blame billing.
+- requirements: A requirement must start with "The <system> shall" or When/While/If/Where. "`SECURITY.md` shall…" fails `ears_problems`; write "The `SECURITY.md` file shall…".
