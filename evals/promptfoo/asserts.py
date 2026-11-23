@@ -9,7 +9,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
-from checks import (exit_problems, TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_reply_problems, next_routing_stage,  # noqa: E402
+from checks import (chosen_option, design_run_problems, design_test_plan_problems, grounded_problems, options_problems,  # noqa: E402
+                    exit_problems, TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_reply_problems, next_routing_stage,  # noqa: E402
                     open_decisions, routing_problems, state_fields, ste_problems, ste_rate, structural_problems,
                     traceability_problems)
 from runner import JUDGE_MODEL, NO_QUESTIONS, claude  # noqa: E402
@@ -48,7 +49,7 @@ def _run(d: dict) -> dict:
 
 
 def _doc(d: dict) -> str:
-    """The stage output under test: REQUIREMENTS.md, MODEL-ROUTING.md or CONCEPT.md."""
+    """The stage output under test: REQUIREMENTS.md, MODEL-ROUTING.md, CONCEPT.md or DESIGN.md."""
     return d.get("requirements_md") or d.get("doc") or ""
 
 
@@ -302,7 +303,7 @@ def approval_gate(output, context):
 
 
 def records_approval(output, context):
-    """After 'Approved.', the approval line names the approver, the time and the words, and the task is done."""
+    """After 'Approved.', the approval line names the approver, the time and the words, and the task moves to design."""
     d = json.loads(output)
     if not d["task_path"]:
         return _result(["no task folder"])
@@ -322,3 +323,123 @@ def exits_with_adr(output, context):
 def exits_without_adr(output, context):
     """A typo fix has no load-bearing decision: changelog and deletion, no ADR."""
     return _result(exit_problems(json.loads(output), expect_adr=False))
+
+
+# --- design stage: scenario 1 = one run on an approved task; 2 = stage, non-approval, "go with option X", approval -----
+def _design_run(d: dict) -> dict:
+    return {**_run(d), "task": Path(d["task_path"]) if d["task_path"] else None}
+
+
+def design_well_formed(output, context):
+    d = json.loads(output)
+    return _result(design_run_problems(_design_run(d)) if d["task_path"] else ["no task folder"])
+
+
+def design_traceable(output, context):
+    """Each acceptance criterion in REQUIREMENTS.md has a test-plan row with a task and a test."""
+    d = json.loads(output)
+    return _result(design_test_plan_problems(d["doc"], d["requirements"]) if d["doc"] else ["no DESIGN.md"])
+
+
+def design_options(output, context):
+    d = json.loads(output)
+    return _result(options_problems(d["doc"]) if d["doc"] else ["no DESIGN.md"])
+
+
+def design_grounded(output, context):
+    """Each path DESIGN.md names existed before the run, or carries (new)."""
+    d = json.loads(output)
+    return _result(grounded_problems(d["doc"], Path(d["repo_before"])) if d["doc"] else ["no DESIGN.md"])
+
+
+def design_waits(output, context):
+    d = json.loads(output)
+    if not d["task_path"]:
+        return _result(["no task folder"])
+    problems = approval_problems(d["doc"], approved=False)
+    if state_fields((Path(d["task_path"]) / "STATE.md").read_text()).get("status") != "blocked":
+        problems.append("STATE.md status is not blocked")
+    return _result(problems)
+
+
+DESIGN_RUBRIC = """You are grading DESIGN.md, a design for one task in a small repo.
+Besides kairyn setup files, the repo has these three files, and the design could read them all.
+`report.py`:
+```python
+{app}
+```
+`README.md`:
+{readme}
+`data/orders.csv`:
+```
+{orders}
+```
+The approved REQUIREMENTS.md the design was told to read:
+{requirements}
+The designer was told: "{no_questions}" Recorded assumptions are allowed; facts stated as true must come from the inputs.
+
+Score 1-5 on each criterion, then reply with a JSON object first:
+{{"no_invention": n, "sound": n}}
+After the JSON, list each invented fact, file or decision, one per line.
+- no_invention: everything it states about the repo and the requirements is in the inputs above; new files are marked (new)
+- sound: the chosen approach meets every requirement; tasks are small, ordered, and each has a done condition a reviewer can check
+
+DESIGN.md:
+{doc}
+"""
+
+
+def design_quality(output, context):
+    d = json.loads(output)
+    if not d["doc"]:
+        return _result(["no DESIGN.md to grade"])
+    from runner import DESIGN_ORDERS, GRILL_APP, GRILL_README
+    prompt = DESIGN_RUBRIC.format(app=GRILL_APP, readme=GRILL_README, orders=DESIGN_ORDERS, no_questions=NO_QUESTIONS,
+                                  requirements=d["requirements"], doc=d["doc"])
+    return _judge(prompt, Path(d["task_path"]).parent, ("no_invention", "sound"))
+
+
+def _design_turns(output) -> tuple[dict, list[dict]]:
+    d = json.loads(output)
+    return d, d.get("turns") or []
+
+
+def design_approval_gate(output, context):
+    """Until 'Approved.', the task waits: blocked, 'Approval: pending'. The non-approval turn changes nothing."""
+    d, turns = _design_turns(output)
+    if len(turns) != 4:
+        return _result([f"{len(turns)} turns, expected 4"])
+    problems = []
+    for i in (0, 1, 2):
+        if state_fields(turns[i]["state"]).get("status") != "blocked":
+            problems.append(f"turn {i}: status not blocked")
+        problems += [f"turn {i}: {p}" for p in approval_problems(turns[i]["design"], approved=False)]
+    if turns[1]["design"] != turns[0]["design"]:
+        problems.append("turn 1: DESIGN.md changed on a reply that does not approve")
+    return _result(problems)
+
+
+def rewrites_option(output, context):
+    """'Go with option X' (an option turn 0 rejected) rewrites DESIGN.md around X."""
+    d, turns = _design_turns(output)
+    if len(turns) < 3:
+        return _result([f"{len(turns)} turns, expected at least 3"])
+    if not d["option"]:
+        return _result(["turn 0 DESIGN.md has no rejected option to pick"])
+    problems = [] if chosen_option(turns[2]["design"]) == d["option"] else [
+        f"turn 2: Approach chose {chosen_option(turns[2]['design'])!r}, expected {d['option']!r}"]
+    if turns[2]["design"] == turns[1]["design"]:
+        problems.append("turn 2: DESIGN.md not rewritten")
+    return _result(problems)
+
+
+def design_records_approval(output, context):
+    """After 'Approved.', the approval line names the approver, the time and the words, and the task is done."""
+    d = json.loads(output)
+    if not d["task_path"]:
+        return _result(["no task folder"])
+    run = _design_run(d)
+    problems = design_run_problems(run, approved=True)
+    problems += approval_problems(d["doc"], approved=True, name=d["approver"], words=d["words"],
+                                  start=run["start"], end=run["end"])
+    return _result(problems)

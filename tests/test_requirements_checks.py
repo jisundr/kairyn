@@ -126,13 +126,13 @@ def test_recorded_approval_wrong_fields():
     assert len(problems) == 3, problems
 
 
-def _task(tmp_path, status, approval="Approval: pending"):
+def _task(tmp_path, status, approval="Approval: pending", stage="requirements"):
     task = tmp_path / "2026-11-22-dry-run"
     task.mkdir()
     (task / "STATE.md").write_text(f"""---
 task: 2026-11-22-dry-run
 title: Dry run
-stage: requirements
+stage: {stage}
 status: {status}
 stages:
   requirements: done
@@ -155,9 +155,19 @@ def test_unapproved_run_must_end_blocked(tmp_path):
 
 
 def test_unapproved_run_marked_done_is_flagged(tmp_path):
-    assert "stage not advanced and status not blocked" in structural_problems(_task(tmp_path, "done"))
+    assert "stage 'requirements' status 'done', expected requirements blocked" in structural_problems(
+        _task(tmp_path, "done"))
 
 
-def test_approved_run_ends_done(tmp_path):
-    run = _task(tmp_path, "done", 'Approval: Eval User, 2026-11-22T10:05:00Z, "Approved"')
+APPROVED = 'Approval: Eval User, 2026-11-22T10:05:00Z, "Approved"'
+
+
+def test_approved_run_hands_off_to_design(tmp_path):
+    run = _task(tmp_path, "in-progress", APPROVED, stage="design")
     assert structural_problems(run, approved=True) == []
+
+
+def test_approved_run_marked_done_is_flagged(tmp_path):
+    """Design follows requirements (D4), so an approved task is not done."""
+    assert "stage 'requirements' status 'done', expected design in-progress" in structural_problems(
+        _task(tmp_path, "done", APPROVED), approved=True)

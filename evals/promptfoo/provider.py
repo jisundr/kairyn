@@ -14,7 +14,7 @@ HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
 from helpers import PLUGIN, ROOT, make_good_repo, run_verify  # noqa: E402
-from runner import (EXIT_DECISION_TASK, EXIT_PLAIN_TASK, make_exit_repo, run_exit, APPROVAL_WORDS, APPROVER, CONCEPT_DECISIONS, CONCEPT_TASK, CONCEPT_VALUE, GRILL_APP, GRILL_README, GRILL_REQUEST, MODEL, REQUEST, RESULTS, ROUTING_REQUEST,  # noqa: E402
+from runner import (DESIGN_REQUEST, DESIGN_REQUIREMENTS, make_design_repo, run_design, run_design_approval, EXIT_DECISION_TASK, EXIT_PLAIN_TASK, make_exit_repo, run_exit, APPROVAL_WORDS, APPROVER, CONCEPT_DECISIONS, CONCEPT_TASK, CONCEPT_VALUE, GRILL_APP, GRILL_README, GRILL_REQUEST, MODEL, REQUEST, RESULTS, ROUTING_REQUEST,  # noqa: E402
                     claude, make_concept_repo, make_grill_repo, make_routing_repo, new_repo, run_grill, run_model_routing,
                     run_requirements, run_requirements_approval, run_requirements_with_concept, set_cost_dir, tree_hash)
 
@@ -135,6 +135,40 @@ def requirements_approval(work: Path, scenario: str, run_id: str) -> dict:
     return out
 
 
+def _design_repo(work: Path, run_dir: Path) -> Path:
+    """The fixture repo, plus a copy taken before the run: `grounded` checks paths against what existed."""
+    repo = make_design_repo(make_good_repo(new_repo(work, "repo")))
+    shutil.copytree(repo, run_dir / "repo-before", ignore=shutil.ignore_patterns(".git"))
+    return repo
+
+
+def _design_evidence(run: dict, run_dir: Path) -> dict:
+    out = {"request": DESIGN_REQUEST, "requirements": DESIGN_REQUIREMENTS, "repo_before": str(run_dir / "repo-before"),
+           "task_path": None, "doc": "", "start": run["start"].strftime(TS), "end": run["end"].strftime(TS)}
+    if run["task"].is_dir():
+        kept = run_dir / run["task"].name
+        shutil.copytree(run["task"], kept)   # temp repo is deleted; assertions read this copy
+        out["task_path"] = str(kept)
+        doc = kept / "DESIGN.md"
+        out["doc"] = doc.read_text() if doc.exists() else ""
+    return out
+
+
+def design(work: Path, scenario: str, run_id: str) -> dict:
+    run_dir = RESULTS / scenario / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+    return _design_evidence(run_design(_design_repo(work, run_dir)), run_dir)
+
+
+def design_approval(work: Path, scenario: str, run_id: str) -> dict:
+    run_dir = RESULTS / scenario / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+    run = run_design_approval(_design_repo(work, run_dir))
+    (run_dir / "turns.json").write_text(json.dumps(run["turns"], indent=2))
+    return {**_design_evidence(run, run_dir), "turns": run["turns"], "option": run["option"],
+            "approver": APPROVER, "words": APPROVAL_WORDS}
+
+
 def _exit(work: Path, scenario: str, run_id: str, task: str) -> dict:
     repo = make_exit_repo(make_good_repo(new_repo(work, "repo")), task)
     out = run_exit(repo, task)
@@ -170,7 +204,7 @@ def upgrade_conflict(work: Path, scenario: str, run_id: str) -> dict:
 
 SCENARIOS = {f.__name__: f for f in (init_fresh, init_keeps_edits, init_keeps_claude_md, check_broken_doc, requirements,
                                      model_routing, grill, requirements_with_concept, requirements_approval,
-                                     upgrade_conflict, exit_decision, exit_plain)}
+                                     upgrade_conflict, exit_decision, exit_plain, design, design_approval)}
 
 
 def call_api(prompt, options, context):
