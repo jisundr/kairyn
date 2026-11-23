@@ -4,7 +4,7 @@ Options, not commitments. Each file is one idea, named `<YYYYMMDDHHMMSS>-<slug>.
 
 ## Triage digest (2026-11-22)
 
-Fifteen ideas are `inbox` and need a keep, park or drop decision. Closed ideas are in `CHANGELOG.md`.
+Fourteen ideas are `inbox` and need a keep, park or drop decision. Closed ideas are in `CHANGELOG.md`.
 
 | Idea | Playbook | Depends on | AI note |
 |---|---|---|---|
@@ -15,7 +15,6 @@ Fifteen ideas are `inbox` and need a keep, park or drop decision. Closed ideas a
 | [Backlog stage](20261122080759-backlog-stage.md) | SDLC 00 | | This file is a manual run of it |
 | [Grill in rounds](20261122105739-grill-rounds.md) | Agents | | From Matt Pocock's grilling skill |
 | [Approval gates hand off](20261123004258-approval-handoff.md) | Agents | | Grill concept gets an approval line |
-| [Eval request hedge](20261123022801-eval-request-hedge.md) | Agents 02 | | Small: reword one eval request |
 | [Evals in a subagent](20261123030659-eval-subagent.md) | Agents | | Dev harness, not shipped |
 | [Retro stage](20261123033554-retro-stage.md) | Agents | | learnings.md at 969/1000 |
 | [Grill on Sonnet](20261123042551-grill-on-sonnet.md) | Agents | | Grill fails 10-run gate on Sonnet |
