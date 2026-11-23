@@ -1,9 +1,9 @@
 ---
 title: Stages do not gate on approval and hand off to the next stage
-status: inbox
+status: triaged
 requester: Jayson
 date: 2026-11-23
-appetite:
+appetite: small batch
 review_by:
 ---
 
@@ -24,3 +24,5 @@ review_by:
 # Log
 
 2026-11-23T00:42:58Z [capture] Created from a chat request by Claude. Status inbox, waiting for triage.
+2026-11-23T09:50:02Z [triage] Kept: design has the gate; grill has no approval line yet. Status triaged. Decided by Jayson De los Reyes.
+2026-11-23T09:55:02Z [appetite] Set to small batch. Decided by Jayson De los Reyes.
