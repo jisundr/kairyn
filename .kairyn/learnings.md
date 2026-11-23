@@ -20,3 +20,4 @@ Stages append here.
 - 2026-11-23 [design] A plugin skill added during a session is not loaded until the next session (`Unknown skill: kairyn:design`). Follow `.kairyn/stages/<STAGE>.md` directly until then.
 - 2026-11-23 [exit] The writing rule aims at ASD-STE100 about 80% of the way. A hedge that only quotes the eval request does not block a task when `plain_language` passes its gate.
 - 2026-11-23 [exit] A line in `_template.md` Writing changes every stage. Run all five dependent evals at 10 runs, not only the eval of the stage you meant to fix.
+- 2026-11-23 [exit] `/run-evals` with no arguments runs every eval whose dependencies changed, at 10 runs. `--all-evals` with names runs only those names. For a cheap check, name the eval and add `--runs 2`.
