@@ -1,0 +1,20 @@
+# depends: plugin/skills/retro/SKILL.md, plugin/stages/RETRO.md, plugin/stages/_template.md, plugin/templates/RETRO.md, plugin/templates/STATE.md, plugin/scripts/retro.py, plugin/scripts/budgets.py, plugin/scripts/kairyn_files.py, plugin/scripts/init.sh, plugin/harness/**/*
+description: retro stage
+prompts: ["{{scenario}}"]
+providers:
+  - id: file://provider.py
+    config: {timeout: 1800000}
+tests:
+  - description: Retro proposes one action per learning and waits for approval
+    vars: {scenario: retro}
+    metadata:
+      min_pass_rate: {retro_proposes: 0.9, retro_waits: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:retro_proposes", metric: retro_proposes}
+      - {type: python, value: "file://asserts.py:retro_waits", metric: retro_waits}
+  - description: After approval, retro applies each action and records the approval
+    vars: {scenario: retro_approval}
+    metadata:
+      min_pass_rate: {retro_applies: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:retro_applies", metric: retro_applies}

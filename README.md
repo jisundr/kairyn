@@ -29,12 +29,12 @@ An agentic SDLC that grows with your repo.
 ├── plugin/                           # the kairyn plugin
 │   ├── .claude-plugin/plugin.json
 │   ├── commands/                     # /kairyn:init, /kairyn:check, /kairyn:upgrade, /kairyn:release
-│   ├── skills/                       # per stage: /kairyn:requirements, /kairyn:design, /kairyn:grill, /kairyn:model-routing, /kairyn:exit
+│   ├── skills/                       # one per stage: /kairyn:<stage>, e.g. /kairyn:design, /kairyn:retro
 │   ├── hooks/hooks.json              # SessionStart: warn when the repo's kairyn files are older
 │   ├── scripts/                      # init, verify, upgrade, version check, doc and budget checkers
 │   ├── harness/                      # .harness/ and CLAUDE.md block installed into your repo
-│   ├── stages/                       # copied into .kairyn/stages/: REQUIREMENTS, DESIGN, GRILL, MODEL-ROUTING, EXIT, _template
-│   ├── templates/                    # STATE.md per task, REQUIREMENTS.md to fill in
+│   ├── stages/                       # copied into .kairyn/stages/: REQUIREMENTS, DESIGN, GRILL, MODEL-ROUTING, EXIT, RETRO, _template
+│   ├── templates/                    # STATE.md per task, one template per stage output
 │   └── release-hashes.json           # installed-file hashes per release
 ├── tests/                            # fast tests (pytest)
 ├── evals/                            # BDD evals that run real claude sessions
@@ -53,7 +53,7 @@ docs/tasks/<YYYY-MM-DD>-<slug>/
 └── REQUIREMENTS.md       # ends with an approval line
 ```
 
-When the change merges, `/kairyn:exit` leaves an ADR (if a decision was load-bearing) and a `CHANGELOG.md` line, then deletes the folder.
+When the change merges, `/kairyn:exit` leaves an ADR (if a decision was load-bearing) and a `CHANGELOG.md` line, then deletes the folder. When `.kairyn/learnings.md` passes half its budget, exit runs retro to move or drop each learning.
 
 ## Tests and evals
 

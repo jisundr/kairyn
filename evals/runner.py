@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import re
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -506,3 +507,109 @@ def run_exit(repo: Path, task: str) -> dict:
             "adrs": {p.name: p.read_text() for p in sorted(adr_dir.glob("*.md"))} if adr_dir.is_dir() else {},
             "backlog_left": sorted(p.name for p in (repo / "docs" / "backlog").glob("*.md")),
             "learnings": (repo / ".kairyn" / "learnings.md").read_text()}
+
+
+# --- retro stage -------------------------------------------------------------------
+# A consumer repo whose learnings.md is past half its budget. Each entry has one right action:
+#   L1 move (the user's own reporting doc), L2 drop (CLAUDE.md already says it), L3 backlog (a test),
+#   L4 backlog (a kairyn-owned template), L5 backlog (its home is full), L6 backlog (CLAUDE.md guards stages),
+#   L7 seen once: keep, drop or backlog, never move.
+RETRO_ENTRIES = [
+    "- 2026-01-03 [requirements] Amounts in data/orders.csv are in cents. Divide by 100 before display.",
+    "- 2026-01-03 [design] Timestamps come from `date`, never from memory.",
+    "- 2026-01-04 [requirements] The CSV parser crashed twice on an empty line in data/orders.csv. A test for empty lines catches it.",
+    "- 2026-01-04 [design] The STATE.md template has no field for the pull request link.",
+    "- 2026-01-05 [design] Releases are tagged from main only. Never tag a branch.",
+    "- 2026-01-05 [design] The design stage did not read the CSV headers. Its step 3 must name data/orders.csv.",
+    "- 2026-01-06 [requirements] One report run was slow on a 50 MB file. Seen once.",
+]
+RETRO_EXPECTED = {"L1": {"move"}, "L2": {"drop"}, "L3": {"backlog"}, "L4": {"backlog"}, "L5": {"backlog"},
+                  "L6": {"backlog"}, "L7": {"keep", "drop", "backlog"}}
+RETRO_HOMES = {"L1": ".harness/workflows/reporting.md"}
+RETRO_OVERFLOW = ("L5",)
+RETRO_CLAUDE_RULE = "Change `.kairyn/stages/` only after an eval proves the change."
+
+
+def _doc(title: str, read_when: str, body: str) -> str:
+    return (f"---\ntitle: {title}\nsummary: \"{title}.\"\nread_when: \"{read_when}\"\nload: on-demand\n---\n\n"
+            f"# {title}\n\n{body}")
+
+
+def make_retro_repo(repo: Path) -> Path:
+    """Call after make_good_repo (init) and before any commit."""
+    (repo / ".kairyn" / "learnings.md").write_text("# Learnings\n\nStages append here.\n\n" + "\n".join(RETRO_ENTRIES) + "\n")
+    with (repo / ".harness" / "budgets.yml").open("a") as f:
+        f.write('  - {pattern: ".kairyn/learnings.md", max_tokens: 250, load: runtime}\n')
+    wf = repo / ".harness" / "workflows"
+    (wf / "reporting.md").write_text(_doc("Reporting", "changing the report or its CSV input",
+                                          "The report reads `data/orders.csv` and prints totals per customer.\n"))
+    full = _doc("Releasing", "tagging or publishing a release", "")
+    step = "- Run the tests, update the changelog, and tag the release.\n"
+    while len(full) + len(step) <= 3192:   # 798 of 800 tokens: any added rule goes over
+        full += step
+    (wf / "releasing.md").write_text(full)
+    claude_md = repo / "CLAUDE.md"
+    claude_md.write_text(f"# Sample CLI\n\n{RETRO_CLAUDE_RULE}\n\n" + claude_md.read_text())
+    # As /kairyn:check write does: index the new docs, or the repo fails its own doc check.
+    subprocess.run(["python3", str(PLUGIN / "scripts" / "harness_docs.py"), "--write", "--root", str(repo)],
+                   check=True, capture_output=True)
+    return repo
+
+
+def commit_all(repo: Path, message: str = "fixture") -> None:
+    subprocess.run(["git", "add", "-A"], cwd=repo, check=True)
+    subprocess.run(["git", "-c", "user.name=Eval User", "-c", "user.email=eval@example.com", "commit", "-qm", message],
+                   cwd=repo, check=True)
+
+
+def changed_paths(repo: Path) -> list[str]:
+    out = subprocess.run(["git", "status", "--porcelain", "-uall"], cwd=repo, capture_output=True, text=True).stdout
+    return sorted(line[3:].strip('"') for line in out.splitlines() if line.strip())
+
+
+def retro_dirs(repo: Path) -> list[Path]:
+    return sorted((repo / "docs" / "tasks").glob("*-retro*")) if (repo / "docs" / "tasks").is_dir() else []
+
+
+def _read(path: Path) -> str:
+    return path.read_text() if path.is_file() else ""
+
+
+def run_retro(repo: Path) -> dict:
+    """One turn: /kairyn:retro writes the proposal and stops for approval."""
+    commit_all(repo)
+    start = utcnow()
+    reply = claude("/kairyn:retro", repo, plugin=True, model=MODEL)
+    dirs = retro_dirs(repo)
+    return {"reply": reply, "retro_dirs": [d.name for d in dirs], "retro": _read(dirs[0] / "RETRO.md") if dirs else "",
+            "state": _read(dirs[0] / "STATE.md") if dirs else "", "changed": changed_paths(repo),
+            "start": start, "end": utcnow()}
+
+
+def run_retro_approval(repo: Path) -> dict:
+    """Two turns: /kairyn:retro, then the user's approval."""
+    from checks import retro_rows
+    subprocess.run(["git", "config", "user.name", APPROVER], cwd=repo, check=True)
+    commit_all(repo)
+    before = {p.relative_to(repo).as_posix(): p.read_text() for p in (repo / ".harness").rglob("*.md")}
+    before.update({"CLAUDE.md": _read(repo / "CLAUDE.md")})
+    backlog_before = set(p.name for p in (repo / "docs" / "backlog").glob("*.md")) if (repo / "docs" / "backlog").is_dir() else set()
+    budgets_before = _read(repo / ".harness" / "budgets.yml")
+    turns = []
+
+    def snapshot(i, reply):
+        dirs = retro_dirs(repo)
+        turns.append({"reply": reply, "retro": _read(dirs[0] / "RETRO.md") if dirs else "", "changed": changed_paths(repo)})
+
+    start = utcnow()
+    claude_session(["/kairyn:retro", f"{APPROVAL_WORDS}."], repo, plugin=True, model=MODEL, on_turn=snapshot)
+    dirs = retro_dirs(repo)
+    retro = _read(dirs[0] / "RETRO.md") if dirs else ""
+    homes = {p for _, (action, home, _) in retro_rows(retro).items() if action == "move" for p in re.findall(r"`([^`\s]+)`", home)}
+    backlog = repo / "docs" / "backlog"
+    return {"entries": RETRO_ENTRIES, "retro": retro, "state": _read(dirs[0] / "STATE.md") if dirs else "",
+            "learnings": _read(repo / ".kairyn" / "learnings.md"),
+            "backlog": {p.name: p.read_text() for p in backlog.glob("*.md") if p.name not in backlog_before} if backlog.is_dir() else {},
+            "homes_before": {h: before.get(h, "") for h in homes}, "homes_after": {h: _read(repo / h) for h in homes},
+            "budgets_before": budgets_before, "budgets_after": _read(repo / ".harness" / "budgets.yml"),
+            "turns": turns, "approver": APPROVER, "words": APPROVAL_WORDS, "start": start, "end": utcnow()}

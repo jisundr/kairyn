@@ -12,6 +12,8 @@ All take --root (default: the current directory). A task is done when its STATE.
   - docs/backlog files with `status: committed` that link the task
   - docs/backlog files with `status: dropped` that link no task folder that still exists
 and removes their rows from docs/backlog/README.md. Git history keeps every deleted file.
+Its last line is `RETRO: learnings.md <used>/<budget>` when learnings.md is past half its
+budget (retro.py): the exit stage then runs the retro stage.
 release never pushes: it prints the push command for the user.
 
 Standard library only: consumers run this with a plain python3 (3.9 on macOS).
@@ -25,6 +27,8 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+from retro import learnings_size
 
 CHANGELOG = "CHANGELOG.md"
 UNRELEASED = "## Unreleased"
@@ -143,6 +147,9 @@ def cmd_close(root: Path, task: str, entry: str) -> int:
     print(f"DELETED docs/tasks/{task}/")
     for rel, target in links_to(root, [f"tasks/{task}/"] + [p.name for p in gone]):
         print(f"LINK: {rel} still links {target}")
+    used, budget = learnings_size(root)
+    if budget and used * 2 > budget:
+        print(f"RETRO: learnings.md {used}/{budget}")
     return 0
 
 

@@ -63,3 +63,10 @@ def test_exit_script_runs(tmp_path):
     repo = make_good_repo(tmp_path / "repo")
     assert run39(str(SCRIPTS / "exit.py"), "adr-path", "first", "--root", str(repo)).stdout.strip() == "docs/adr/0001-first.md"
     assert run39(str(SCRIPTS / "exit.py"), "check", "none", "--root", str(repo)).stdout.startswith("FAIL:")
+
+
+def test_retro_script_runs(tmp_path):
+    repo = make_good_repo(tmp_path / "repo")
+    assert run39(str(SCRIPTS / "retro.py"), "size", "--root", str(repo)).stdout.startswith("learnings.md ")
+    out = run39(str(SCRIPTS / "retro.py"), "fits", "CLAUDE.md", "--add", "rule", "--root", str(repo)).stdout.strip()
+    assert out == "FITS"

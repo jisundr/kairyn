@@ -6,7 +6,8 @@ import yaml
 
 from helpers import PLUGIN, split_front_matter
 
-STAGE_SKILLS = {"requirements": "REQUIREMENTS", "design": "DESIGN", "grill": "GRILL", "model-routing": "MODEL-ROUTING", "exit": "EXIT"}
+STAGE_SKILLS = {"requirements": "REQUIREMENTS", "design": "DESIGN", "grill": "GRILL", "model-routing": "MODEL-ROUTING", "exit": "EXIT",
+                "retro": "RETRO"}
 MODELS = {"haiku", "sonnet", "opus", "inherit"}
 SCRIPT_COMMANDS = ("init", "check", "upgrade", "release")
 
@@ -62,3 +63,17 @@ def test_script_only_commands_name_a_model(name):
 def test_design_skill_runs_on_opus():
     """D6: design needs the most judgment; Sonnet only after a 10-run eval pass."""
     assert front(skill("design"))[0]["model"] == "opus"
+
+
+def test_retro_is_optional_and_runs_its_script():
+    """D1, D6: an optional stage like exit; its size checks run in retro.py, so the skill may call python3."""
+    stage, _ = front(PLUGIN / "stages" / "RETRO.md")
+    assert stage["optional"] is True
+    data, body = front(skill("retro"))
+    assert "Bash(python3:*)" in data["allowed-tools"]
+    assert "scripts/retro.py" in body
+
+
+def test_exit_skill_can_run_retro():
+    """Option A: exit follows RETRO.md in the same turn, so it names the retro script too."""
+    assert "scripts/retro.py" in front(skill("exit"))[1]
