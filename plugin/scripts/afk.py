@@ -4,6 +4,7 @@
     python3 afk.py run <task>                       # run from the stage in STATE.md until a stop
     python3 afk.py approve <task> --words "<words>" # record the merge decision: approve
     python3 afk.py reject <task> --words "<reason>" # record the merge decision: reject
+    python3 afk.py approve <task> --slice T<n> --words "<words>"  # approve one (approval) slice
 
 All take --root (default: the current directory). The script owns what must always work:
 order, checks, git and STATE.md. The model only runs stage files, one `claude -p` per
@@ -23,6 +24,9 @@ Readiness (before the first stage): the `testing` gate has a command, each set g
 base commit, and the worktree has no tracked changes. Limits (afk.yml `limits:`, else DEFAULT_LIMITS):
 a cost cap per stage and per run, from each session's `total_cost_usd`, and minutes per stage. A limit
 blocks the run with the limit, the cost so far and the last failed command.
+Approval gates: build stops before a slice marked `(approval)` in DESIGN.md until BUILD.md has
+`Approval T<n>: ...`. Before gates and review, each changed path that matches afk.yml `approval:`
+needs an approval of the slice that changed it.
 KAIRYN_CLAUDE overrides the claude binary (tests use a stub).
 
 Standard library only: consumers run this with a plain python3 (3.9 on macOS).
@@ -30,6 +34,7 @@ Standard library only: consumers run this with a plain python3 (3.9 on macOS).
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import os
 import re
 import shutil
@@ -57,6 +62,7 @@ class Task(NamedTuple):
     id: str
     after: tuple
     done: str
+    approval: bool = False
 
 
 class Blocked(Exception):
@@ -74,7 +80,8 @@ def task_graph(design: str) -> list:
         if not done:
             raise ValueError(f"{tid} has no done command (Done: `<command>`)")
         after = _AFTER.search(rest)
-        tasks[tid] = Task(tid, tuple(re.findall(r"T\d+", after.group(1))) if after else (), done.group(1))
+        tasks[tid] = Task(tid, tuple(re.findall(r"T\d+", after.group(1))) if after else (), done.group(1),
+                          "(approval)" in rest)
     if not tasks:
         raise ValueError("DESIGN.md has no T<n> lines")
     order, left = [], sorted(tasks, key=lambda t: int(t[1:]))
@@ -133,6 +140,18 @@ def parse_afk(text: str) -> dict:
                 raise ValueError(f"afk.yml: expected `key: value`, got {raw!r}")
             data[section] = {**(data[section] or {}), key.strip(): _value(rest) if rest.strip() else ""}
     return {k: (v if v is not None else {}) for k, v in data.items()}
+
+
+def path_matches(path: str, pattern: str) -> bool:
+    """A glob where `**/` at the start also matches no folder: `**/migrations/**` matches `migrations/x.sql`."""
+    return fnmatch.fnmatch(path, pattern) or (pattern.startswith("**/") and fnmatch.fnmatch(path, pattern[3:]))
+
+
+def add_row(text: str, row: str) -> str:
+    """Put a row after the last table line of BUILD.md (its only table)."""
+    lines = text.rstrip("\n").split("\n")
+    last = max(i for i, line in enumerate(lines) if line.startswith("|"))
+    return "\n".join(lines[:last + 1] + [row] + lines[last + 1:]) + "\n"
 
 
 def escape_patterns(config: dict) -> list:
@@ -348,11 +367,61 @@ class Run:
         return [line.split(":", 1)[1].strip() for line in said.splitlines() if line.startswith("FINDING:")]
 
     def write_sections(self, path: Path, flags: list, findings: list, round_: str) -> None:
-        text = path.read_text().split("\n## Flags\n", 1)[0].rstrip("\n")
+        text = path.read_text().split("\n## Flags\n", 1)[0].rstrip("\n")   # keeps ## Approvals
         text += "\n\n## Flags\n" + ("\n".join(f"- {f}" for f in flags) or "- None") + "\n"
         self.rounds.append(f"- {round_}: " + ("; ".join(findings) if findings else "Findings: none"))
         text += "\n## Review\n" + "\n".join(self.rounds) + "\n"
         path.write_text(text)
+
+    def approved(self, tid: str) -> bool:
+        path = self.folder / "BUILD.md"
+        return path.is_file() and bool(re.search(rf'^Approval {tid}: .+, \d{{4}}-[\d-]+T[\d:]+Z, ".+"$',
+                                                  path.read_text(), re.M))
+
+    def backstop(self) -> None:
+        """D10: each changed path that matches `approval:` needs an approval of the slice that changed it."""
+        patterns = self.config().get("approval") or []
+        if not patterns:
+            return
+        commits = git(self.wt, "log", "--reverse", "--format=%h %s", f"{self.base()}..HEAD").splitlines()
+        for sha, subject in (c.split(" ", 1) for c in commits):
+            label = subject.split(":", 1)[0]
+            if label.startswith("kairyn("):
+                continue
+            tid = re.search(r"T\d+", label)
+            ok = self.approved(tid.group(0)) if tid else bool(re.search(r"^Approval T\d+: ", (
+                self.folder / "BUILD.md").read_text(), re.M))
+            for name in git(self.wt, "show", "--name-only", "--format=", sha).splitlines():
+                pattern = next((p for p in patterns if path_matches(name, str(p))), None)
+                if pattern and not ok:
+                    who = tid.group(0) if tid else "T<n>"
+                    raise Blocked(f"approval: `{name}` matches `{pattern}` in {label} with no approval. Run "
+                                  f"/kairyn:build {self.task} approve {who} \"<words>\"")
+
+    def approve_slice(self, tid: str, words: str) -> int:
+        path = self.folder / "BUILD.md"
+        try:
+            ids = [t.id for t in task_graph((self.folder / "DESIGN.md").read_text())]
+        except (OSError, ValueError):
+            ids = []
+        if tid not in ids or not path.is_file():
+            print(f"FAIL: {tid} is not a slice of {self.task} with a BUILD.md")
+            return 1
+        name = git(self.root, "config", "user.name")
+        line = f'Approval {tid}: {name}, {now()}, "{words}"'
+        text = path.read_text()
+        if "\n## Approvals\n" not in text:
+            head, sep, rest = text.partition("\n## Flags\n")
+            text = head.rstrip("\n") + "\n\n## Approvals\n" + (("\n" + sep.lstrip("\n") + rest) if sep else "")
+        head, _, rest = text.partition("\n## Approvals\n")
+        section, sep, tail = rest.partition("\n## ")
+        text = head + "\n## Approvals\n" + section.rstrip("\n") + ("\n" if section.strip() else "") + line + "\n" + \
+            (("\n## " + tail) if sep else "")
+        path.write_text(text)
+        self.update(self.front("stage"), f"{tid} approved by {name}: {words}", status="in-progress")
+        self.commit(f"kairyn({self.task}): approve {tid}")
+        print(line)
+        return 0
 
     def review_loop(self, graph: list, path: Path) -> None:
         """D3: a read-only reviewer, one fix round, then escalation."""
@@ -392,6 +461,9 @@ class Run:
         for t in graph:
             if re.search(rf"^\| {t.id} \|.*\| 0 \|\s*$", path.read_text(), re.M):
                 continue   # green in an earlier run
+            if t.approval and not self.approved(t.id):
+                raise Blocked(f"{t.id} is marked (approval). Read it in DESIGN.md, then run "
+                              f"/kairyn:build {self.task} approve {t.id} \"<words>\"")
             said = self.claude("build", f"Follow .kairyn/stages/BUILD.md for docs/tasks/{self.task}, task {t.id}. "
                                  f"Done command: `{t.done}`.")
             subjects = git(self.wt, "log", "--format=%h %s", "-n", "50").splitlines()
@@ -405,7 +477,7 @@ class Run:
             green = self.run_at(feat, t.done, "at the green check")
             if green:
                 raise Blocked(f"{t.id}: green check exited {green} at {feat}")
-            path.write_text(path.read_text().rstrip("\n") + f"\n| {t.id} | {test} | {red} | {feat} | {green} |\n")
+            path.write_text(add_row(path.read_text(), f"| {t.id} | {test} | {red} | {feat} | {green} |"))
             self.commit(f"kairyn({self.task}): build {t.id} evidence")
             self.check_cost()
         self.review_loop(graph, path)
@@ -480,6 +552,8 @@ class Run:
                 return 0
             self.start_stage(stage)
             try:
+                if stage != "build":
+                    self.backstop()
                 getattr(self, stage)()
             except Blocked as e:
                 self.update(stage, f"Blocked: {e}", status="blocked")
@@ -508,6 +582,7 @@ def main(argv=None) -> int:
     parser.add_argument("command", choices=("run", "approve", "reject"))
     parser.add_argument("task")
     parser.add_argument("--words", default="")
+    parser.add_argument("--slice", default="", help="approve one (approval) slice T<n>, not the merge")
     parser.add_argument("--root", type=Path, default=Path.cwd())
     args = parser.parse_args(argv)
     if "/" in args.task or not (args.root / "docs" / "tasks" / args.task).is_dir():
@@ -519,6 +594,11 @@ def main(argv=None) -> int:
     if not args.words:
         print("FAIL: --words is required")
         return 1
+    if args.slice:
+        if args.command != "approve":
+            print("FAIL: --slice works only with approve")
+            return 1
+        return run.approve_slice(args.slice, args.words)
     return run.decide(args.words, args.command == "approve")
 
 

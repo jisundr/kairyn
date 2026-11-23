@@ -18,6 +18,10 @@ gates:
   observability:
   security:
 
+# Glob patterns for high-risk paths. Design marks a slice that touches one with (approval); build
+# stops before it until you run /kairyn:build <task> approve T<n> "<words>". Examples: '**/migrations/**'.
+approval:
+
 # Regex patterns for added lines that turn off a check. afk.py lists each hit for the reviewer.
 escape_hatches:
   - "# noqa"

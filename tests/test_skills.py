@@ -87,3 +87,8 @@ def test_afk_skills_run_the_script(name, command):
     assert "Bash(python3:*)" in data["allowed-tools"]
     assert f"scripts/afk.py {command}" in body
     assert "/kairyn:upgrade" in body
+
+
+def test_build_skill_approves_a_slice():
+    """D10: `/kairyn:build <task> approve T<n>` records the approval, then resumes."""
+    assert "afk.py approve <task> --slice T<n>" in front(skill("build"))[1]
