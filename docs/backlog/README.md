@@ -4,7 +4,7 @@ Options, not commitments. Each file is one idea, named `<YYYYMMDDHHMMSS>-<slug>.
 
 ## Triage digest (2026-11-22)
 
-Twelve ideas are `inbox` and need a keep, park or drop decision. Closed ideas are in `CHANGELOG.md`.
+Fourteen ideas are `inbox` and need a keep, park or drop decision. Closed ideas are in `CHANGELOG.md`.
 
 | Idea | Playbook | Depends on | AI note |
 |---|---|---|---|
@@ -20,6 +20,7 @@ Twelve ideas are `inbox` and need a keep, park or drop decision. Closed ideas ar
 | [Pointer-following checks](20261122080759-instruction-file-checks.md) | Agents 02 | | Partly done |
 | [Skill checks](20261122103416-skill-checks.md) | Agents 02 | | Bears on the stage-skills task |
 | [Multi-repo support](20261122080759-multi-repo.md) | Agents 03 | | Park candidate, no evidence yet |
+| [Post-incident review stage](20261123093900-pir-stage.md) | SDLC 07 | release-stage | Park candidate, maybe optional |
+| [Parallel learnings conflicts](20261123093900-parallel-learnings.md) | Agents 05 | | Small, inferred, not seen yet |
 
-
-Rechecked 2026-11-22 against knowledge-base `9b65dd9`: added skill-checks. The naming change (`bf874a0`) is already followed. The gate renumbering (`b5cc9bd`) changes no idea.
+Rechecked 2026-11-23 against knowledge-base `be5dbfa`: added pir-stage and parallel-learnings; notes on build, gates, review, release and retro. Agents 04 and 06 (loops, bots) add no idea yet: kairyn has no build stage to loop on.
