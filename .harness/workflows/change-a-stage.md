@@ -21,6 +21,12 @@ Lessons already learned, so you do not repeat them:
 - State what to do in every case. "Advance `stage`" failed 3 of 10 runs because the only stage had nothing to advance to. The fix spells out three cases (next stage, last stage, blocked).
 - Do not let the model invent facts it cannot know. Timestamps and dates come from `date`.
 - Check the checker. A bad check (YAML turning timestamps into datetimes) produced a false 0 of 10. Pure checks live in `evals/checks.py` with tests.
+- Headless `claude -p` refuses Bash pipelines: a globbed `grep` needs approval. Stage steps that must work in evals use Read and Glob.
+- macOS ignores filename case: `GRILL.md` and `grill.md` are one file. Draft stage and command files in separate folders.
+- A template that lists every section makes the model fill each one. Write "state only what a source states, else not applicable".
+- `checks.structural_problems` expects requirements to hand off to `design`. A stage after design must change `design_run_problems` and the design eval too.
+- A line in `_template.md` Writing changes every stage. Run all its dependent evals at 10 runs.
+- Give every stage output a template. Read the failure reasons before you blame the model.
 
 ## Stage file format
 
