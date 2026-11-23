@@ -9,3 +9,4 @@
 - New optional exit stage, /kairyn:exit: it writes ADRs, a changelog line and learnings for a done task, then deletes the task folder and closed backlog files. (2026-11-22-exit-strategy)
 - New required design stage, /kairyn:design: Claude proposes options, writes DESIGN.md with tasks and a test plan, and waits for approval in chat. (2026-11-23-design-stage)
 - The shared writing rule now bans hedge words such as `would` in stage outputs, even when quoted from your request. (2026-11-23-eval-request-hedge)
+- Contributors run evals with /run-evals: a background subagent runs them and returns a short report with failures, evidence and cost. (2026-11-23-eval-subagent)
