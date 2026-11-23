@@ -1,6 +1,6 @@
 ---
 title: Rule on /run-evals arguments has no home
-status: inbox
+status: dropped
 requester: Jayson De los Reyes
 date: 2026-11-23
 appetite:
@@ -18,3 +18,4 @@ review_by:
 # Log
 
 2026-11-23T11:09:52Z [capture] Created by retro from `.kairyn/learnings.md` L18. Status inbox, waiting for triage.
+2026-11-23T11:22:03Z [triage] Merged into `20261123112203-split-testing-and-evals.md`. Status dropped. Decided by Jayson De los Reyes.

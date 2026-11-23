@@ -1,10 +1,10 @@
 ---
 title: Rule on the shared dev and consumer harness has no home
-status: inbox
+status: parked
 requester: Jayson De los Reyes
 date: 2026-11-23
 appetite:
-review_by:
+review_by: 2027-02-23
 ---
 
 # Rule on the shared dev and consumer harness has no home
@@ -18,3 +18,4 @@ review_by:
 # Log
 
 2026-11-23T11:09:52Z [capture] Created by retro from `.kairyn/learnings.md` L1. Status inbox, waiting for triage.
+2026-11-23T11:22:03Z [triage] Parked: only this repo hits it, and its homes are full. Status parked. Decided by Jayson De los Reyes.
