@@ -35,7 +35,7 @@ CHANGELOG = "CHANGELOG.md"
 UNRELEASED = "## Unreleased"
 STATUS_RE = re.compile(r"^status:\s*([\w-]+)", re.M)
 STAGE_RE = re.compile(r"^stage:\s*([\w-]+)", re.M)
-APPROVED_RE = re.compile(r'^Approval: (?!pending\s*$).+, \d{4}-\d\d-\d\dT[\d:]+Z, ".+"\s*$', re.M)
+APPROVED_RE = re.compile(r'^(?:Approval|Decision): (?!pending\s*$).+, \d{4}-\d\d-\d\dT[\d:]+Z, ".+"\s*$', re.M)
 TASK_LINK_RE = re.compile(r"tasks/(\d{4}-\d\d-\d\d-[\w-]+)/")
 
 

@@ -9,6 +9,7 @@ Next: build-stage. Parked ideas are reviewed by 2027-02-23. Closed ideas are in 
 | Idea | Status | Appetite | Depends on | Note |
 |---|---|---|---|---|
 | [Build stage](20261122080759-build-stage.md) | triaged | big | design | |
+| [TL;DR for long docs](20261123123016-tldr-for-long-docs.md) | inbox | | | |
 | [Approval gates hand off](20261123004258-approval-handoff.md) | triaged | small | | |
 | [Grill in rounds](20261122105739-grill-rounds.md) | triaged | small | | |
 | [Backlog stage](20261122080759-backlog-stage.md) | triaged | big | | |

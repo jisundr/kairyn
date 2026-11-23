@@ -1,7 +1,9 @@
 """DESIGN.md checks: four sections, options with a smallest thing, a test plan for every criterion, grounded paths."""
 from datetime import datetime, timezone
 
-from checks import (chosen_option, design_run_problems, design_section_problems, design_test_plan_problems, grounded_problems, option_labels,
+import pytest
+
+from checks import (slice_problems, chosen_option, design_run_problems, design_section_problems, design_test_plan_problems, grounded_problems, option_labels,
                     options_problems, rejected_option)
 
 REQUIREMENTS = """## Acceptance criteria
@@ -27,8 +29,8 @@ Option A. Route writes through `src/write.py` and skip them in a dry run.
 | B | A virtual file system. | Large. | New dependency. |
 
 ## Tasks
-- T1: Add the flag to `src/cli.py`. Done: `--help` lists it.
-- T2: Skip writes in `src/write.py`. Done: `tests/test_dry_run.py` (new) passes.
+- T1: Add the flag to `src/cli.py`. Done: `python3 -m pytest tests/test_dry_run.py -k flag` exits 0.
+- T2: Skip writes in `src/write.py`. after: T1. Done: `python3 -m pytest tests/test_dry_run.py` (new) exits 0.
 
 ## Test plan
 | Criterion | Task | Test |
@@ -154,8 +156,28 @@ def test_design_run_waits_blocked(tmp_path):
     assert design_run_problems(design_task(tmp_path)) == []
 
 
-def test_approved_design_run_ends_done(tmp_path):
-    assert design_run_problems(design_task(tmp_path, status="done"), approved=True) == []
+def test_approved_design_run_hands_off_to_build(tmp_path):
+    """D5: design approval starts the AFK run at build."""
+    assert design_run_problems(design_task(tmp_path, stage="build", status="in-progress"), approved=True) == []
+    (tmp_path / "x").mkdir()
+    assert design_run_problems(design_task(tmp_path / "x", status="done"), approved=True) == [
+        "stage 'design' status 'done', expected build in-progress"]
+
+
+def test_slice_problems_accepts_slices():
+    assert slice_problems(GOOD) == []
+
+
+@pytest.mark.parametrize("old,new,problem", [
+    ("Done: `python3 -m pytest tests/test_dry_run.py -k flag` exits 0.", "Done: it lists the flag.", "T1 has no done command"),
+    ("Done: `python3 -m pytest tests/test_dry_run.py` (new)", "Done: it works (new)", "T2 has no done command"),
+    ("`src/cli.py`. Done", "`src/cli.py`. after: T2. Done", "cycle"),
+    ("after: T1. ", "", "T2 has no after: line"),
+])
+def test_slice_problems_flags_a_task_list_afk_cannot_run(old, new, problem):
+    """D13: T1 is the tracer bullet; each later slice names its blockers; each done condition is a command."""
+    problems = slice_problems(GOOD.replace(old, new))
+    assert any(problem in p for p in problems), problems
 
 
 def test_design_run_not_blocked_is_flagged(tmp_path):

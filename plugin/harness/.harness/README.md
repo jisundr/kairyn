@@ -12,6 +12,7 @@ Workflow docs for AI sessions in this repo, set up by `/kairyn:init`. Add your o
 <!-- harness-docs:start -->
 | Workflow | Use it when |
 |---|---|
+| [AFK run](workflows/afk-run.md) | running /kairyn:build or /kairyn:review, or editing afk.yml |
 | [Keeping docs lean](workflows/keeping-docs-lean.md) | adding or editing a harness doc, or when /kairyn:check fails |
 | [Running stages](workflows/running-stages.md) | running a stage, or editing or adding stage instructions |
 | [Task lifecycle](workflows/task-lifecycle.md) | starting or resuming a task, or touching STATE.md or task folders |

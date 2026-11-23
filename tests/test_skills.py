@@ -77,3 +77,18 @@ def test_retro_is_optional_and_runs_its_script():
 def test_exit_skill_can_run_retro():
     """Option A: exit follows RETRO.md in the same turn, so it names the retro script too."""
     assert "scripts/retro.py" in front(skill("exit"))[1]
+
+
+@pytest.mark.parametrize("name,command", [("build", "run"), ("review", "approve")])
+def test_afk_skills_run_the_script(name, command):
+    """D7, D11: the script runs the loop and records the decision; the skill only calls it."""
+    data, body = front(skill(name))
+    assert data["name"] == name and data["model"] in MODELS and "Use when" in data["description"]
+    assert "Bash(python3:*)" in data["allowed-tools"]
+    assert f"scripts/afk.py {command}" in body
+    assert "/kairyn:upgrade" in body
+
+
+def test_build_skill_approves_a_slice():
+    """D10: `/kairyn:build <task> approve T<n>` records the approval, then resumes."""
+    assert "afk.py approve <task> --slice T<n>" in front(skill("build"))[1]
