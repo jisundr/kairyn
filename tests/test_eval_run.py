@@ -156,3 +156,26 @@ def test_score_gate_rounds_gradable_runs_up(tmp_path):
     (tmp_path / "s" / "run-0").mkdir(parents=True)
     (tmp_path / "s" / "run-0" / "judge.json").write_text('{"a": 5}')
     assert any("gradable" in line for line in score_gate(tmp_path, "s", 2, {"mean": 4, "floor": 3, "min_gradable": 0.9}))
+
+
+def collectable_names(source: str) -> list[str]:
+    """Top-level names pytest would collect if a test module imported them (test_* functions, Test* classes)."""
+    import ast
+    tree = ast.parse(source)
+    return [n.name for n in tree.body
+            if (isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name.startswith("test"))
+            or (isinstance(n, ast.ClassDef) and n.name.startswith("Test"))]
+
+
+def test_collectable_names_finds_what_pytest_would_collect():
+    sample = "def test_plan_problems(x):\n    pass\n\nclass TestCase:\n    pass\n\ndef design_test_plan_problems(x):\n    pass\n"
+    assert collectable_names(sample) == ["test_plan_problems", "TestCase"]
+
+
+def test_eval_modules_name_nothing_pytest_collects():
+    """Tests import from evals/ (checks, selector, bg). An imported test_* function runs as a test of its own."""
+    from pathlib import Path
+    evals = Path(__file__).resolve().parent.parent / "evals"
+    found = {p.name: collectable_names(p.read_text()) for p in sorted(evals.rglob("*.py"))
+             if "results" not in p.parts}
+    assert not {k: v for k, v in found.items() if v}, found

@@ -2,4 +2,4 @@
 
 ## Unreleased
 
-- /run-evals starts evals detached with evals/bg.py, so a run outlives the agent, and waits in bounded foreground steps. (eval-agent-early-return)
+- A test fails when a module in evals/ names a function test_* or a class Test*, which pytest would run by accident. (no-test-prefix-in-checks)
