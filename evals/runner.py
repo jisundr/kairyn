@@ -173,11 +173,14 @@ def run_requirements(repo: Path) -> dict:
     return {"task": tasks[0] if len(tasks) == 1 else None, "start": start, "end": end}
 
 
-def claude_session(prompts: list[str], cwd: Path, *, plugin: bool = False, model: str | None = None,
+def claude_session(prompts: list, cwd: Path, *, plugin: bool = False, model: str | None = None,
                    on_turn=None, timeout: int = 600) -> list[str]:
-    """One conversation, one prompt per turn (a scripted user). on_turn(i, reply) runs after each turn."""
+    """One conversation, one prompt per turn (a scripted user). on_turn(i, reply) runs after each turn.
+    A prompt can be a callable: it gets the replies so far and returns the prompt."""
     replies, session = [], None
     for i, prompt in enumerate(prompts):
+        if callable(prompt):
+            prompt = prompt(replies)
         cmd = ["claude", "-p", prompt, "--permission-mode", "acceptEdits", "--output-format", "json"]
         if session:
             cmd += ["--resume", session]
@@ -339,6 +342,115 @@ def run_requirements_approval(repo: Path) -> dict:
         *APPROVAL_ANSWERS], repo, model=MODEL, on_turn=snapshot)
     tasks = task_dirs(repo)
     return {"task": tasks[0] if len(tasks) == 1 else None, "turns": turns, "start": start, "end": utcnow()}
+
+
+# --- design stage ------------------------------------------------------------------
+# The report CLI with an approved requirements task. Design reads it and writes DESIGN.md.
+DESIGN_TASK = "2026-01-09-customer-filter"
+DESIGN_REQUEST = "Add a --customer flag to report.py that prints the total for one customer."
+DESIGN_STATE = f"""---
+task: {DESIGN_TASK}
+title: Customer filter
+stage: design
+status: in-progress
+stages:
+  requirements: done
+  design: pending
+created: 2026-01-09T09:00:00Z
+updated: 2026-01-09T09:30:00Z
+---
+
+# Log
+
+2026-01-09T09:00:00Z [requirements] Task created. {DESIGN_REQUEST}
+2026-01-09T09:30:00Z [requirements] User approved in chat ("Approved."). Next stage: design.
+"""
+DESIGN_REQUIREMENTS = f"""---
+task: {DESIGN_TASK}
+stage: requirements
+summary: "A --customer flag prints the total for one customer."
+---
+
+# Requirements: Customer filter
+
+## Problem statement
+{DESIGN_REQUEST} Today `report.py` prints every customer.
+
+## Scope
+In: a `--customer` flag on `report.py` (request)
+Out: other filters, output formats
+
+## Requirements
+- R1: When the user passes `--customer <name>`, the report shall print only that customer's total. (request)
+- R2: If no row matches the name, the report shall print "no orders for <name>" and exit with code 1. (A1)
+- R3: When the user passes no flag, the report shall print every customer, as today. (request)
+
+## Non-functional needs
+- Accessibility: not applicable: text output only.
+- Performance: not applicable: no source states a limit.
+- Security: not applicable: no new input source.
+- Observability: not applicable: no logs today.
+
+## Assumptions, risks and dependencies
+| ID | Kind | Item | Owner |
+|---|---|---|---|
+| A1 | assumption | A missing customer is an error, not an empty line. | user |
+
+## Acceptance criteria
+- [ ] `python report.py --customer acme` prints one line for acme. (R1)
+- [ ] An unknown name prints the message and exits with code 1. (R2)
+- [ ] `python report.py` prints the same output as before. (R3)
+
+## Open questions and answers
+None.
+
+Approval: Eval User, 2026-01-09T09:30:00Z, "Approved"
+"""
+DESIGN_ORDERS = "customer,amount\nacme,10.00\nglobex,5.50\nacme,2.25\n"
+
+
+def make_design_repo(repo: Path) -> Path:
+    make_grill_repo(repo)
+    (repo / "data").mkdir(exist_ok=True)
+    (repo / "data" / "orders.csv").write_text(DESIGN_ORDERS)
+    task = repo / "docs" / "tasks" / DESIGN_TASK
+    task.mkdir(parents=True)
+    (task / "STATE.md").write_text(DESIGN_STATE)
+    (task / "REQUIREMENTS.md").write_text(DESIGN_REQUIREMENTS)
+    return repo
+
+
+def run_design(repo: Path) -> dict:
+    start = utcnow()
+    claude(f"/kairyn:design docs/tasks/{DESIGN_TASK}/ {NO_QUESTIONS}", repo, plugin=True, model=MODEL)   # through its skill
+    return {"task": repo / "docs" / "tasks" / DESIGN_TASK, "start": start, "end": utcnow()}
+
+
+def run_design_approval(repo: Path) -> dict:
+    """Four turns: the stage, a non-approval, 'go with option X' (a rejected option), an approval."""
+    from checks import rejected_option
+    subprocess.run(["git", "config", "user.name", APPROVER], cwd=repo, check=True)
+    task, turns = repo / "docs" / "tasks" / DESIGN_TASK, []
+
+    def read(name):
+        return (task / name).read_text() if (task / name).exists() else ""
+
+    def snapshot(i, reply):
+        turns.append({"reply": reply, "state": read("STATE.md"), "design": read("DESIGN.md")})
+
+    picked = []
+
+    def pick_option(replies):   # turn 2 names an option that turn 0 rejected
+        picked.append(rejected_option(turns[0]["design"]) if turns else None)
+        return f"Go with option {picked[0] or 'B'} instead."
+
+    start = utcnow()
+    claude_session([
+        f"Follow the stage definition in .kairyn/stages/DESIGN.md exactly for the task docs/tasks/{DESIGN_TASK}/. "
+        f"{NO_QUESTIONS}",
+        APPROVAL_ANSWERS[0], pick_option, APPROVAL_ANSWERS[1]], repo, model=MODEL, on_turn=snapshot)
+    return {"task": task, "turns": turns, "option": picked[0] if picked else None,
+            "start": start, "end": utcnow()}
 
 
 # --- exit stage --------------------------------------------------------------------

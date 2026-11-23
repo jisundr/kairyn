@@ -237,7 +237,7 @@ def timestamp_problems(data: dict, body: str, start: datetime, end: datetime, st
 
 def structural_problems(run: dict, approved: bool = False) -> list[str]:
     """run = {"task": Path | None, "start": datetime, "end": datetime}.
-    Requirements is the last stage: it ends blocked on approval, and done once the user approved."""
+    Requirements ends blocked on approval. Once the user approved, it hands the task to design (D4)."""
     task, start, end = run["task"], run["start"], run["end"]
     if task is None:
         return ["expected exactly one task folder"]
@@ -254,9 +254,9 @@ def structural_problems(run: dict, approved: bool = False) -> list[str]:
         return problems + [f"STATE.md front matter invalid: {e}"]
     if data.get("stages", {}).get("requirements") != "done":
         problems.append("stages.requirements != done")
-    expected = "done" if approved else "blocked"
-    if data.get("stage") == "requirements" and data.get("status") != expected:
-        problems.append(f"stage not advanced and status not {expected}")
+    expected = ("design", "in-progress") if approved else ("requirements", "blocked")
+    if (data.get("stage"), data.get("status")) != expected:
+        problems.append(f"stage {data.get('stage')!r} status {data.get('status')!r}, expected {' '.join(expected)}")
     if not any(LOG_LINE_RE.match(line) for line in body.splitlines()):
         problems.append("no timestamped [requirements] log line")
     problems += timestamp_problems(data, body, start, end)
@@ -464,4 +464,108 @@ def exit_problems(e: dict, expect_adr: bool, keyword: str = "") -> list[str]:
             problems.append(f"{name}: does not name the task")
         if keyword and keyword.lower() not in text.lower():
             problems.append(f"{name}: does not mention {keyword}")
+    return problems
+
+
+# --- design stage ---------------------------------------------------------------
+# DESIGN.md: Approach, Options (2+, one the smallest thing), Tasks (T<n>), Test plan (AC<n> -> T<n> -> test).
+# AC<n> is the n-th acceptance criterion in REQUIREMENTS.md. Standards impact waits for a gates stage (D5).
+DESIGN_SECTIONS = ("approach", "options", "tasks", "test plan")
+_TASK_DEF = re.compile(r"^\s*(?:[-*]|\d+\.|\|)?\s*[*`]*(T\d+)\b", re.M)
+_PATH = re.compile(r"`([^`\s]*/[^`\s]*)`(\s*\(new\))?")
+
+
+def design_section_problems(text: str) -> list[str]:
+    headings = {h.strip().lower() for h in re.findall(r"^##\s+(.+?)\s*$", text, re.M)}
+    problems = [f"DESIGN.md missing section {s!r}" for s in DESIGN_SECTIONS if s not in headings]
+    if "standards impact" in headings:
+        problems.append("DESIGN.md has a section the stage does not write: 'standards impact'")
+    return problems
+
+
+def options_problems(text: str) -> list[str]:
+    options = section_items(text, "options")
+    problems = [] if len(options) >= 2 else [f"{len(options)} option(s), expected at least 2"]
+    if not any("smallest" in o.lower() for o in options):
+        problems.append("no option is the smallest thing")
+    return problems
+
+
+def design_test_plan_problems(design: str, requirements: str) -> list[str]:
+    criteria = _CRITERION.findall(section_text(requirements, "acceptance criteria"))
+    if not criteria:
+        return ["REQUIREMENTS.md has no acceptance criteria"]
+    tasks = set(_TASK_DEF.findall(section_text(design, "tasks")))
+    rows = section_items(design, "test plan")
+    problems = []
+    for n in range(1, len(criteria) + 1):
+        row = next((r for r in rows if re.search(rf"\bAC{n}\b", r)), None)
+        if row is None:
+            problems.append(f"AC{n} has no row in the test plan")
+            continue
+        cells = [c.strip() for c in row.split("|")]
+        if not set(re.findall(r"\bT\d+\b", row)) & tasks:
+            problems.append(f"AC{n} names no task from the Tasks section")
+        elif len(cells) < 3 or not cells[-1]:
+            problems.append(f"AC{n} names no test")
+    return problems
+
+
+def grounded_problems(text: str, repo: Path) -> list[str]:
+    """Each path in backticks exists in the repo, unless it carries `(new)` somewhere in the text."""
+    found = _PATH.findall(text)
+    created = {path for path, new in found if new}
+    problems = []
+    for path, new in found:
+        if path in created or path.startswith("/") or "://" in path or any(c in path for c in "<>*{}$"):
+            continue
+        path = re.sub(r":\d+(-\d+)?$", "", path)
+        if not (repo / path).exists() and f"names a missing file: {path}" not in problems:
+            problems.append(f"names a missing file: {path}")
+    return problems
+
+
+_OPTION_CELL = re.compile(r"^[*`\s]*(?:Option\s+)?([A-Z])\b", re.I)
+
+
+def option_labels(text: str) -> list[str]:
+    """The letter of each option row: 'A (smallest thing)' or 'Option B' gives A, B."""
+    return [m.group(1).upper() for item in section_items(text, "options") if (m := _OPTION_CELL.match(item))]
+
+
+def chosen_option(text: str) -> str | None:
+    m = re.search(r"\bOption\s+([A-Z])\b", section_text(text, "approach"))
+    return m.group(1) if m else None
+
+
+def rejected_option(text: str) -> str | None:
+    """An option the design did not choose, for the eval's 'go with option X' turn."""
+    chosen = chosen_option(text)
+    return next((o for o in option_labels(text) if o != chosen), None) if chosen else None
+
+
+def design_run_problems(run: dict, approved: bool = False) -> list[str]:
+    """run = {"task": Path, "start", "end"}. Design waits blocked on approval, then the task is done (last stage)."""
+    task = run["task"]
+    doc, state = task / "DESIGN.md", task / "STATE.md"
+    if not doc.exists():
+        return ["DESIGN.md missing"]
+    try:
+        fm, body = split_front_matter(state.read_text())
+        data = yaml.safe_load(fm)
+    except (OSError, AssertionError, yaml.YAMLError) as e:
+        return [f"STATE.md unreadable: {e}"]
+    problems = []
+    expected = ("design", "done" if approved else "blocked")
+    if (data.get("stage"), data.get("status")) != expected:
+        problems.append(f"stage {data.get('stage')!r} status {data.get('status')!r}, expected {' '.join(expected)}")
+    if (data.get("stages") or {}).get("design") != "done":
+        problems.append("stages.design != done")
+    if not any(log_line_re("design").match(line) for line in body.splitlines()):
+        problems.append("no timestamped [design] log line")
+    # The fixture's created time is old on purpose: check only what design writes.
+    problems += timestamp_problems({"created": data.get("updated"), "updated": data.get("updated")}, body,
+                                   run["start"], run["end"], stage="design")
+    text = doc.read_text()
+    problems += output_header_problems(text, task.name, "design") + design_section_problems(text)
     return problems
