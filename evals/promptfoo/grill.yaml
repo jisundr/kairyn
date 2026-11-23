@@ -1,4 +1,4 @@
-# depends: plugin/stages/GRILL.md, plugin/skills/grill/SKILL.md, plugin/stages/_template.md, plugin/templates/STATE.md, plugin/scripts/init.sh
+# depends: plugin/stages/GRILL.md, plugin/skills/grill/SKILL.md, plugin/stages/_template.md, plugin/templates/STATE.md, plugin/templates/CONCEPT.md, plugin/scripts/init.sh
 description: grill stage
 prompts: ["{{scenario}}"]
 providers:

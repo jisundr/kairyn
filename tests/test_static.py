@@ -103,3 +103,21 @@ def test_design_checks_requirements_approval_first():
 def test_docs_name_the_design_stage():
     for doc in (ROOT / "README.md", PLUGIN / "harness" / ".harness" / "workflows" / "running-stages.md"):
         assert "/kairyn:design" in doc.read_text(), doc
+
+
+def test_concept_template_has_the_sections_the_grill_check_needs():
+    """Grill wrote `# Concept` 2 in 10 times without a template (run 20261123T083521Z)."""
+    import re
+
+    from checks import CONCEPT_SECTIONS
+    text = (PLUGIN / "templates" / "CONCEPT.md").read_text()
+    data = yaml.safe_load(split_front_matter(text)[0])
+    assert set(data) == {"task", "stage", "summary"} and data["stage"] == "grill"
+    headings = [h.lower() for h in re.findall(r"^## (.+)$", text, re.M)]
+    assert headings == list(CONCEPT_SECTIONS)
+
+
+def test_grill_output_points_to_the_concept_template():
+    text = (PLUGIN / "stages" / "GRILL.md").read_text()
+    output = text.split("## Output", 1)[1].split("\n## ", 1)[0]
+    assert ".kairyn/templates/CONCEPT.md" in output

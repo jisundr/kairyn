@@ -26,11 +26,7 @@ Optional: run it before `requirements` on a vague or solution-first request. `/k
 7. Stop only when the user confirms or says stop. Then name the task folder for `requirements`.
 
 ## Output
-`CONCEPT.md`, front matter `stage: grill` (see `_template.md`, Output), then:
-- `## Concept`: at most 5 sentences
-- `## Decisions`: `D1`, `D2`: the decision and its source (user, or user accepted)
-- `## Terms`: table, one meaning per term
-- `## Open branches`: questions not asked yet, or `None`
+`CONCEPT.md` in the task folder: fill `.kairyn/templates/CONCEPT.md`. Keep its four `##` sections.
 
 Write it in ASD-STE100 (see `_template.md`, Writing).
 
