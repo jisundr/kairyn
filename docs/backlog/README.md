@@ -2,20 +2,21 @@
 
 Options, not commitments. Each file is one idea, named `<YYYYMMDDHHMMSS>-<slug>.md` from its capture time (UTC), following the playbook `knowledge-base/03 Playbooks/SDLC/00 Managing the Idea Backlog.md`. Status: `inbox` → `triaged` → `shaping` → `shaped` → `committed`, or `parked` / `dropped`. Agents capture and draft; a human triages, sets the appetite and commits.
 
-## Triage (2026-11-23, Jayson De los Reyes; retro ideas 11:22)
+## Triage (2026-11-24, Jayson De los Reyes)
 
-Next: none chosen (build-stage shipped 2026-11-24). Parked ideas are reviewed by 2027-02-23. Closed ideas are in `CHANGELOG.md`.
+Next: public-ready. Parked ideas are reviewed by 2027-02-23. Closed ideas are in `CHANGELOG.md`.
 
 | Idea | Status | Appetite | Depends on | Note |
 |---|---|---|---|---|
-| [TL;DR for long docs](20261123123016-tldr-for-long-docs.md) | inbox | | | |
+| [Public-ready hardening](20261123221958-public-ready.md) | triaged | small | | |
 | [Approval gates hand off](20261123004258-approval-handoff.md) | triaged | small | | |
+| [TL;DR for long docs](20261123123016-tldr-for-long-docs.md) | triaged | small | | |
 | [Grill in rounds](20261122105739-grill-rounds.md) | triaged | small | | |
 | [Backlog stage](20261122080759-backlog-stage.md) | triaged | big | | |
 | [Parallel learnings conflicts](20261123093900-parallel-learnings.md) | triaged | small | | |
 | [Pointer and skill checks](20261122080759-instruction-file-checks.md) | triaged | small | | |
-| [Public-ready hardening](20261123221958-public-ready.md) | inbox | | | |
 | [Release and monitoring stage](20261122080759-release-stage.md) | parked | | | |
+| [Parallel slices](20261123225741-parallel-slices.md) | parked | | | |
 | [Post-incident review stage](20261123093900-pir-stage.md) | parked | | release-stage | |
 | [Multi-repo support](20261122080759-multi-repo.md) | parked | | | |
 | [Hedges in backticks](20261123110952-hedge-words-in-backticks.md) | parked | | | |

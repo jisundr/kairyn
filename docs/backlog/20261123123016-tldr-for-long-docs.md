@@ -1,9 +1,9 @@
 ---
 title: Long stage outputs have no TL;DR
-status: inbox
+status: triaged
 requester: Jayson De los Reyes
 date: 2026-11-23
-appetite:
+appetite: small batch
 review_by:
 ---
 
@@ -22,3 +22,5 @@ review_by:
 # Log
 
 2026-11-23T12:30:16Z [capture] Created by Claude from the user's request. Status inbox, waiting for triage.
+2026-11-23T23:02:43Z [triage] Kept. Status triaged. Decided by Jayson De los Reyes.
+2026-11-23T23:02:43Z [appetite] Set to small batch. Decided by Jayson De los Reyes.
