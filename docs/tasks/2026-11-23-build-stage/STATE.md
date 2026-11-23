@@ -8,7 +8,7 @@ stages:
   requirements: done   # pending | in-progress | done
   design: done
 created: 2026-11-23T11:38:32Z
-updated: 2026-11-23T21:04:19Z
+updated: 2026-11-23T21:10:25Z
 ---
 
 # Log
@@ -29,3 +29,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-23T13:43:50Z [build] T5 merged in PR #47. T6 built on the feat/afk-loop-t6-pr-and-install branch: push, gh pull request and merge, afk.yml from init, afk-run.md. 498 tests pass. Deviation: upgrade.py unchanged; afk.py creates a missing afk.yml from the upgraded template.
 2026-11-23T20:28:56Z [build] T6 merged in PR #48. T7 on the feat/afk-loop-t7-evals branch: build, gates and review evals, README. 505 tests pass.
 2026-11-23T21:04:19Z [build] Evals: build, gates, review, retro pass at 10 runs (20261123T203342Z). Design failed quality 3.75; user chose option 2: restore the T4-cut approval rules. Design then passed, quality 4.0 (20261123T205538Z).
+2026-11-23T21:10:25Z [build] T7 merged in PR #49. Plugin version 0.8.1 to 0.9.0 for the final pull request to main.
