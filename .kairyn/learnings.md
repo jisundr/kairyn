@@ -8,3 +8,5 @@ Stages append here.
 - build: `uv run pytest` fails when a new stage file or template is not in `plugin/release-hashes.json`. Run `uv run python scripts/release_hashes.py --write` after each change to a file init installs.
 - build: `plugin/stages/DESIGN.md` is at its 500-token budget. A new step there needs a cut elsewhere in the file.
 - build: A stub `claude` that picks its action from words in the prompt breaks when a prompt shares the word. The fix-round prompt said "reviewer findings" and the stub took it for a reviewer call.
+- build: `claude -p --max-budget-usd` is a soft cap: it stops after the turn that passes it. A $0.01 cap on Opus spent $0.13. It exits 1 with `subtype: error_max_budget_usd`, an empty `result` and the reason in `errors`.
+- build: `.harness/workflows/running-stages.md` (plugin copy) is at its 800-token budget. The next AFK-run text needs its own harness doc.

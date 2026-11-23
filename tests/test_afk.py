@@ -15,7 +15,8 @@ from helpers import PLUGIN, ROOT
 AFK = PLUGIN / "scripts" / "afk.py"
 STUB = ROOT / "tests" / "stubs" / "claude"
 TASK = "2026-01-05-feature"
-GOOD_GATE = 'python3 -c "import feature_t1"'
+# Runs every check_*.py, so it passes on the base commit (no checks yet) and after build.
+GOOD_GATE = 'python3 -c "import glob; [__import__(f[:-3]) for f in sorted(glob.glob(\'check_*.py\'))]"'
 
 STATE = """---
 task: {task}
@@ -185,7 +186,8 @@ def test_slice1_gate(repo):
 
 
 def test_slice1_failing_gate_blocks(repo):
-    (repo / ".kairyn" / "afk.yml").write_text("gates:\n  testing: python3 -c 'raise SystemExit(3)'\n")
+    gate = "python3 -c \"import os, sys; sys.exit(3 if os.path.exists('feature_t1.py') else 0)\""
+    (repo / ".kairyn" / "afk.yml").write_text(f"gates:\n  testing: {gate}\n")
     git(repo, "commit", "-qam", "failing gate")
     assert run(repo, "run", TASK).returncode == 0
     state = task_file(repo, "STATE.md")
@@ -286,3 +288,115 @@ def test_slice2_review_and_retro_turn_findings_into_constraints():
     assert "learnings.md" in review.split("## Learnings", 1)[1] and "lint rule" in review
     steps = (PLUGIN / "stages" / "RETRO.md").read_text().split("## Steps", 1)[1]
     assert "agent-written code" in steps and "lint rule" in steps
+
+
+# --- slice 3: readiness check and limits -------------------------------------------------------
+
+
+def set_afk(repo, text):
+    (repo / ".kairyn" / "afk.yml").write_text(text)
+    git(repo, "commit", "-qam", "afk.yml")
+
+
+def test_slice3_readiness_needs_a_testing_command(repo):
+    set_afk(repo, "gates:\n  testing:\n  security:\n")
+    assert run(repo, "run", TASK).returncode == 0
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("build", "blocked")
+    assert re.search(r"\[build\] Blocked: readiness: .*testing", state) and calls(repo) == []
+
+
+def test_slice3_readiness_needs_gates_green_on_the_base(repo):
+    set_afk(repo, "gates:\n  testing: python3 -c 'raise SystemExit(4)'\n")
+    assert run(repo, "run", TASK).returncode == 0
+    state = task_file(repo, "STATE.md")
+    assert re.search(r"\[build\] Blocked: readiness: gate testing exits 4 on the base commit", state)
+    assert calls(repo) == []
+
+
+def test_slice3_readiness_needs_a_clean_worktree(repo):
+    run(repo, "run", TASK, mode="review_stuck")
+    wt = worktree(repo)
+    (wt / "feature_t1.py").write_text("VALUE = 9\n")
+    state = wt / "docs" / "tasks" / TASK / "STATE.md"
+    state.write_text(state.read_text().replace("status: blocked", "status: in-progress"))
+    n = len(calls(repo))
+    assert run(repo, "run", TASK).returncode == 0
+    assert re.search(r"\[build\] Blocked: readiness: the worktree has changes: feature_t1.py", task_file(repo, "STATE.md"))
+    assert len(calls(repo)) == n
+
+
+def test_slice3_readiness_ignores_untracked_files(repo):
+    """The tracer run left __pycache__/ in the worktree; that must not block a resume."""
+    run(repo, "run", TASK, mode="review_stuck")
+    wt = worktree(repo)
+    (wt / "__pycache__").mkdir(exist_ok=True)
+    (wt / "__pycache__" / "x.pyc").write_text("")
+    state = wt / "docs" / "tasks" / TASK / "STATE.md"
+    state.write_text(state.read_text().replace("status: blocked", "status: in-progress"))
+    run(repo, "run", TASK, mode="good")
+    assert "readiness" not in task_file(repo, "STATE.md")
+
+
+def args_log(repo):
+    return (repo.parent / "stub.log.args").read_text().splitlines()
+
+
+def test_slice3_limits_stage_cost(repo):
+    set_afk(repo, f"limits:\n  build_usd: 10\n  run_usd: 20\ngates:\n  testing: {GOOD_GATE}\n")
+    r = subprocess.run([sys.executable, str(AFK), "run", TASK, "--root", str(repo)], capture_output=True, text=True,
+                       env={**os.environ, "KAIRYN_CLAUDE": str(STUB), "STUB_LOG": str(repo.parent / "stub.log"),
+                            "STUB_COST": "6"})
+    assert r.returncode == 0, r.stderr
+    budgets = [re.search(r"--max-budget-usd (\S+)", a).group(1) for a in args_log(repo)]
+    assert budgets[:2] == ["10.00", "4.00"], "each session gets what is left of the stage cap"
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("build", "blocked")
+    assert re.search(r"Blocked: limit build_usd \$10 reached: spent \$12\.00 in build, \$12\.00 in this run\. "
+                     r"Last failed command: `python3 check_t2.py` exit 1 at the red check", state)
+
+
+def test_slice3_limits_run_cost(repo):
+    set_afk(repo, f"limits:\n  build_usd: 10\n  run_usd: 5\ngates:\n  testing: {GOOD_GATE}\n")
+    env = {**os.environ, "KAIRYN_CLAUDE": str(STUB), "STUB_LOG": str(repo.parent / "stub.log"), "STUB_COST": "3"}
+    subprocess.run([sys.executable, str(AFK), "run", TASK, "--root", str(repo)], env=env, capture_output=True)
+    assert re.search(r"Blocked: limit run_usd \$5 reached: spent \$6\.00", task_file(repo, "STATE.md"))
+
+
+def test_slice3_limits_stage_time(repo):
+    set_afk(repo, f"limits:\n  stage_minutes: 0.01\ngates:\n  testing: {GOOD_GATE}\n")
+    env = {**os.environ, "KAIRYN_CLAUDE": str(STUB), "STUB_LOG": str(repo.parent / "stub.log"), "STUB_SLEEP": "3"}
+    subprocess.run([sys.executable, str(AFK), "run", TASK, "--root", str(repo)], env=env, capture_output=True)
+    assert re.search(r"Blocked: limit stage_minutes 0.01 reached in build", task_file(repo, "STATE.md"))
+
+
+def test_slice3_limit_names_the_last_failed_command(repo):
+    """D8: a limit logs the last failed command with its output."""
+    set_afk(repo, f"limits:\n  build_usd: 1\ngates:\n  testing: {GOOD_GATE}\n")
+    env = {**os.environ, "KAIRYN_CLAUDE": str(STUB), "STUB_LOG": str(repo.parent / "stub.log"), "STUB_COST": "2"}
+    subprocess.run([sys.executable, str(AFK), "run", TASK, "--root", str(repo)], env=env, capture_output=True)
+    state = task_file(repo, "STATE.md")
+    assert re.search(r"Last failed command: `python3 check_t1.py` exit 1 at the red check: .*ModuleNotFoundError", state)
+
+
+def test_slice3_stage_cost_is_logged(repo):
+    assert run(repo, "run", TASK).returncode == 0
+    assert re.search(r"\[build\] All 2 tasks green\. Cost \$0\.75\. Next: gates\.", task_file(repo, "STATE.md"))
+
+
+def test_slice3_afk_yml_template_parses_with_defaults():
+    sys.path.insert(0, str(PLUGIN / "scripts"))
+    import afk
+    data = afk.parse_afk((PLUGIN / "templates" / "afk.yml").read_text())
+    assert data["limits"] == afk.DEFAULT_LIMITS
+    assert list(data["gates"]) == ["testing", "contract", "accessibility", "performance", "observability", "security"]
+    assert set(data["gates"].values()) == {""}
+    assert afk.escape_patterns(data) == afk.DEFAULT_ESCAPES
+
+
+def test_slice3_a_session_that_runs_out_of_budget_is_a_limit(repo):
+    """The real CLI exits 1 with subtype error_max_budget_usd and an empty result (tracer run 2026-11-23)."""
+    run(repo, "run", TASK, mode="budget")
+    state = task_file(repo, "STATE.md")
+    assert re.search(r"Blocked: limit build_usd \$10 reached in a session: Reached maximum budget \(\$0\.01\)\. "
+                     r"Spent \$0\.13 in build", state)
