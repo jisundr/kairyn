@@ -160,6 +160,16 @@ def add_row(text: str, row: str) -> str:
     return "\n".join(lines[:last + 1] + [row] + lines[last + 1:]) + "\n"
 
 
+def clip_diff(diff: str, limit: int, stat: str) -> str:
+    """The diff for a prompt. Past `limit` characters it is cut, and the file list stays."""
+    if len(diff) <= limit:
+        return diff
+    return diff[:limit] + f"\n[diff cut at {limit} characters. Changed files:]\n{stat}\n"
+
+
+DIFF_LIMIT = 60000
+
+
 def escape_patterns(config: dict) -> list:
     """The `escape_hatches:` regex list of afk.yml, or the defaults when it has none."""
     return list(config.get("escape_hatches") or DEFAULT_ESCAPES)
@@ -349,7 +359,10 @@ class Run:
             if label.startswith("test("):
                 tests.update(files)
                 continue
-            found += [f"test edit: `{f}` in {label}" for f in files if f in tests]
+            # Adding to a test file is fine. A changed or removed line can weaken it.
+            found += [f"test edit: `{f}` in {label}" for f in files if f in tests and any(
+                line.startswith("-") and not line.startswith("---")
+                for line in git(self.wt, "show", "-U0", "--format=", sha, "--", f).splitlines())]
             name, line = None, 0
             for diff_line in git(self.wt, "show", "-U0", "--format=", sha).splitlines():
                 if diff_line.startswith("+++ "):
@@ -363,13 +376,22 @@ class Run:
                     line += 1
         return found
 
-    def reviewer(self, flags: list) -> list:
+    def diff(self) -> str:
+        """The change under review, without the task's own files. In the prompt: a read-only session
+        cannot count on running git (a PreToolUse hook rewrote `git diff` in a real run)."""
+        spec = [f"{self.base()}..HEAD", "--", ".", f":(exclude)docs/tasks/{self.task}"]
+        return clip_diff(git(self.wt, "diff", *spec), DIFF_LIMIT, git(self.wt, "diff", "--stat", *spec))
+
+    def reviewer(self, flags: list, fixed: list = ()) -> list:
         listed = "\n".join(f"- {f}" for f in flags) or "- none"
+        earlier = ("\nThe fix round answered these findings. Changes that fix them are in scope, not outside "
+                   "DESIGN.md:\n" + "\n".join(f"- {f}" for f in fixed)) if fixed else ""
         said = self.claude("reviewer", (
-            f"You are the reviewer for docs/tasks/{self.task}. Read its REQUIREMENTS.md and DESIGN.md and "
-            f"`git diff {self.base()[:12]}..HEAD`. Change nothing. Report each acceptance criterion with no test, "
-            "each change outside DESIGN.md, each test that checks nothing, and each flag below with no good reason. "
-            "Print one line per finding as `FINDING: <text>`, or `FINDINGS: none`.\nFlags:\n" + listed), read_only=True)
+            f"You are the reviewer for docs/tasks/{self.task}. Read its REQUIREMENTS.md and DESIGN.md and the diff "
+            "below. Change nothing. Report each acceptance criterion with no test, each change outside DESIGN.md, "
+            "each test that checks nothing, and each flag below with no good reason. "
+            "Print one line per finding as `FINDING: <text>`, or `FINDINGS: none`.\nFlags:\n" + listed + earlier
+            + "\nDiff:\n" + self.diff()), read_only=True)
         return [line.split(":", 1)[1].strip() for line in said.splitlines() if line.startswith("FINDING:")]
 
     def write_sections(self, path: Path, flags: list, findings: list, round_: str) -> None:
@@ -445,7 +467,7 @@ class Run:
             if code:
                 raise Blocked(f"{t.id}: done command exited {code} after the fix round")
         flags = self.flags()
-        findings = self.reviewer(flags)
+        findings = self.reviewer(flags, fixed=findings)
         self.write_sections(path, flags, findings, "Review 2, after the fix round")
         self.commit(f"kairyn({self.task}): review 2")
         if findings:
@@ -495,8 +517,8 @@ class Run:
         """An inferential check inside a gate (D9): '' when it passes, else the reason."""
         said = self.claude("gate", (
             f"You run the {name} gate check for docs/tasks/{self.task}. Follow .kairyn/stages/GATES.md. "
-            f"Read `git diff {self.base()[:12]}..HEAD` and change nothing. Check: {check}\n"
-            "Print `PASS`, or `FAIL: <one-line reason>`."), read_only=True)
+            f"Read the diff below and change nothing. Check: {check}\n"
+            "Print `PASS`, or `FAIL: <one-line reason>`.\nDiff:\n" + self.diff()), read_only=True)
         last = next((line for line in reversed(said.splitlines()) if line.startswith(("PASS", "FAIL"))), "")
         if last.startswith("PASS"):
             return ""

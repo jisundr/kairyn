@@ -8,7 +8,7 @@ stages:
   requirements: done   # pending | in-progress | done
   design: done
 created: 2026-11-23T11:38:32Z
-updated: 2026-11-23T21:10:25Z
+updated: 2026-11-23T21:24:50Z
 ---
 
 # Log
@@ -30,3 +30,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-23T20:28:56Z [build] T6 merged in PR #48. T7 on the feat/afk-loop-t7-evals branch: build, gates and review evals, README. 505 tests pass.
 2026-11-23T21:04:19Z [build] Evals: build, gates, review, retro pass at 10 runs (20261123T203342Z). Design failed quality 3.75; user chose option 2: restore the T4-cut approval rules. Design then passed, quality 4.0 (20261123T205538Z).
 2026-11-23T21:10:25Z [build] T7 merged in PR #49. Plugin version 0.8.1 to 0.9.0 for the final pull request to main.
+2026-11-23T21:24:50Z [build] Pre-merge tests: init, upgrade, check, exit evals pass (20261123T211349Z). A real reviewer-finding run found 3 defects; T8 fixes them on feat/afk-loop-t8-review-fixes. Rerun: fix round clears the finding, $0.85. 513 tests pass.

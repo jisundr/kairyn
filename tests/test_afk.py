@@ -233,7 +233,7 @@ def test_slice2_reviewer_runs_read_only_after_build(repo):
 
 def test_slice2_fix_round_clears_a_finding(repo):
     assert run(repo, "run", TASK, mode="review_fixable").returncode == 0
-    assert sum("fix round" in p for p in calls(repo)) == 1 and len(reviewer_calls(repo)) == 2
+    assert sum("fix round" in p and "reviewer" not in p for p in calls(repo)) == 1 and len(reviewer_calls(repo)) == 2
     state = task_file(repo, "STATE.md")
     assert (front(state, "stage"), front(state, "status")) == ("review", "blocked"), "the run reached review"
     assert "fix: cover VALUE 0" in git(worktree(repo), "log", "--format=%s")
@@ -243,7 +243,7 @@ def test_slice2_fix_round_clears_a_finding(repo):
 def test_slice2_escalates(repo):
     """D3: one fix round only. A finding that stays blocks the run with the finding."""
     assert run(repo, "run", TASK, mode="review_stuck").returncode == 0
-    assert sum("fix round" in p for p in calls(repo)) == 1 and len(reviewer_calls(repo)) == 2
+    assert sum("fix round" in p and "reviewer" not in p for p in calls(repo)) == 1 and len(reviewer_calls(repo)) == 2
     state = task_file(repo, "STATE.md")
     assert (front(state, "stage"), front(state, "status")) == ("build", "blocked")
     assert re.search(r"\[build\] Blocked: .*fix round.*feature_t1.VALUE has no test for 0", state)
@@ -619,3 +619,40 @@ def test_slice6_afk_creates_a_missing_afk_yml(repo):
     result = run(repo, "run", TASK)
     assert result.returncode == 1 and "Created .kairyn/afk.yml" in result.stdout
     assert (repo / ".kairyn" / "afk.yml").is_file() and not worktree(repo).exists()
+
+
+# --- slice 8: review fixes from the real reviewer run (2026-11-23) --------------------------------
+
+
+def test_slice8_reviewer_gets_the_diff_in_its_prompt(repo):
+    """A PreToolUse hook (rtk) rewrote `git diff`, so the read-only reviewer could not run it. afk.py passes the diff."""
+    run(repo, "run", TASK)
+    prompt = reviewer_calls(repo)[0]
+    assert "+VALUE = 1" in prompt and "check_t1.py" in prompt
+    assert "docs/tasks/" not in prompt.split("Diff:", 1)[1], "the task's own files are not part of the diff"
+
+
+def test_slice8_gate_check_gets_the_diff_in_its_prompt(repo):
+    set_afk(repo, f"gates:\n  testing: {GOOD_GATE}\n  observability: true\n"
+                  "checks:\n  observability: Each new code path writes a log line.\n")
+    run(repo, "run", TASK)
+    check = next(p for p in calls(repo) if "gate check" in p)
+    assert "+VALUE = 1" in check
+
+
+def test_slice8_second_review_treats_fixes_as_in_scope(repo):
+    run(repo, "run", TASK, mode="review_fixable")
+    second = reviewer_calls(repo)[1]
+    assert "feature_t1.VALUE has no test for 0." in second and "in scope" in second
+
+
+def test_slice8_adding_to_a_test_file_is_not_a_test_edit(repo):
+    run(repo, "run", TASK, mode="add_test")
+    assert "test edit" not in task_file(repo, "BUILD.md")
+
+
+def test_slice8_diff_is_cut_when_long():
+    sys.path.insert(0, str(PLUGIN / "scripts"))
+    import afk
+    text = afk.clip_diff("x" * 100, limit=40, stat=" a.py | 2 +-")
+    assert len(text) < 200 and "a.py" in text and "cut" in text

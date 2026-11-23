@@ -694,7 +694,8 @@ def _tool_calls(events: list) -> list:
     """[(name, input, result_text, is_error)] in session order, from `claude -p --output-format stream-json`."""
     calls, results = [], {}
     for e in events:
-        for c in ((e.get("message") or {}).get("content") or []) if isinstance(e, dict) else []:
+        message = e.get("message") if isinstance(e, dict) else None
+        for c in (message.get("content") or []) if isinstance(message, dict) else []:
             if not isinstance(c, dict):
                 continue
             if c.get("type") == "tool_use":

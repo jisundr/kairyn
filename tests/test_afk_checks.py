@@ -72,3 +72,9 @@ def test_red_before_code_fails_on_a_heredoc_write_before_any_red_run():
     events = [tool_use(1, "Bash", command="cat > textstats.py <<'EOF'\nx\nEOF"), tool_result(1, "")] + HEREDOC
     assert red_before_code_problems(events, "textstats.py", "test_lines") == [
         "no failing run of test_lines before the first edit of textstats.py"]
+
+
+def test_tool_calls_skip_an_event_whose_message_is_text():
+    """Real reviewer transcripts (2026-11-23) hold events with a plain-string message."""
+    assert red_before_code_problems([{"type": "system", "message": "hello"}, *TEST_FIRST], "textstats.py",
+                                    "test_lines") == []

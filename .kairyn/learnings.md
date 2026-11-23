@@ -10,3 +10,4 @@ Stages append here.
 - build: A stub `claude` that picks its action from words in the prompt breaks when a prompt shares the word. The fix-round prompt said "reviewer findings" and the stub took it for a reviewer call.
 - build: `claude -p --max-budget-usd` is a soft cap: it stops after the turn that passes it. A $0.01 cap on Opus spent $0.13. It exits 1 with `subtype: error_max_budget_usd`, an empty `result` and the reason in `errors`.
 - build: `.harness/workflows/running-stages.md` (plugin copy) is at its 800-token budget. The next AFK-run text needs its own harness doc.
+- build: A user's PreToolUse hook can rewrite Bash commands (rtk turned `git diff` into `rtk git diff`), so an allowlist such as `Bash(git diff:*)` stops matching. A read-only session gets its input in the prompt, not from Bash.
