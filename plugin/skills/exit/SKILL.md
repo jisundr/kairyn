@@ -9,5 +9,6 @@ allowed-tools: Bash(python3:*), Bash(date:*), Bash(mkdir:*), Read, Write, Edit, 
 Follow `.kairyn/stages/EXIT.md` exactly for: $ARGUMENTS
 
 - The exit script is `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/exit.py`. Run it from the repo root.
+- On a `RETRO:` line, the retro script is `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/retro.py`.
 - The argument is a task folder name in `docs/tasks/`. If there is none, list the tasks with `status: done` and ask which one.
 - If `.kairyn/stages/EXIT.md` is missing, tell the user to run `/kairyn:upgrade`, and stop.

@@ -1,4 +1,4 @@
-# depends: plugin/skills/exit/SKILL.md, plugin/stages/EXIT.md, plugin/stages/_template.md, plugin/scripts/exit.py, plugin/scripts/init.sh
+# depends: plugin/skills/exit/SKILL.md, plugin/stages/EXIT.md, plugin/stages/_template.md, plugin/scripts/exit.py, plugin/scripts/retro.py, plugin/stages/RETRO.md, plugin/templates/RETRO.md, plugin/skills/retro/SKILL.md, plugin/scripts/init.sh
 description: exit stage
 prompts: ["{{scenario}}"]
 providers:
@@ -17,3 +17,9 @@ tests:
       min_pass_rate: {exits: 0.9}
     assert:
       - {type: python, value: "file://asserts.py:exits_without_adr", metric: exits}
+  - description: Exit with learnings.md past half its budget starts retro, which waits for approval
+    vars: {scenario: exit_retro}
+    metadata:
+      min_pass_rate: {exit_starts_retro: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:exit_starts_retro", metric: exit_starts_retro}

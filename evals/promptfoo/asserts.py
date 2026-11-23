@@ -9,7 +9,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
-from checks import (chosen_option, design_run_problems, design_test_plan_problems, grounded_problems, options_problems,  # noqa: E402
+from checks import (retro_applied_problems, retro_proposal_problems, retro_scope_problems, chosen_option, design_run_problems, design_test_plan_problems, grounded_problems, options_problems,  # noqa: E402
                     exit_problems, TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_reply_problems, next_routing_stage,  # noqa: E402
                     open_decisions, routing_problems, state_fields, ste_problems, ste_rate, structural_problems,
                     traceability_problems)
@@ -442,4 +442,47 @@ def design_records_approval(output, context):
     problems = design_run_problems(run, approved=True)
     problems += approval_problems(d["doc"], approved=True, name=d["approver"], words=d["words"],
                                   start=run["start"], end=run["end"])
+    return _result(problems)
+
+
+# --- retro stage: 1 = proposal only; 2 = proposal, then "Approved."; 3 = exit with a full learnings.md -----
+def _times(d: dict) -> dict:
+    parse = lambda s: datetime.strptime(s, TS_FORMAT).replace(tzinfo=timezone.utc)
+    return {**d, "start": parse(d["start"]), "end": parse(d["end"])}
+
+
+def retro_proposes(output, context):
+    """One retro folder; RETRO.md gives each learning one right action and waits for approval."""
+    from runner import RETRO_EXPECTED, RETRO_HOMES, RETRO_OVERFLOW
+    d = json.loads(output)
+    if len(d["retro_dirs"]) != 1:
+        return _result([f"retro folders {d['retro_dirs']}, expected one docs/tasks/<date>-retro/"])
+    return _result(retro_proposal_problems(d["retro"], RETRO_EXPECTED, RETRO_HOMES, Path(d["repo_before"]), RETRO_OVERFLOW))
+
+
+def retro_waits(output, context):
+    """Before approval: blocked, and no change outside the retro folder."""
+    d = json.loads(output)
+    problems = retro_scope_problems(d["changed"])
+    if state_fields(d["state"]).get("status") != "blocked":
+        problems.append(f"status {state_fields(d['state']).get('status')!r}, expected blocked")
+    return _result(problems)
+
+
+def retro_applies(output, context):
+    """After 'Approved.': each action applied, kept entries unchanged, budgets untouched, approval recorded."""
+    d = _times(json.loads(output))
+    problems = retro_scope_problems(d["turns"][0]["changed"]) if d["turns"] else ["no turns"]
+    return _result([f"turn 0: {p}" for p in problems] + retro_applied_problems(d))
+
+
+def exit_starts_retro(output, context):
+    """Exit closes the task as usual, then retro writes a proposal and changes no learning yet."""
+    d = json.loads(output)
+    problems = exit_problems(d, expect_adr=False)
+    if len(d["retro_dirs"]) != 1:
+        problems.append(f"retro folders {d['retro_dirs']}, expected one")
+    elif "Approval: pending" not in d["retro"]:
+        problems.append("RETRO.md does not wait for approval")
+    problems += [f"learning removed before approval: {e[:50]}" for e in d["entries"] if e not in d["learnings"]]
     return _result(problems)

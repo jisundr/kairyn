@@ -10,7 +10,7 @@ load: on-demand
 | | Tests (`tests/`) | Evals (`evals/`) |
 |---|---|---|
 | Result | Same every time | A pass rate over N runs |
-| Speed and cost | Under a second, free | 3 to 7 minutes per eval, uses tokens |
+| Cost | Under a second, free | Minutes and tokens per eval |
 | Runs | Always | Only when dependencies changed |
 | Command | `uv run pytest` | `/run-evals` |
 
@@ -20,11 +20,11 @@ load: on-demand
 uv run pytest
 ```
 
-Plugin shape, scripts, eval checks, selector, gates. No `claude` calls.
+No `claude` calls.
 
 ## Evals
 
-Evals use promptfoo (via `npx`, pinned in `evals/run.py`), one `evals/promptfoo/<name>.yaml` each, each test repeated N times. Each repeat calls `provider.py`: one headless `claude` session in a fresh repo, evidence as JSON. `asserts.py` checks it with `evals/checks.py` and a `claude` judge (1 to 5 per criterion).
+Evals use promptfoo (`npx`, pinned in `evals/run.py`), one `evals/promptfoo/<name>.yaml` each, each test repeated N times. Each repeat calls `provider.py`: one headless `claude` session in a fresh repo, evidence as JSON. `asserts.py` checks it with `evals/checks.py` and a `claude` judge (scores 1 to 5).
 
 Each test sets `metadata.min_pass_rate: {metric: fraction}`; `evals/run.py` fails a metric below it.
 
@@ -39,7 +39,8 @@ Judge gate: criterion scores average at least 4, none below 3. Plain language: a
 | model-routing | 90%: `well_formed`, `starts_with_baseline` (stage 0), `waits_for_human` (open `D<n>`); 80% plain language; judge |
 | grill | 90% over 4 scripted turns: `well_formed`, `one_question` (with a recommendation), `records_answers`, `waits_for_answer`, `hands_off` (names the folder); 80% plain language; judge |
 | upgrade | 90% upgrade a v0.1.0 repo, name its conflict |
-| exit | 90%: task and closed backlog gone, changelog line, ADR only when due |
+| exit | 90%: task and closed backlog gone, changelog line, ADR only when due; full learnings start retro |
+| retro | 90%: one right action per learning, no change before approval, each action applied after |
 
 ### Running only what changed
 
@@ -77,4 +78,3 @@ Each run saves `<name>.json`, evidence and `summary.md` to `evals/results/<run-i
 1. Write `evals/promptfoo/<name>.yaml`: `# depends:` header, thresholds, a `metric` per assertion.
 2. Add a scenario function to `provider.py` and its checks to `asserts.py`.
 3. Run it on current instructions; confirm it can fail.
-4. Pure checks: `evals/checks.py`, tested in `tests/`.

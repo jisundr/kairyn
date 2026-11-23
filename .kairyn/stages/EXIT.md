@@ -20,6 +20,7 @@ Optional: run it after a task's change merges. `/kairyn:exit <task>` runs it. Co
 4. Append each durable rule the task taught to `.kairyn/learnings.md`: `- <date> [exit] <rule>`. Skip rules already there.
 5. Write one changelog line: what changed for a user of the repo, at most 25 words.
 6. Run `close <task> --entry "<line>"`. Report every line it prints. Report each `LINK:` as a link to fix.
+7. On a `RETRO:` line, follow `.kairyn/stages/RETRO.md` in this turn.
 
 ## Output
 No task output: `close` deletes the folder. The outputs are the ADRs, the `CHANGELOG.md` entry and the learnings. Write them in ASD-STE100 (see `_template.md`, Writing). Get dates from `date +%Y-%m-%d`.

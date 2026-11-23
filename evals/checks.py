@@ -569,3 +569,105 @@ def design_run_problems(run: dict, approved: bool = False) -> list[str]:
     text = doc.read_text()
     problems += output_header_problems(text, task.name, "design") + design_section_problems(text)
     return problems
+
+
+# --- retro stage ------------------------------------------------------------------
+# RETRO.md has one table row per learning, numbered L<n> in learnings.md order:
+#   | L1 | move | `<home>` | <text to add> |
+# Actions: move, drop, backlog, keep. Exit runs retro when learnings.md is past half its budget.
+RETRO_ACTIONS = ("move", "drop", "backlog", "keep")
+_RETRO_ROW = re.compile(r"^\|\s*\**`?(L\d+)`?\**\s*\|\s*\**`?(\w+)`?\**\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*$", re.M)
+_ENTRY = re.compile(r"^- \d{4}-\d\d-\d\d \[[\w-]+\] (.+)$", re.M)
+_CELL_PATH = re.compile(r"`([^`\s]+)`")
+
+
+def learning_entries(text: str) -> list[str]:
+    """The full lines of learnings.md entries, in order (L1 is the first)."""
+    return [m.group(0) for m in _ENTRY.finditer(text)]
+
+
+def entry_text(line: str) -> str:
+    m = _ENTRY.match(line)
+    return m.group(1).strip() if m else line
+
+
+def retro_rows(text: str) -> dict[str, tuple[str, str, str]]:
+    """{"L1": (action, home cell, detail cell)}; the action is lower case."""
+    return {m.group(1): (m.group(2).lower(), m.group(3), m.group(4)) for m in _RETRO_ROW.finditer(text)}
+
+
+def _cell_paths(cell: str) -> list[str]:
+    return _CELL_PATH.findall(cell) or [cell.strip()]
+
+
+def retro_proposal_problems(text: str, expected: dict[str, set], homes: dict[str, str], repo: Path,
+                            overflow: tuple[str, ...] = ()) -> list[str]:
+    """RETRO.md before approval. expected: {"L1": {"move"}}; homes: {"L1": "<path>"} for expected moves;
+    repo: the fixture as it was before the run (paths must exist there); overflow: entries whose home is full."""
+    rows = retro_rows(text)
+    problems = [f"no row for {n}" for n in expected if n not in rows]
+    problems += [f"row {n} is not a learning" for n in rows if n not in expected]
+    for n, (action, home, detail) in rows.items():
+        if n not in expected:
+            continue
+        if action not in RETRO_ACTIONS:
+            problems.append(f"{n}: unknown action {action!r}")
+            continue
+        if action not in expected[n]:
+            problems.append(f"{n}: {action}, expected {'/'.join(sorted(expected[n]))}")
+        if action == "move":
+            paths = _cell_paths(home)
+            if n in homes and homes[n] not in paths:
+                problems.append(f"{n}: move home {home!r}, expected {homes[n]}")
+            if not any((repo / p).is_file() for p in paths):
+                problems.append(f"{n}: move home {home!r} does not exist")
+            if not detail.strip():
+                problems.append(f"{n}: move gives no text to add")
+        elif action == "drop":
+            if not any((repo / p).is_file() for p in _cell_paths(home)) and not detail.strip():
+                problems.append(f"{n}: drop names no existing path and no reason")
+        elif action == "keep" and not detail.strip() and not home.strip():
+            problems.append(f"{n}: keep gives no reason")
+        if action == "backlog" and n in overflow and not re.search(r"\bover\b.*\d|\d+\s*tokens?\s*over", (home + " " + detail).lower()):
+            problems.append(f"{n}: backlog for a full home does not name the overflow")
+    return problems + approval_problems(text, approved=False)
+
+
+def retro_scope_problems(changed: list[str]) -> list[str]:
+    """Before approval, retro changes nothing outside its own task folder docs/tasks/<date>-retro/."""
+    outside = [p for p in changed if not re.match(r"docs/tasks/\d{4}-\d\d-\d\d-retro[\w-]*/", p)]
+    return [f"changed before approval: {p}" for p in outside]
+
+
+def retro_applied_problems(run: dict) -> list[str]:
+    """After approval. run = {"entries": [lines before], "retro": RETRO.md, "learnings": text after,
+    "backlog": {name: text} of new backlog files, "homes_before"/"homes_after": {path: text},
+    "budgets_before"/"budgets_after": text, "state": STATE.md, "approver", "words", "start", "end"}."""
+    rows = retro_rows(run["retro"])
+    if not rows:
+        return ["RETRO.md has no action rows"]
+    problems = []
+    after = set(learning_entries(run["learnings"]))
+    for i, line in enumerate(run["entries"], 1):
+        action = rows.get(f"L{i}", ("?",))[0]
+        if action == "keep" and line not in after:
+            problems.append(f"L{i}: kept entry changed or removed")
+        if action != "keep" and line in after:
+            problems.append(f"L{i}: {action} entry still in learnings.md")
+        if action == "backlog":
+            quoted = [name for name, text in run["backlog"].items()
+                      if entry_text(line) in text and re.search(r"^status:\s*inbox\s*$", text, re.M)]
+            if not quoted:
+                problems.append(f"L{i}: no inbox backlog idea quotes the learning")
+        if action == "move":
+            home = _cell_paths(rows[f"L{i}"][1])[0]
+            if run["homes_after"].get(home) == run["homes_before"].get(home):
+                problems.append(f"L{i}: home {home} unchanged")
+    extra = after - set(run["entries"])
+    problems += [f"new entry in learnings.md: {e[:50]}" for e in sorted(extra)]
+    if run["budgets_after"] != run["budgets_before"]:
+        problems.append("budgets.yml changed")
+    if state_fields(run["state"]).get("status") != "done":
+        problems.append(f"retro status {state_fields(run['state']).get('status')!r}, expected done")
+    return problems + approval_problems(run["retro"], approved=True, name=run["approver"], words=run["words"],
+                                        start=run["start"], end=run["end"])

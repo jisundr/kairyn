@@ -156,3 +156,33 @@ def test_close_reports_links_to_deleted_backlog_files(repo):
     (repo / "docs" / "backlog" / "4-inbox.md").write_text(backlog("inbox", "Split from [dropped](2-dropped.md)."))
     r = run(repo, "close", TASK, "--entry", "x")
     assert "LINK: docs/backlog/4-inbox.md still links 2-dropped.md" in r.stdout
+
+
+def learnings(root, chars):
+    (root / ".kairyn").mkdir(exist_ok=True)
+    (root / ".kairyn" / "learnings.md").write_text("x" * chars)
+
+
+@pytest.mark.parametrize("chars,line", [(4004, "RETRO: learnings.md 1001/2000"), (8000, "RETRO: learnings.md 2000/2000")])
+def test_close_names_retro_past_half_the_learnings_budget(repo, chars, line):
+    learnings(repo, chars)
+    r = run(repo, "close", TASK, "--entry", "Added a dry run.")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert r.stdout.splitlines()[-1] == line
+
+
+@pytest.mark.parametrize("chars", [0, 4000])
+def test_close_is_quiet_at_or_under_half_the_budget(repo, chars):
+    if chars:
+        learnings(repo, chars)
+    r = run(repo, "close", TASK, "--entry", "Added a dry run.")
+    assert r.returncode == 0 and "RETRO:" not in r.stdout, r.stdout
+
+
+def test_close_uses_the_repo_learnings_budget(repo):
+    (repo / ".harness").mkdir()
+    (repo / ".harness" / "budgets.yml").write_text(
+        'budgets:\n  - {pattern: ".kairyn/learnings.md", max_tokens: 1000, load: runtime}\n')
+    learnings(repo, 3976)
+    r = run(repo, "close", TASK, "--entry", "Added a dry run.")
+    assert "RETRO: learnings.md 994/1000" in r.stdout
