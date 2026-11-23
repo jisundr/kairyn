@@ -8,7 +8,7 @@ Suggested commit order: retro-stage, then build-stage. Parked ideas are reviewed
 
 | Idea | Status | Appetite | Depends on | Note |
 |---|---|---|---|---|
-| [Retro stage](20261123033554-retro-stage.md) | triaged | small | | learnings.md at 966/1000 |
+| [Retro stage](20261123033554-retro-stage.md) | committed | small | | learnings.md at 966/1000 |
 | [Build stage](20261122080759-build-stage.md) | triaged | big | design (ADR 0006) | Next SDLC gap |
 | [Approval gates hand off](20261123004258-approval-handoff.md) | triaged | small | | Grill has no approval line |
 | [Grill in rounds](20261122105739-grill-rounds.md) | triaged | small | | GRILL.md at 498/500 |
