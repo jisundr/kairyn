@@ -73,3 +73,33 @@ def test_command_has_description_and_valid_script_references(command):
     assert yaml.safe_load(fm).get("description")
     for script in re.findall(r"\$\{CLAUDE_PLUGIN_ROOT\}/(scripts/[\w.-]+)", text):
         assert (PLUGIN / script).is_file(), f"{command.name} references missing {script}"
+
+
+
+def test_state_template_lists_design_after_requirements():
+    """Design is a required stage after requirements (D4)."""
+    data = yaml.safe_load(split_front_matter((PLUGIN / "templates" / "STATE.md").read_text())[0])
+    assert list(data["stages"]) == ["requirements", "design"]
+    assert data["stages"]["design"] == "pending"
+
+
+def test_requirements_hands_off_to_design():
+    text = (PLUGIN / "stages" / "REQUIREMENTS.md").read_text()
+    assert "`stage: design`" in text.split("## State update", 1)[1]
+
+
+def test_design_stage_is_required_and_follows_requirements():
+    data = yaml.safe_load(split_front_matter((PLUGIN / "stages" / "DESIGN.md").read_text())[0])
+    assert data["order"] == 2 and not data.get("optional")
+
+
+def test_design_checks_requirements_approval_first():
+    """R6: no design before the requirements are approved."""
+    steps = (PLUGIN / "stages" / "DESIGN.md").read_text().split("## Steps", 1)[1]
+    first = next(line for line in steps.splitlines() if line.startswith("1."))
+    assert "Approval" in first
+
+
+def test_docs_name_the_design_stage():
+    for doc in (ROOT / "README.md", PLUGIN / "harness" / ".harness" / "workflows" / "running-stages.md"):
+        assert "/kairyn:design" in doc.read_text(), doc

@@ -22,16 +22,13 @@ Two layers.
 uv run pytest
 ```
 
-Plugin shape, scripts, eval checks, selector and gates. Never calls `claude`.
+Plugin shape, scripts, eval checks, selector, gates. Never calls `claude`.
 
 ## Evals
 
-Evals use promptfoo (Node, via `npx`, pinned in `evals/run.py`), one `evals/promptfoo/<name>.yaml` each. promptfoo repeats every test N times (default 10). Each repeat calls `evals/promptfoo/provider.py`: one headless `claude` session in a fresh repo, evidence returned as JSON. Assertions check it:
+Evals use promptfoo (via `npx`, pinned in `evals/run.py`), one `evals/promptfoo/<name>.yaml` each, each test repeated N times (default 10). Each repeat calls `provider.py`: one headless `claude` session in a fresh repo, evidence as JSON. `asserts.py` checks it with `evals/checks.py` and a `claude` judge (1 to 5 per criterion).
 
-- Deterministic checks are `python` assertions in `asserts.py`, built on `evals/checks.py`.
-- A `claude` judge in `asserts.py` scores quality 1 to 5 per criterion.
-
-Each test sets `metadata.min_pass_rate: {metric: fraction}`; each assertion names its `metric`. `evals/run.py` fails a metric below its threshold.
+Each test sets `metadata.min_pass_rate: {metric: fraction}`; `evals/run.py` fails a metric below it.
 
 Judge gate: criterion scores average at least 4, none below 3. Plain language: at most 1.0 ASD-STE100 violations per 100 words.
 
@@ -40,6 +37,7 @@ Judge gate: criterion scores average at least 4, none below 3. Plain language: a
 | init | 90% pass `verify-init.sh --fresh`; 100% keep `.kairyn/` and `CLAUDE.md` (one kairyn block) |
 | check | 90% name the doc that lost its header |
 | requirements | `requirements` runs via its skill. 90%: `well_formed` (ends blocked on approval, real timestamps), `traceable` (criteria cite `request`, `A<n>`, `D<n>` or `R<n>`), `specified` (EARS, non-functional needs, owners), `waits_for_approval`, `uses_concept`; over 3 turns `approval_gate` and `records_approval`; 80% plain language; judge, `no_invention` at least 4 |
+| design | Via its skill, 90%: `design_` well_formed, traceable, options, grounded (paths exist or say `(new)`), waits; over 4 turns approval_gate, `rewrites_option`, records_approval; judge |
 | model-routing | Via its skill. 90%: `well_formed`, `starts_with_baseline` (stage 0), `waits_for_human` (open `D<n>`); 80% plain language; judge |
 | grill | 90% over 4 scripted turns: `well_formed`, `one_question` (with a recommendation), `records_answers`, `waits_for_answer`, `hands_off` (names the folder); 80% plain language; judge |
 | upgrade | 90% upgrade a v0.1.0 repo, name its conflict |
@@ -61,12 +59,11 @@ uv run python evals/run.py init                 # a named eval
 uv run python evals/run.py --all-evals          # everything, e.g. before a release
 ```
 
-- A hash is saved only when every metric passed at 10 runs; fewer never vouch.
-- List every plugin file an eval uses in `# depends:`.
+A hash is saved only when every metric passed at 10 runs. List every plugin file an eval uses in `# depends:`.
 
 ### Evidence and summary
 
-Each run saves `<name>.json`, per-run evidence and `summary.md` to `evals/results/<run-id>/`. Read them before you claim a result.
+Each run saves `<name>.json`, evidence and `summary.md` to `evals/results/<run-id>/`. Read them before you claim a result.
 
 `summary.md` ends with cost per scenario and a total, from each run's `cost.jsonl` (`total_cost_usd`, an estimate). A session records its last turn only: on `--resume` the value is cumulative.
 

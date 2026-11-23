@@ -6,7 +6,7 @@ import yaml
 
 from helpers import PLUGIN, split_front_matter
 
-STAGE_SKILLS = {"requirements": "REQUIREMENTS", "grill": "GRILL", "model-routing": "MODEL-ROUTING", "exit": "EXIT"}
+STAGE_SKILLS = {"requirements": "REQUIREMENTS", "design": "DESIGN", "grill": "GRILL", "model-routing": "MODEL-ROUTING", "exit": "EXIT"}
 MODELS = {"haiku", "sonnet", "opus", "inherit"}
 SCRIPT_COMMANDS = ("init", "check", "upgrade", "release")
 
@@ -57,3 +57,8 @@ def test_grill_is_a_skill_not_a_command():
 def test_script_only_commands_name_a_model(name):
     data, _ = front(PLUGIN / "commands" / f"{name}.md")
     assert data.get("model") in MODELS
+
+
+def test_design_skill_runs_on_opus():
+    """D6: design needs the most judgment; Sonnet only after a 10-run eval pass."""
+    assert front(skill("design"))[0]["model"] == "opus"

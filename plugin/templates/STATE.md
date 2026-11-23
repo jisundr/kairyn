@@ -5,6 +5,7 @@ stage: requirements
 status: in-progress   # in-progress | blocked | done
 stages:
   requirements: pending   # pending | in-progress | done
+  design: pending
 created: <YYYY-MM-DDTHH:MM:SSZ>
 updated: <YYYY-MM-DDTHH:MM:SSZ>
 ---

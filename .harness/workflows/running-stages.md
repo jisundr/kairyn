@@ -11,7 +11,7 @@ Stage instructions are in `.kairyn/stages/`, one file per stage, in `order`. The
 
 ## Run one
 
-Run its skill: `/kairyn:requirements add a dry-run flag`, `/kairyn:grill <topic>` or `/kairyn:model-routing <task folder>`. Or ask Claude to follow `.kairyn/stages/<STAGE>.md` for your request. That route works for stages you add.
+Run its skill: `/kairyn:requirements add a dry-run flag`, `/kairyn:design <task folder>`, `/kairyn:grill <topic>` or `/kairyn:model-routing <task folder>`. Or ask Claude to follow `.kairyn/stages/<STAGE>.md` for your request. That route works for stages you add.
 
 Each skill names a cheaper model in its `model:` front matter. The model applies to the turn the skill runs. Your next reply, for example an approval or a grill answer, runs on the session model. Set a cheaper session model with `/model` for long stages.
 
@@ -22,9 +22,9 @@ A stage:
 
 An optional stage (`optional: true` in its front matter) is not in the default stage list. Run it on a task only when it fits: `GRILL.md` before `requirements` when a request is vague, `MODEL-ROUTING.md` after it to cut model cost, `EXIT.md` (`/kairyn:exit`) after a task merges. It adds itself to the task's `stages`.
 
-## Approve requirements
+## Approve requirements and design
 
-`requirements` ends with `status: blocked` and `Approval: pending` in `REQUIREMENTS.md`. Read it, then approve in chat. Claude writes `Approval: <your git name>, <timestamp>, "<your words>"` and moves the task on. A reply that does not approve changes nothing. The sections to fill are in `.kairyn/templates/REQUIREMENTS.md`.
+`requirements` and `design` end with `status: blocked` and `Approval: pending` in their output. Read it, then approve in chat. Claude writes `Approval: <your git name>, <timestamp>, "<your words>"` and moves the task on: requirements to `design`, design to `done`. A reply that does not approve changes nothing. To design another way, name an option from `DESIGN.md`: Claude rewrites it. The sections are in `.kairyn/templates/`.
 
 ## Add a stage
 

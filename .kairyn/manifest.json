@@ -6,7 +6,11 @@
     },
     ".harness/workflows/running-stages.md": {
       "owner": "plugin",
-      "sha256": "28e2560ce2a234cee8322ea1123eafcaa14d99bd93e741be57ecc8cede121aa9"
+      "sha256": "5916033a892435918865cb5474dfc7ef7545adb1c0d3d4ff591c76de5f1e5edd"
+    },
+    ".kairyn/stages/DESIGN.md": {
+      "owner": "repo",
+      "sha256": "a92dff69ff20983d3270057eebcd27f67ba2d0d2a0ee26b8fbef7b9e8bc08bd2"
     },
     ".kairyn/stages/EXIT.md": {
       "owner": "repo",
@@ -22,11 +26,15 @@
     },
     ".kairyn/stages/REQUIREMENTS.md": {
       "owner": "repo",
-      "sha256": "d9ce45b734d3d9c4a776bd8c9c2d6842b09b049637e870319f1c38a3783c007b"
+      "sha256": "3cf14b8608276d9c1157a4c219b2820769a26fd6bef0859ce545a93b1bdc83e4"
     },
     ".kairyn/stages/_template.md": {
       "owner": "repo",
       "sha256": "de59ec19f18deca9426d43f3fd09c1e5d91b0ec93a9d109b6d9566215f7adc5d"
+    },
+    ".kairyn/templates/DESIGN.md": {
+      "owner": "plugin",
+      "sha256": "e23c1c7fc3c829854e0c9dab2a2fe33206c8c7f132810f1c8bf48f63a92a54bc"
     },
     ".kairyn/templates/REQUIREMENTS.md": {
       "owner": "plugin",
@@ -34,12 +42,12 @@
     },
     ".kairyn/templates/STATE.md": {
       "owner": "plugin",
-      "sha256": "fd912ac9ebacc2e7d7520f679ef6235d0bd31f13ee9af0938203ababd5605716"
+      "sha256": "7b9c8634c40335504aeccbe9fa9c355cf12a81c4a70cf958593ceaec1153df71"
     },
     "CLAUDE.md#kairyn": {
       "owner": "plugin",
       "sha256": "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
     }
   },
-  "version": "0.6.0"
+  "version": "0.7.0"
 }

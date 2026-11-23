@@ -12,7 +12,8 @@ Each unit of work is a task with its own folder in the user's repo:
 ```
 docs/tasks/<YYYY-MM-DD>-<slug>/
 ├── STATE.md            front matter = current state, body = log
-└── REQUIREMENTS.md     output of the requirements stage (one file per stage, upper case)
+├── REQUIREMENTS.md     output of the requirements stage (one file per stage, upper case)
+└── DESIGN.md           output of the design stage
 ```
 
 Stage outputs are files, not chat, so later stages (which run in a fresh context) can read them, a person can review them in git, and the repo keeps a history.
@@ -44,7 +45,7 @@ When a stage finishes it sets its own stage to `done`, updates `updated`, then:
 
 Open questions are not tracked in `STATE.md`. They live in `REQUIREMENTS.md`, and waiting on the user is expressed with `status: blocked`.
 
-`requirements` always ends blocked: `REQUIREMENTS.md` ends with `Approval: pending` until the user approves in chat. The agent then writes `Approval: <git user.name>, <timestamp>, "<the user's words>"` and moves on (`status: done` while it is the last stage). `checks.approval_problems` enforces both forms.
+`requirements` always ends blocked: `REQUIREMENTS.md` ends with `Approval: pending` until the user approves in chat. The agent then writes `Approval: <git user.name>, <timestamp>, "<the user's words>"` and moves the task to `design`. `design` ends the same way with `DESIGN.md`; as the last stage, its approval sets `status: done`. `checks.approval_problems` enforces both forms.
 
 ## Time
 
