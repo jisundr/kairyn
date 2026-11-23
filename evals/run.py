@@ -50,13 +50,19 @@ def metric_outcomes(data: dict) -> dict:
     return out
 
 
+def needed(total: int, rate: float) -> int:
+    """Passes a gate needs: total * rate rounded up, at least 1. Rounding down let a 1-run smoke pass
+    with 0 passes and a 2-run smoke with 1 of 2. At 10 runs, 90% still needs 9."""
+    return max(1, math.ceil(total * rate - 1e-9))
+
+
 def gate(outcomes: dict) -> list[str]:
-    """Summary lines, one per metric; a metric fails when passes < floor(total * min), as before."""
+    """Summary lines, one per metric; a metric fails when passes < needed(total, min)."""
     lines = []
     for (name, metric), o in outcomes.items():
-        needed = math.floor(o["total"] * o["min"] + 1e-9)
-        ok = o["passes"] >= needed
-        lines.append(f"{'PASS' if ok else 'FAIL'}  {metric:<18}{o['passes']}/{o['total']} (need {needed}, {o['min']:.0%})  [{name}]")
+        need = needed(o["total"], o["min"])
+        ok = o["passes"] >= need
+        lines.append(f"{'PASS' if ok else 'FAIL'}  {metric:<18}{o['passes']}/{o['total']} (need {need}, {o['min']:.0%})  [{name}]")
         if not ok:
             lines += [f"      - {reason}" for reason in o["reasons"][:5]]
     return lines
@@ -66,7 +72,7 @@ def score_gate(results_dir: Path, scenario: str, total: int, gate_cfg: dict) -> 
     """Judge-score gate from the judge.json files assertions save per run: overall mean, floor, per-criterion means."""
     scores = [json.loads(f.read_text()) for f in sorted((results_dir / scenario).glob("*/judge.json"))]
     values = [v for s in scores for v in s.values()]
-    need = math.floor(total * gate_cfg["min_gradable"] + 1e-9)
+    need = needed(total, gate_cfg["min_gradable"])
     problems = []
     if len(scores) < need:
         problems.append(f"only {len(scores)}/{total} runs gradable (need {need})")

@@ -125,3 +125,34 @@ def test_requirements_judge_sees_the_instruction_the_run_got():
     asserts = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(asserts)
     assert NO_QUESTIONS in asserts.RUBRIC.format(request="r", doc="d")
+
+
+def _gate_line(passes, total, minimum):
+    from run import gate
+    return gate({("t", "m"): {"passes": passes, "total": total, "min": minimum, "reasons": []}})[0]
+
+
+def test_gate_keeps_the_ten_run_thresholds():
+    assert _gate_line(9, 10, 0.9).startswith("PASS") and "(need 9," in _gate_line(9, 10, 0.9)
+    assert _gate_line(8, 10, 0.9).startswith("FAIL")
+    assert _gate_line(8, 10, 0.8).startswith("PASS") and "(need 8," in _gate_line(8, 10, 0.8)
+
+
+def test_gate_fails_a_small_run_below_its_rate():
+    """1 run needed 0 passes and 2 runs needed 1, so a smoke run could not fail. A rate rounds up."""
+    assert _gate_line(0, 1, 0.9).startswith("FAIL")
+    assert _gate_line(1, 2, 0.9).startswith("FAIL")
+    assert _gate_line(3, 4, 0.9).startswith("FAIL")
+    assert _gate_line(1, 1, 0.9).startswith("PASS")
+    assert _gate_line(2, 4, 0.5).startswith("PASS")
+
+
+def test_gate_fails_when_no_run_finished():
+    assert _gate_line(0, 0, 0.9).startswith("FAIL")
+
+
+def test_score_gate_rounds_gradable_runs_up(tmp_path):
+    from run import score_gate
+    (tmp_path / "s" / "run-0").mkdir(parents=True)
+    (tmp_path / "s" / "run-0" / "judge.json").write_text('{"a": 5}')
+    assert any("gradable" in line for line in score_gate(tmp_path, "s", 2, {"mean": 4, "floor": 3, "min_gradable": 0.9}))

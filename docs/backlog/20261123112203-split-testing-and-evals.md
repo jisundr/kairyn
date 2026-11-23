@@ -19,7 +19,7 @@ review_by:
 - `20261123110952-run-evals-arguments.md`: "`/run-evals` with no arguments runs every eval whose dependencies changed, at 10 runs. `--all-evals` with names runs only those names. For a cheap check, name the eval and add `--runs 2`."
 - `20261123110952-fixtures-pass-repo-checks.md`: "An eval fixture must pass the repo's own checks. After adding a harness doc, run `harness_docs.py --write`, or the agent cannot find it."
 
-**Notes:** Retro measured each rule OVER 32 to 45 tokens. The `--runs 2` advice conflicts with [small-run-gate](20261123110952-small-run-gate.md): a 2-run gate needs only 1 of 2 passes. Fix the wording when it moves.
+**Notes:** Retro measured each rule OVER 32 to 45 tokens. Since the small-run gate fix, a 2-run gate needs 2 of 2 passes. The `--runs 2` advice holds: a cheap smoke now fails on any miss.
 
 # Log
 
