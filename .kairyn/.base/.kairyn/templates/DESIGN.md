@@ -16,7 +16,8 @@ Option <letter>. <why it meets the requirements>
 | B | <what> | <cost> | <risk> |
 
 ## Tasks
-- T1: <change>. Files: `<path>`, `<path>` (new). Done: <check>.
+- T1: <tracer bullet>. Files: `<path>`, `<path>` (new). Done: `<command>` exits 0.
+- T2: <slice>. Files: `<path>`. after: T1. Done: `<command>` exits 0.
 
 ## Test plan
 | Criterion | Task | Test |

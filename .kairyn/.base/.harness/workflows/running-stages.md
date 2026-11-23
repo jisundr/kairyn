@@ -24,7 +24,11 @@ An optional stage (`optional: true` in its front matter) is not in the default s
 
 ## Approve requirements and design
 
-`requirements` and `design` end with `status: blocked` and `Approval: pending` in their output. Read it, then approve in chat. Claude writes `Approval: <your git name>, <timestamp>, "<your words>"` and moves the task on: requirements to `design`, design to `done`. A reply that does not approve changes nothing. To design another way, name an option from `DESIGN.md`: Claude rewrites it. The sections are in `.kairyn/templates/`.
+`requirements` and `design` end with `status: blocked` and `Approval: pending` in their output. Read it, then approve in chat. Claude writes `Approval: <your git name>, <timestamp>, "<your words>"` and moves the task on: requirements to `design`, design to `build`. A reply that does not approve changes nothing. To design another way, name an option from `DESIGN.md`: Claude rewrites it. The sections are in `.kairyn/templates/`.
+
+## The AFK run: build, gates, review
+
+`/kairyn:build <task>` runs them with no user turns, after design approval. See `afk-run.md`.
 
 ## Add a stage
 
