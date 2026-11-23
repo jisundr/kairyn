@@ -7,11 +7,11 @@ stages:
   grill: done
   requirements: done
   design: done
-  build: pending
+  build: in-progress
   gates: pending
   review: pending
 created: 2026-11-23T23:10:10Z
-updated: 2026-11-23T23:41:28Z
+updated: 2026-11-23T23:52:56Z
 ---
 
 # Log
@@ -31,3 +31,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-23T23:39:32Z [requirements] Wording only: R6, R7, R9, R12, R15, R16 to EARS form; R10, R14 and CONCEPT D3 split into short sentences. Meaning unchanged.
 2026-11-23T23:39:32Z [design] DESIGN.md written: option B (settings script with --apply and --check), T1-T6, T6 needs approval. Waiting for user approval.
 2026-11-23T23:41:28Z [design] Approved by Jayson De los Reyes: "Approve". Next: /kairyn:build.
+2026-11-23T23:52:56Z [build] Build started.
