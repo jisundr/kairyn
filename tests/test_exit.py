@@ -186,3 +186,38 @@ def test_close_uses_the_repo_learnings_budget(repo):
     learnings(repo, 3976)
     r = run(repo, "close", TASK, "--entry", "Added a dry run.")
     assert "RETRO: learnings.md 994/1000" in r.stdout
+
+
+def make_stage_task(root, task, stage, approval):
+    """A done task whose last stage is <stage>: its approval lives in <STAGE>.md, not REQUIREMENTS.md."""
+    d = root / "docs" / "tasks" / task
+    d.mkdir(parents=True)
+    (d / "STATE.md").write_text(STATE.format(task=task, status="done").replace("stage: requirements", f"stage: {stage}", 1))
+    (d / f"{stage.upper()}.md").write_text(f"---\ntask: {task}\nstage: {stage}\nsummary: \"x\"\n---\n\n{approval}\n")
+    return d
+
+
+def test_check_accepts_a_retro_task_approved_in_retro_md(tmp_path):
+    make_stage_task(tmp_path, "2026-01-10-retro", "retro", APPROVED)
+    r = run(tmp_path, "check", "2026-01-10-retro")
+    assert r.returncode == 0 and r.stdout.strip() == "OK", r.stdout
+
+
+def test_close_deletes_an_approved_retro_task(tmp_path):
+    make_stage_task(tmp_path, "2026-01-10-retro", "retro", APPROVED)
+    r = run(tmp_path, "close", "2026-01-10-retro", "--entry", "Moved learnings to their homes.")
+    assert r.returncode == 0 and "DELETED docs/tasks/2026-01-10-retro/" in r.stdout, r.stdout
+
+
+def test_check_refuses_a_retro_task_still_pending(tmp_path):
+    make_stage_task(tmp_path, "2026-01-10-retro", "retro", "Approval: pending")
+    r = run(tmp_path, "check", "2026-01-10-retro")
+    assert r.returncode == 1 and "no approval line in RETRO.md" in r.stdout, r.stdout
+
+
+def test_check_reads_the_approval_of_the_last_stage(tmp_path):
+    """A design task is done only when DESIGN.md is approved, not REQUIREMENTS.md alone."""
+    d = make_stage_task(tmp_path, "2026-01-11-plan", "design", "Approval: pending")
+    (d / "REQUIREMENTS.md").write_text(REQS.format(task="2026-01-11-plan", approval=APPROVED))
+    r = run(tmp_path, "check", "2026-01-11-plan")
+    assert r.returncode == 1 and "no approval line in DESIGN.md" in r.stdout, r.stdout

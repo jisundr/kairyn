@@ -7,7 +7,8 @@
     python3 exit.py release <version>             # ## Unreleased -> ## <version>, local tag v<version>
 
 All take --root (default: the current directory). A task is done when its STATE.md has
-`status: done` and its REQUIREMENTS.md has an approval line. close deletes:
+`status: done` and the output of its last stage (`stage:` in STATE.md, e.g. RETRO.md) has an
+approval line. close deletes:
   - docs/tasks/<task>/
   - docs/backlog files with `status: committed` that link the task
   - docs/backlog files with `status: dropped` that link no task folder that still exists
@@ -33,6 +34,7 @@ from retro import learnings_size
 CHANGELOG = "CHANGELOG.md"
 UNRELEASED = "## Unreleased"
 STATUS_RE = re.compile(r"^status:\s*([\w-]+)", re.M)
+STAGE_RE = re.compile(r"^stage:\s*([\w-]+)", re.M)
 APPROVED_RE = re.compile(r'^Approval: (?!pending\s*$).+, \d{4}-\d\d-\d\dT[\d:]+Z, ".+"\s*$', re.M)
 TASK_LINK_RE = re.compile(r"tasks/(\d{4}-\d\d-\d\d-[\w-]+)/")
 
@@ -54,9 +56,11 @@ def task_problem(root: Path, task: str) -> str | None:
     status = status_of(folder / "STATE.md")
     if status != "done":
         return f"{task} has status {status}, not done"
-    req = folder / "REQUIREMENTS.md"
-    if not req.is_file() or not APPROVED_RE.search(req.read_text()):
-        return f"{task} has no approval line in REQUIREMENTS.md"
+    state = folder / "STATE.md"
+    stage = STAGE_RE.search(state.read_text()) if state.is_file() else None
+    output = folder / f"{stage.group(1).upper() if stage else 'REQUIREMENTS'}.md"
+    if not output.is_file() or not APPROVED_RE.search(output.read_text()):
+        return f"{task} has no approval line in {output.name}"
     return None
 
 
