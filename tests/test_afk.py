@@ -467,3 +467,54 @@ def test_slice4_path_patterns():
 def test_slice4_design_marks_approval_slices():
     steps = (PLUGIN / "stages" / "DESIGN.md").read_text().split("## Steps", 1)[1].split("\n## ", 1)[0]
     assert "(approval)" in steps and "approval:" in steps
+
+
+# --- slice 5: the full gate chain ---------------------------------------------------------------
+
+SIX = ("testing", "contract", "accessibility", "performance", "observability", "security")
+
+
+def gate_rows(repo):
+    return [[c.strip() for c in line.strip("|").split("|")] for line in task_file(repo, "GATES.md").splitlines()
+            if line.startswith("| ") and not line.startswith("| Gate")]
+
+
+def test_slice5_gates(repo):
+    """D9: gates run in order; the exit code decides; an empty command is `not set`, never a pass."""
+    set_afk(repo, f"gates:\n  testing: {GOOD_GATE}\n  contract:\n  accessibility:\n  performance: true\n"
+                  "  observability:\n  security: true\n")
+    assert run(repo, "run", TASK).returncode == 0
+    rows = gate_rows(repo)
+    assert [r[0] for r in rows] == list(SIX)
+    assert [r[1] for r in rows] == ["pass", "not set", "not set", "pass", "not set", "pass"]
+    assert front(task_file(repo, "STATE.md"), "stage") == "review"
+    assert re.search(r"\[gates\] 3 pass, 3 not set: contract, accessibility, observability\.", task_file(repo, "STATE.md"))
+
+
+def test_slice5_security_runs_last(repo):
+    set_afk(repo, f"gates:\n  testing: {GOOD_GATE}\n  security: true\n  performance: true\n")
+    assert run(repo, "run", TASK).returncode == 0
+    assert re.search(r"Blocked: readiness: the security gate must be last", task_file(repo, "STATE.md"))
+    assert calls(repo) == []
+
+
+def test_slice5_ai_check_runs_after_its_command(repo):
+    """D9: an AI check runs inside a gate only after the gate's command passes, read-only."""
+    set_afk(repo, f"gates:\n  testing: {GOOD_GATE}\n  observability: true\n  security:\n"
+                  "checks:\n  observability: Each new code path writes a log line.\n  security: No secret in the diff.\n")
+    assert run(repo, "run", TASK).returncode == 0
+    checks = [p for p in calls(repo) if "gate check" in p]
+    assert len(checks) == 1 and "Each new code path writes a log line." in checks[0], "no check for a not set gate"
+    args = [a for a, p in zip(args_log(repo), calls(repo)) if "gate check" in p][0]
+    assert "--disallowedTools" in args
+    assert gate_rows(repo)[1][:4] == ["observability", "pass", "0", "check: pass"]
+
+
+def test_slice5_a_failed_ai_check_fails_the_gate(repo):
+    set_afk(repo, f"gates:\n  testing: {GOOD_GATE}\n  observability: true\n"
+                  "checks:\n  observability: Each new code path writes a log line.\n")
+    assert run(repo, "run", TASK, mode="gate_fail").returncode == 0
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("gates", "blocked")
+    assert re.search(r"Blocked: gate observability check failed: no log line for the new path", state)
+    assert gate_rows(repo)[1][:4] == ["observability", "fail", "0", "check: no log line for the new path"]

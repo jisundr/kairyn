@@ -16,8 +16,9 @@ slice `T<n>` and per stage, each with a fresh context.
     BUILD.md gets the SHAs and exit codes. Then the script lists flags (a later commit that edits a
     test file, an added line that matches `escape_hatches:`), and a read-only reviewer session reads
     the diff. Findings get one fix round. If a finding stays or a done command fails, the run blocks.
-  - gates: each command in .kairyn/afk.yml `gates:`, in order. The exit code decides. An empty
-    command is `not set`, never a pass. GATES.md gets one row per gate.
+  - gates: each command in .kairyn/afk.yml `gates:`, in order, security last. The exit code decides.
+    An empty command is `not set`, never a pass. A gate with a `checks:` entry then gets a read-only
+    session that prints PASS or FAIL: <why>. GATES.md gets one row per gate.
   - review: one session writes REVIEW.md with `Decision: pending`. The run then stops for the human.
 A failed check sets `status: blocked` and logs why. Running `run` again resumes at `stage:`.
 Readiness (before the first stage): the `testing` gate has a command, each set gate exits 0 on the
@@ -46,7 +47,7 @@ from typing import NamedTuple
 
 PLUGIN = Path(__file__).resolve().parent.parent
 AFK_STAGES = ("build", "gates", "review")
-MODELS = {"build": "opus", "reviewer": "opus", "review": "opus"}
+MODELS = {"build": "opus", "reviewer": "opus", "gate": "sonnet", "review": "opus"}
 DEFAULT_ESCAPES = ["# noqa", "# type: ignore", "eslint-disable", "@ts-ignore", "@ts-expect-error",
                    r"pytest\.mark\.skip", r"\.skip\(", r"\bxit\("]
 DEFAULT_LIMITS = {"build_usd": 10, "gates_usd": 5, "review_usd": 3, "run_usd": 20, "stage_minutes": 60}
@@ -485,24 +486,43 @@ class Run:
         self.update("build", f"All {len(graph)} tasks green. Cost ${self.stage_cost:.2f}. Next: gates.",
                     stage_status="done", stage="gates")
 
+    def gate_check(self, name: str, check: str) -> str:
+        """An inferential check inside a gate (D9): '' when it passes, else the reason."""
+        said = self.claude("gate", (
+            f"You run the {name} gate check for docs/tasks/{self.task}. Follow .kairyn/stages/GATES.md. "
+            f"Read `git diff {self.base()[:12]}..HEAD` and change nothing. Check: {check}\n"
+            "Print `PASS`, or `FAIL: <one-line reason>`."), read_only=True)
+        last = next((line for line in reversed(said.splitlines()) if line.startswith(("PASS", "FAIL"))), "")
+        if last.startswith("PASS"):
+            return ""
+        return last[5:].strip() if last.startswith("FAIL:") else f"no PASS or FAIL line: {said[-120:]}"
+
     def gates(self) -> None:
         if not (self.wt / ".kairyn" / "afk.yml").is_file():
             raise Blocked("no .kairyn/afk.yml with a gates: list")
         gates = self.config().get("gates") or {}
+        checks = self.config().get("checks") or {}
         path = self.folder / "GATES.md"
         rows = []
         try:
             for name, command in gates.items():
                 if not command:
-                    rows.append(f"| {name} | not set | - |")
+                    rows.append(f"| {name} | not set | - | - |")
                     continue
                 code = self.command(str(command), self.wt, f"at gate {name}")
-                rows.append(f"| {name} | {'pass' if code == 0 else 'fail'} | {code} |")
                 if code:
+                    rows.append(f"| {name} | fail | {code} | - |")
                     raise Blocked(f"gate {name} failed: `{command}` exited {code}")
+                why = self.gate_check(name, str(checks[name])) if checks.get(name) else None
+                rows.append(f"| {name} | {'fail' if why else 'pass'} | 0 | "
+                            f"{'-' if why is None else 'check: ' + (why or 'pass')} |")
+                if why:
+                    raise Blocked(f"gate {name} check failed: {why}")
         finally:
             path.write_text(self.template("GATES.md").rstrip("\n") + "\n" + "\n".join(rows) + "\n")
-        self.update("gates", f"{len(rows)} gates run. Next: review.", stage_status="done", stage="review")
+        unset = [n for n, c in gates.items() if not c]
+        note = f"{len(gates) - len(unset)} pass, {len(unset)} not set" + (f": {', '.join(unset)}" if unset else "")
+        self.update("gates", f"{note}. Cost ${self.stage_cost:.2f}. Next: review.", stage_status="done", stage="review")
 
     def review(self) -> None:
         self.update("review", "Review started.", stage_status="in-progress")
@@ -527,6 +547,8 @@ class Run:
         if self.front("stage") != "build" or (self.folder / "BUILD.md").exists():
             return   # gates on the base commit run once, before the first build
         gates = self.config().get("gates") or {}
+        if "security" in gates and list(gates)[-1] != "security":
+            raise Blocked("readiness: the security gate must be last in .kairyn/afk.yml, so it checks the final code")
         if not gates.get("testing"):
             raise Blocked("readiness: the testing gate in .kairyn/afk.yml has no command")
         for name, command in gates.items():

@@ -5,7 +5,8 @@ STUB_LOG: file that gets one line per call (the prompt).
 STUB_MODE: good (default) | no_red (the test passes before the code exists)
   | weaken (the feat commit edits the test) | noqa (the feat commit adds `# noqa`)
   | review_fixable (one finding, gone after the fix round) | review_stuck (the finding stays)
-  | budget (the session runs out of --max-budget-usd, as the real CLI reports it).
+  | budget (the session runs out of --max-budget-usd, as the real CLI reports it)
+  | gate_fail (an AI gate check prints FAIL). Gate-check prompts say "gate check".
 Reviewer prompts say "reviewer": the stub prints findings. Fix-round prompts say "fix round".
 With --output-format json it prints {"result", "total_cost_usd"}: STUB_COST (default 0.25) per call.
 STUB_SLEEP: seconds to sleep first (to hit a time limit).
@@ -39,7 +40,9 @@ def commit(msg, files):
 
 task = re.search(r"docs/tasks/([\w-]+)", prompt).group(1)
 build = re.search(r"\b(T\d+)\b", prompt) if "BUILD.md" in prompt else None
-if "reviewer" in prompt:
+if "gate check" in prompt:
+    said.append("FAIL: no log line for the new path" if mode == "gate_fail" else "PASS")
+elif "reviewer" in prompt:
     count = Path(os.environ["STUB_LOG"] + ".reviews")
     n = int(count.read_text()) + 1 if count.exists() else 1
     count.write_text(str(n))
