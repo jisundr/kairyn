@@ -54,3 +54,21 @@ def test_review_gap_problems():
 def test_new_constraint_lines():
     assert new_constraint_lines("# L\n- old\n", "# L\n- old\n- Ban `# noqa` with a lint rule or gate because x\n") == [
         "- Ban `# noqa` with a lint rule or gate because x"]
+
+
+HEREDOC = [tool_use(1, "Bash", command="cat > test_lines.py <<'EOF'\nimport unittest\nEOF\npython3 -m unittest test_lines"),
+           tool_result(1, "F.\nFAIL: test_lines (test_lines.LinesTest)\nFAILED (failures=1)"),
+           tool_use(2, "Bash", command="git add test_lines.py && git commit -qm 'test(T1): x' && "
+                                       "cat > textstats.py <<'EOF'\nimport sys\nEOF\npython3 -m unittest"),
+           tool_result(2, "OK")]
+
+
+def test_red_before_code_counts_a_bash_heredoc_write():
+    """Smoke run 20261123T203002Z: the agent wrote both files with Bash heredocs, never Edit or Write."""
+    assert red_before_code_problems(HEREDOC, "textstats.py", "test_lines") == []
+
+
+def test_red_before_code_fails_on_a_heredoc_write_before_any_red_run():
+    events = [tool_use(1, "Bash", command="cat > textstats.py <<'EOF'\nx\nEOF"), tool_result(1, "")] + HEREDOC
+    assert red_before_code_problems(events, "textstats.py", "test_lines") == [
+        "no failing run of test_lines before the first edit of textstats.py"]

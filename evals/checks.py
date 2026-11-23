@@ -707,14 +707,21 @@ def _tool_calls(events: list) -> list:
     return [(name, inp, *results.get(cid, ("", False))) for cid, name, inp in calls]
 
 
-_FAILED_RUN = re.compile(r"\b(FAILED|Error|Traceback|AssertionError)\b")
+_FAILED_RUN = re.compile(r"\b(FAILED|FAIL|Error|Traceback|AssertionError)\b")
+
+
+def _writes(name: str, inp: dict, path: str) -> bool:
+    """A tool call that writes `path`: Write, Edit or MultiEdit, or a Bash redirect, tee, sed -i or heredoc."""
+    if name in ("Write", "Edit", "MultiEdit"):
+        return str(inp.get("file_path", "")).endswith(path)
+    cmd = str(inp.get("command", "")) if name == "Bash" else ""
+    return bool(re.search(rf"(>>?|\btee\b(\s+-a)?|\bsed\s+-i\S*(\s+'[^']*'|\s+\S+)?)\s*\S*{re.escape(path)}\b", cmd))
 
 
 def red_before_code_problems(events: list, code_file: str, test_word: str) -> list[str]:
     """D12 inside one build session: a run of the test that fails comes before the first edit of the code file."""
     calls = _tool_calls(events)
-    edit = next((i for i, (name, inp, _, _) in enumerate(calls)
-                 if name in ("Write", "Edit", "MultiEdit") and str(inp.get("file_path", "")).endswith(code_file)), None)
+    edit = next((i for i, (name, inp, _, _) in enumerate(calls) if _writes(name, inp, code_file)), None)
     if edit is None:
         return [f"the session never edited {code_file}"]
     red = [i for i, (name, inp, text, err) in enumerate(calls[:edit])
