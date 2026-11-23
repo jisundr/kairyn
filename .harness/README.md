@@ -12,6 +12,7 @@ How work gets done in this repo: the workflows for developing kairyn itself. Rea
 <!-- harness-docs:start -->
 | Workflow | Use it when |
 |---|---|
+| [AFK run](workflows/afk-run.md) | running /kairyn:build or /kairyn:review, or editing afk.yml |
 | [Change a stage](workflows/change-a-stage.md) | editing or adding a stage in plugin/stages/ |
 | [Init](workflows/init.md) | changing /kairyn:init, init.sh or verify-init.sh |
 | [Keeping docs lean](workflows/keeping-docs-lean.md) | adding or editing a harness doc, or when /kairyn:check fails |
@@ -24,12 +25,12 @@ How work gets done in this repo: the workflows for developing kairyn itself. Rea
 
 ## Principles
 
-1. **Deterministic first.** If a step can be a script, make it a script (`init.sh`, `verify-init.sh`). Leave the model only what needs judgment. A command that asks the model to copy files by hand failed 10 out of 10 runs in headless mode.
+1. **Deterministic first.** If a step can be a script, make it a script (`init.sh`, `verify-init.sh`). Leave the model only what needs judgment. A command that had the model copy files by hand failed 10 of 10 headless runs.
 2. **Tests before code, evals before instructions.** Write the failing test or eval first, then make it pass.
-3. **Evidence over claims.** A passing eval leaves its outputs and scores in `evals/results/`. Don't report a pass you can't point to.
+3. **Evidence over claims.** A passing eval leaves its outputs and scores in `evals/results/`. Report no pass you can't point to.
 4. **Never trust the model with the clock or with overwriting user files.** Timestamps come from `date`. Init never overwrites.
-5. **Playbooks guide kairyn's own work.** The SDLC playbooks in the author's knowledge base (`03 Playbooks/`) drive how this repo is built. They are not shipped to consumers. A stage that kairyn lacks, such as design, is done by hand from its playbook.
-6. **Lean files.** What an AI reads has a size budget (`budgets.yml`, estimated tokens). Tests fail when a file is over or has no budget. For people, `uv run python plugin/scripts/budgets_html.py` builds a readable report (`.harness/budgets.html`, git-ignored) from `budgets.yml`.
+5. **Playbooks guide kairyn's own work.** The SDLC playbooks in the author's knowledge base (`03 Playbooks/`) drive how this repo is built. They are not shipped to consumers. A stage that kairyn lacks is done by hand from its playbook.
+6. **Lean files.** What an AI reads has a size budget (`budgets.yml`, estimated tokens). Tests fail when a file is over or has no budget. `budgets_html.py` builds a report for people (`.harness/budgets.html`, git-ignored).
 
 ## Doc format
 

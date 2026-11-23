@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Deterministic core of `/kairyn:init`: set up kairyn in a repo.
-#   .kairyn/   stages, templates, learnings
+#   .kairyn/   stages, templates, learnings, afk.yml
 #   docs/tasks/
 #   .harness/  workflow docs and budgets (existing files are kept)
 #   CLAUDE.md  created, or a marked kairyn block appended (the rest is never touched)
@@ -27,6 +27,8 @@ for kind in stages templates; do
   for src in "$plugin/$kind"/*; do installed+=(".kairyn/$kind/$(basename "$src")"); done
 done
 printf '# Learnings\n\nStages append here.\n' > "$repo/.kairyn/learnings.md"
+# The AFK run settings belong to the repo from the start: no manifest record, so upgrades never touch them.
+cp "$plugin/templates/afk.yml" "$repo/.kairyn/afk.yml"
 
 # .harness/: add files that do not exist yet; never overwrite a user's file.
 harness="$plugin/harness"

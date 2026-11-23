@@ -479,10 +479,14 @@
  },
  "0.8.1": {
   ".harness/README.md": [
+   "7b140b59df0602bee22e5130b0d94b3cc1982fd57b1d4196337db944047b54b1",
    "efe793519875f2a1f87dffa403f7308f3dc1380aa2d2b452b2b1ad442289b139"
   ],
   ".harness/budgets.yml": [
    "f46d476c01b092e688b6faf124130b39e218017875e65db27a0f706c1f2c0d31"
+  ],
+  ".harness/workflows/afk-run.md": [
+   "c2a04b41f65ef6ddfd382ffd8f5ee24ede61f949a84c14e223acc4f993dd1dfe"
   ],
   ".harness/workflows/keeping-docs-lean.md": [
    "f0b1bb0b5abe012a8a402a9a30d53ce24fd96783e8463905eeea58990258d2b4"
@@ -491,7 +495,8 @@
    "0e6cb07dbea301221d252632dbae3bbd5c01b07f3c0e9f0aea124d37e34a66d3",
    "3165314bd9c84524f1ccd988716192da8f54eb963085f00971325080c87bd1bb",
    "3196f16a99ffb85a465d401de3357a50e932870afef6f3898295509b74501583",
-   "7d3639a4ca624aa59312149cd4991dfc202cbfa30e760d272edf092186ca6c4b"
+   "7d3639a4ca624aa59312149cd4991dfc202cbfa30e760d272edf092186ca6c4b",
+   "bb4ca2a8933c45e0d522df2db05c7a58c31bc3c81c0aa88e6cf0c1e280617025"
   ],
   ".harness/workflows/task-lifecycle.md": [
    "2c58be71ec2bc5041451fb51daad0ff390a2747837ad9472b33bf43d3388ef33",

@@ -518,3 +518,104 @@ def test_slice5_a_failed_ai_check_fails_the_gate(repo):
     assert (front(state, "stage"), front(state, "status")) == ("gates", "blocked")
     assert re.search(r"Blocked: gate observability check failed: no log line for the new path", state)
     assert gate_rows(repo)[1][:4] == ["observability", "fail", "0", "check: no log line for the new path"]
+
+
+# --- slice 6: push, pull request, merge, install -------------------------------------------------
+
+GH = ROOT / "tests" / "stubs" / "gh"
+
+
+def with_remote(repo):
+    remote = repo.parent / "remote.git"
+    subprocess.run(["git", "init", "-q", "--bare", str(remote)], check=True)
+    git(repo, "remote", "add", "origin", str(remote))
+    git(repo, "push", "-q", "origin", "main")
+    return remote
+
+
+def run_gh(repo, *args, mode="good", gh_mode=""):
+    env = {**os.environ, "KAIRYN_CLAUDE": str(STUB), "KAIRYN_GH": str(GH), "STUB_LOG": str(repo.parent / "stub.log"),
+           "STUB_MODE": mode, "GH_LOG": str(repo.parent / "gh.log"), "GH_MODE": gh_mode}
+    return subprocess.run([sys.executable, str(AFK), *args, "--root", str(repo)], capture_output=True, text=True,
+                          env=env)
+
+
+def gh_calls(repo):
+    log = repo.parent / "gh.log"
+    return log.read_text().splitlines() if log.exists() else []
+
+
+def test_slice6_gh(repo):
+    """D11: build ends with a push and one pull request; review posts REVIEW.md; approve merges."""
+    remote = with_remote(repo)
+    assert run_gh(repo, "run", TASK).returncode == 0
+    calls_ = gh_calls(repo)
+    assert any(c.startswith(f"pr create --base main --head kairyn/{TASK}") for c in calls_)
+    assert sum(c.startswith("pr create") for c in calls_) == 1
+    assert any(c.startswith(f"pr comment kairyn/{TASK} --body-file ") and c.endswith("REVIEW.md") for c in calls_)
+    branch_tip = subprocess.run(["git", "-C", str(remote), "rev-parse", f"kairyn/{TASK}"], capture_output=True,
+                                text=True).stdout.strip()
+    assert branch_tip == git(worktree(repo), "rev-parse", "HEAD").strip(), "the pushed branch has the review commit"
+    assert "https://github.com/example/repo/pull/1" in task_file(repo, "STATE.md")
+    result = run_gh(repo, "approve", TASK, "--words", "Ship it")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert gh_calls(repo)[-1] == f"pr merge kairyn/{TASK} --merge"
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("review", "done")
+
+
+def test_slice6_merge_failure_blocks(repo):
+    with_remote(repo)
+    run_gh(repo, "run", TASK)
+    result = run_gh(repo, "approve", TASK, "--words", "Ship it", gh_mode="merge_fail")
+    assert result.returncode == 1 and "base branch policy" in result.stdout
+    state = task_file(repo, "STATE.md")
+    assert front(state, "status") == "blocked"
+    assert re.search(r'^Decision: Eval User, .*"Ship it"$', task_file(repo, "REVIEW.md"), re.M)
+    assert re.search(r"\[review\] Blocked: gh pr merge failed: .*base branch policy", state)
+
+
+def test_slice6_no_remote(repo):
+    """D11: with no remote, nothing is pushed and approve only records the decision."""
+    assert run_gh(repo, "run", TASK).returncode == 0
+    assert gh_calls(repo) == []
+    assert re.search(r"\[build\] No remote: no push and no pull request\.", task_file(repo, "STATE.md"))
+    assert run_gh(repo, "approve", TASK, "--words", "Ship it").returncode == 0
+    assert gh_calls(repo) == [] and front(task_file(repo, "STATE.md"), "status") == "done"
+
+
+def test_slice6_no_gh(repo):
+    with_remote(repo)
+    env = {**os.environ, "KAIRYN_CLAUDE": str(STUB), "KAIRYN_GH": str(repo.parent / "missing-gh"),
+           "STUB_LOG": str(repo.parent / "stub.log")}
+    subprocess.run([sys.executable, str(AFK), "run", TASK, "--root", str(repo)], env=env, capture_output=True)
+    state = task_file(repo, "STATE.md")
+    assert re.search(r"\[build\] Pushed kairyn/2026-01-05-feature\. No gh: no pull request\.", state)
+    assert front(state, "stage") == "review"
+
+
+def test_slice6_init(tmp_path):
+    """R16: init creates .kairyn/afk.yml from the template; afk.py creates it in a repo set up before."""
+    from helpers import make_good_repo
+    repo = make_good_repo(tmp_path / "fresh")
+    assert (repo / ".kairyn" / "afk.yml").read_text() == (PLUGIN / "templates" / "afk.yml").read_text()
+
+
+def test_slice6_init_keeps_an_edited_afk_yml(tmp_path):
+    from helpers import make_good_repo
+    repo = make_good_repo(tmp_path / "fresh")
+    (repo / ".kairyn" / "afk.yml").write_text("gates:\n  testing: make test\n")
+    subprocess.run(["bash", str(PLUGIN / "scripts" / "init.sh"), str(repo)], check=True, capture_output=True)
+    assert (repo / ".kairyn" / "afk.yml").read_text() == "gates:\n  testing: make test\n"
+
+
+def test_slice6_afk_creates_a_missing_afk_yml(repo):
+    """An upgraded repo has the template but no .kairyn/afk.yml: the run creates it and stops before a worktree."""
+    (repo / ".kairyn" / "afk.yml").unlink()
+    (repo / ".kairyn" / "templates").mkdir()
+    (repo / ".kairyn" / "templates" / "afk.yml").write_text((PLUGIN / "templates" / "afk.yml").read_text())
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "upgraded repo")
+    result = run(repo, "run", TASK)
+    assert result.returncode == 1 and "Created .kairyn/afk.yml" in result.stdout
+    assert (repo / ".kairyn" / "afk.yml").is_file() and not worktree(repo).exists()
