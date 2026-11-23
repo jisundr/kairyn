@@ -19,3 +19,5 @@ Stages append here.
 - 2026-11-23 [build] An LLM judge must see every file the stage could read. The design judge got only `report.py` and scored true README facts as invented (no_invention 2.3).
 - 2026-11-23 [exit] pytest collects any imported function whose name starts with `test_`. Name check functions in `evals/checks.py` without that prefix (`design_test_plan_problems`).
 - 2026-11-23 [exit] A path check must accept a later mention of a file marked `(new)` once. Designs name a created file again in the test plan without the mark.
+- 2026-11-23 [requirements] To name a hedge word in a stage output, put it in backticks. `checks.ste_problems` skips inline code but counts a quoted "word".
+- 2026-11-23 [design] A plugin skill added during a session is not loaded until the next session (`Unknown skill: kairyn:design`). Follow `.kairyn/stages/<STAGE>.md` directly until then.
