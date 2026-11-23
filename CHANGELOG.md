@@ -12,3 +12,4 @@
 - Contributors run evals with /run-evals: a background subagent runs them and returns a short report with failures, evidence and cost. (2026-11-23-eval-subagent)
 - Grill fills a new CONCEPT.md template, so its four sections keep the same headings on every run. (2026-11-23-grill-on-sonnet)
 - Added /kairyn:retro: when learnings.md passes half its budget, exit proposes a home, drop or backlog idea for each learning, then applies it on approval. (2026-11-23-retro-stage)
+- Ran the first retro: six learnings moved to change-a-stage.md, eight dropped, nine became backlog ideas. Exit now closes retro tasks. (2026-11-23-retro)
