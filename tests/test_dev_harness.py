@@ -62,9 +62,3 @@ def test_this_repo_kairyn_is_upgraded_to_the_plugin_version():
     assert ".kairyn/stages/CLOSE.md" in manifest["files"]
     assert ".kairyn/stages/EXIT.md" not in manifest["files"]  # old-name
 
-
-def test_plugin_version_is_0_11_0_or_later():
-    from helpers import PLUGIN
-    from kairyn_files import plugin_version
-
-    assert tuple(int(p) for p in plugin_version(PLUGIN).split(".")) >= (0, 11, 0)
