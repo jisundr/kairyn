@@ -44,3 +44,27 @@ def test_eval_runner_starts_detached_and_waits_in_the_foreground():
     assert "evals/bg.py start" in text and "evals/bg.py wait" in text
     assert "run_in_background" not in text and "Monitor" not in text
     assert "Monitor" not in tool_names(front(AGENT)["tools"])
+
+
+# --- this repo dogfoods its own plugin (A5) -------------------------------------
+
+def test_this_repo_kairyn_is_upgraded_to_the_plugin_version():
+    """/kairyn:upgrade ran on this repo: the manifest has the plugin version and the close stage."""
+    import json
+
+    from helpers import PLUGIN
+    from kairyn_files import plugin_version
+
+    manifest = json.loads((ROOT / ".kairyn" / "manifest.json").read_text())
+    assert manifest["version"] == plugin_version(PLUGIN)
+    assert (ROOT / ".kairyn" / "stages" / "CLOSE.md").is_file()
+    assert not (ROOT / ".kairyn" / "stages" / "EXIT.md").exists()
+    assert ".kairyn/stages/CLOSE.md" in manifest["files"]
+    assert ".kairyn/stages/EXIT.md" not in manifest["files"]
+
+
+def test_plugin_version_is_0_11_0_or_later():
+    from helpers import PLUGIN
+    from kairyn_files import plugin_version
+
+    assert tuple(int(p) for p in plugin_version(PLUGIN).split(".")) >= (0, 11, 0)
