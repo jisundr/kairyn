@@ -140,3 +140,46 @@ def test_grill_output_points_to_the_concept_template():
     text = (PLUGIN / "stages" / "GRILL.md").read_text()
     output = text.split("## Output", 1)[1].split("\n## ", 1)[0]
     assert ".kairyn/templates/CONCEPT.md" in output
+
+
+# --- the close stage (R4, R5) -------------------------------------------------
+
+# A bare /exit is the Claude Code built-in, so no shipped or tested file names the stage exit.
+EXIT_WORD = re.compile(r"(?<![A-Za-z_])exits?(?![A-Za-z])", re.I)
+# Process exit codes and `## Exit criteria` keep the word (A1).
+EXIT_CODE = re.compile(r"sys\.exit|SystemExit|Exit criteria|exits? (with )?code|exits? ([0-9]|\{|non-zero)|exit \"\$"
+                       r"|exit \((not )?0\)|exit=|\| Exit \||(red|green|other) exit|\"exit\":|exit: skipped", re.I)
+# History and the tests that check the old name is gone.
+EXIT_ALLOWED = {"plugin/release-hashes.json", "tests/test_static.py", "tests/test_skills.py", "tests/test_upgrade.py"}
+
+
+def _guarded_files():
+    roots = [PLUGIN, ROOT / "tests", ROOT / "evals" / "promptfoo", ROOT / "README.md", *(ROOT / "evals").glob("*.py")]
+    for root in roots:
+        for path in ([root] if root.is_file() else sorted(root.rglob("*"))):
+            rel = path.relative_to(ROOT).as_posix()
+            if path.is_file() and "__pycache__" not in rel and rel not in EXIT_ALLOWED:
+                yield rel, path
+
+
+def test_no_shipped_or_tested_file_names_the_exit_stage():
+    hits = []
+    for rel, path in _guarded_files():
+        try:
+            text = path.read_text()
+        except UnicodeDecodeError:
+            continue
+        for n, line in enumerate(text.splitlines(), 1):
+            if EXIT_WORD.search(EXIT_CODE.sub("", line)):
+                hits.append(f"{rel}:{n}: {line.strip()[:100]}")
+    assert not hits, "\n".join(hits)
+
+
+def test_close_stage_tags_its_lines_close():
+    text = (PLUGIN / "stages" / "CLOSE.md").read_text()
+    assert "[close]" in text and "[exit]" not in text
+
+
+def test_close_eval_replaces_the_exit_eval():
+    assert (ROOT / "evals" / "promptfoo" / "close.yaml").is_file()
+    assert not (ROOT / "evals" / "promptfoo" / "exit.yaml").exists()
