@@ -1,7 +1,9 @@
 ---
 title: Gate: a done build with an approval task that has no BUILD.md row
-status: inbox
+status: dropped
 date: 2026-11-24
+appetite: 
+requester: Jayson De los Reyes
 ---
 
 # Gate: a done build with an approval task that has no BUILD.md row
@@ -13,3 +15,4 @@ date: 2026-11-24
 # Log
 
 2026-11-24T01:44:15Z [capture] Created by the retro of 2026-11-24 from a learning. Status inbox, waiting for triage.
+2026-11-24T02:11:01Z [triage] Dropped: merged into afk-drops-task-lines, same root cause. Decided by Jayson De los Reyes.
