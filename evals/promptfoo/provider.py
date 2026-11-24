@@ -14,7 +14,7 @@ HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
 from helpers import PLUGIN, ROOT, make_good_repo, run_verify  # noqa: E402
-from runner import (RETRO_ENTRIES, make_retro_repo, run_retro, run_retro_approval, DESIGN_REQUEST, DESIGN_REQUIREMENTS, make_design_repo, run_design, run_design_approval, DESIGN_CHILD_REQUIREMENTS, make_design_child_repo, run_design_child, EXIT_DECISION_TASK, EXIT_PLAIN_TASK, make_exit_repo, run_exit, APPROVAL_WORDS, APPROVER, CONCEPT_DECISIONS, CONCEPT_TASK, CONCEPT_VALUE, GRILL_APP, GRILL_README, GRILL_REQUEST, MODEL, REQUEST, RESULTS, ROUTING_REQUEST,  # noqa: E402
+from runner import (RETRO_ENTRIES, make_retro_repo, run_retro, run_retro_approval, DESIGN_REQUEST, DESIGN_REQUIREMENTS, make_design_repo, run_design, run_design_approval, DESIGN_CHILD_REQUIREMENTS, make_design_child_repo, run_design_child, CLOSE_DECISION_TASK, CLOSE_PLAIN_TASK, make_close_repo, run_close, APPROVAL_WORDS, APPROVER, CONCEPT_DECISIONS, CONCEPT_TASK, CONCEPT_VALUE, GRILL_APP, GRILL_README, GRILL_REQUEST, MODEL, REQUEST, RESULTS, ROUTING_REQUEST,  # noqa: E402
                     claude, make_concept_repo, make_grill_repo, make_routing_repo, new_repo, run_grill, run_model_routing,
                     run_requirements, run_requirements_approval, run_requirements_with_concept, set_cost_dir, tree_hash)
 
@@ -178,19 +178,19 @@ def design_approval(work: Path, scenario: str, run_id: str) -> dict:
             "approver": APPROVER, "words": APPROVAL_WORDS}
 
 
-def _exit(work: Path, scenario: str, run_id: str, task: str) -> dict:
-    repo = make_exit_repo(make_good_repo(new_repo(work, "repo")), task)
-    out = run_exit(repo, task)
+def _close(work: Path, scenario: str, run_id: str, task: str) -> dict:
+    repo = make_close_repo(make_good_repo(new_repo(work, "repo")), task)
+    out = run_close(repo, task)
     _save(scenario, run_id, "evidence.json", json.dumps(out, indent=2))
     return out
 
 
-def exit_decision(work: Path, scenario: str, run_id: str) -> dict:
-    return _exit(work, scenario, run_id, EXIT_DECISION_TASK)
+def close_decision(work: Path, scenario: str, run_id: str) -> dict:
+    return _close(work, scenario, run_id, CLOSE_DECISION_TASK)
 
 
-def exit_plain(work: Path, scenario: str, run_id: str) -> dict:
-    return _exit(work, scenario, run_id, EXIT_PLAIN_TASK)
+def close_plain(work: Path, scenario: str, run_id: str) -> dict:
+    return _close(work, scenario, run_id, CLOSE_PLAIN_TASK)
 
 
 def _times(d: dict) -> dict:
@@ -220,11 +220,11 @@ def retro_approval(work: Path, scenario: str, run_id: str) -> dict:
     return out
 
 
-def exit_retro(work: Path, scenario: str, run_id: str) -> dict:
-    """Exit a done task while learnings.md is past half its budget: exit runs retro, which stops for approval."""
+def close_retro(work: Path, scenario: str, run_id: str) -> dict:
+    """Close a done task while learnings.md is past half its budget: close runs retro, which stops for approval."""
     from runner import changed_paths, retro_dirs
-    repo = make_exit_repo(make_retro_repo(make_good_repo(new_repo(work, "repo"))), EXIT_PLAIN_TASK)
-    out = run_exit(repo, EXIT_PLAIN_TASK)
+    repo = make_close_repo(make_retro_repo(make_good_repo(new_repo(work, "repo"))), CLOSE_PLAIN_TASK)
+    out = run_close(repo, CLOSE_PLAIN_TASK)
     dirs = retro_dirs(repo)
     out.update({"retro_dirs": [d.name for d in dirs], "entries": RETRO_ENTRIES,
                 "retro": (dirs[0] / "RETRO.md").read_text() if dirs and (dirs[0] / "RETRO.md").is_file() else "",
@@ -293,8 +293,8 @@ def afk_review(work: Path, scenario: str, run_id: str) -> dict:
 
 SCENARIOS = {f.__name__: f for f in (afk_build, afk_gates_pass, afk_gates_fail, afk_review, init_fresh, init_keeps_edits, init_keeps_claude_md, check_broken_doc, requirements,
                                      model_routing, grill, requirements_with_concept, requirements_approval,
-                                     upgrade_conflict, exit_decision, exit_plain, design, design_approval, design_child_repo,
-                                     retro, retro_approval, exit_retro)}
+                                     upgrade_conflict, close_decision, close_plain, design, design_approval, design_child_repo,
+                                     retro, retro_approval, close_retro)}
 
 
 def call_api(prompt, options, context):
