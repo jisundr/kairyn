@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """A stand-in for `claude -p` in afk.py tests. It acts on the prompt, never calls a model.
 
-STUB_LOG: file that gets one line per call (the prompt).
+STUB_LOG: file that gets one line per call (the prompt). STUB_LOG.args gets the other arguments,
+STUB_LOG.cwd the directory the session runs in.
 STUB_MODE: good (default) | no_red (the test passes before the code exists)
   | weaken (the feat commit edits the test) | add_test (the feat commit only adds to the test) | noqa (the feat commit adds `# noqa`)
   | review_fixable (one finding, gone after the fix round) | review_stuck (the finding stays)
@@ -11,7 +12,8 @@ Reviewer prompts say "reviewer": the stub prints findings. Fix-round prompts say
 With --output-format json it prints {"result", "total_cost_usd"}: STUB_COST (default 0.25) per call.
 STUB_SLEEP: seconds to sleep first (to hit a time limit).
 Build prompts name `T<n>`: the stub makes the test(T<n>) and feat(T<n>) commits.
-Review prompts name REVIEW.md: the stub writes REVIEW.md with `Decision: pending`.
+Review prompts name REVIEW.md: the stub writes REVIEW.md with `Decision: pending` in the task folder the
+prompt names (a full path for a child-repo task, whose session runs in the child worktree).
 """
 import os
 import re
@@ -25,6 +27,8 @@ with open(os.environ["STUB_LOG"], "a") as log:
     log.write(prompt.replace("\n", " ") + "\n")
 with open(os.environ["STUB_LOG"] + ".args", "a") as log:
     log.write(" ".join(a for a in args if a != prompt) + "\n")
+with open(os.environ["STUB_LOG"] + ".cwd", "a") as log:
+    log.write(os.getcwd() + "\n")
 mode = os.environ.get("STUB_MODE", "good")
 import time
 time.sleep(float(os.environ.get("STUB_SLEEP", "0")))
@@ -38,7 +42,8 @@ def commit(msg, files):
     subprocess.run(["git", "commit", "-q", "-m", msg], check=True)
 
 
-task = re.search(r"docs/tasks/([\w-]+)", prompt).group(1)
+folder = re.search(r"(\S*docs/tasks/([\w-]+))", prompt)
+task = folder.group(2)
 build = re.search(r"\b(T\d+)\b", prompt) if "BUILD.md" in prompt else None
 if "gate check" in prompt:
     said.append("FAIL: no log line for the new path" if mode == "gate_fail" else "PASS")
@@ -72,7 +77,7 @@ elif build:
         commit(f"test({build.group(1)}): add check", check)
         commit(f"feat({build.group(1)}): add feature", feature)
 elif "REVIEW.md" in prompt:
-    Path(f"docs/tasks/{task}/REVIEW.md").write_text(
+    Path(folder.group(1), "REVIEW.md").write_text(
         f"---\ntask: {task}\nstage: review\nsummary: \"stub review\"\n---\n\n# Review\n\nDecision: pending\n")
 
 text = "\n".join(said)

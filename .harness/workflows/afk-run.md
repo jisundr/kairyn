@@ -34,3 +34,11 @@ Fix the cause, then run `/kairyn:build <task>` again. It resumes at `stage:` in 
 ## Approve
 - A slice: `/kairyn:build <task> approve T<n> "<words>"`.
 - The merge: read the diff and `REVIEW.md`, then `/kairyn:review <task> approve "<words>"` or `reject "<reason>"`. Approve merges the pull request with a merge commit.
+
+## Code in a child repo
+A home repo holds the tasks; a child repo holds the code. List each child under `repos:` in `.kairyn/afk.yml`, with `path:` and its own `gates:`. Design writes `repo: <name>` in the task's `STATE.md`.
+- The task files stay on the home `kairyn/<task>` branch. The code goes on a `kairyn/<task>` branch in a worktree of the child repo.
+- Sessions run in the child worktree with `--add-dir` to the home worktree. Gates and readiness use the child `gates:`.
+- Each repo gets its own push and pull request. `REVIEW.md` goes on the child pull request.
+- Approve merges the child first, then the home. If the child has no remote or its merge fails, the run blocks and the home stays unmerged. A retry skips a child that is already merged.
+- One child repo per task. A task with no `repo:` line runs in the home repo, as before.
