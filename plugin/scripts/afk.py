@@ -401,6 +401,13 @@ class Run:
         path = self.wt / ".kairyn" / "afk.yml"
         return parse_afk(path.read_text()) if path.is_file() else {}
 
+    def gate_list(self) -> dict:
+        """R9: the child entry's `gates:` for a child-repo task, else the top-level `gates:`."""
+        return (self.repo_entry if self.repo_entry is not None else self.config()).get("gates") or {}
+
+    def gates_where(self) -> str:
+        return f"repo {self.front('repo')} in .kairyn/afk.yml" if self.repo_entry is not None else ".kairyn/afk.yml"
+
     def base(self) -> str:
         """The commit the code branch starts from: with the code repo HEAD (A2 for a child repo)."""
         return git(self.code, "merge-base", "HEAD", git(self.code_root, "rev-parse", "HEAD"))
@@ -588,7 +595,7 @@ class Run:
     def gates(self) -> None:
         if not (self.wt / ".kairyn" / "afk.yml").is_file():
             raise Blocked("no .kairyn/afk.yml with a gates: list")
-        gates = self.config().get("gates") or {}
+        gates = self.gate_list()
         checks = self.config().get("checks") or {}
         path = self.folder / "GATES.md"
         rows = []
@@ -597,7 +604,7 @@ class Run:
                 if not command:
                     rows.append(f"| {name} | not set | - | - |")
                     continue
-                code = self.command(str(command), self.wt, f"at gate {name}")
+                code = self.command(str(command), self.code, f"at gate {name}")
                 if code:
                     rows.append(f"| {name} | fail | {code} | - |")
                     raise Blocked(f"gate {name} failed: `{command}` exited {code}")
@@ -626,22 +633,25 @@ class Run:
 
     def readiness(self) -> None:
         """D18: before the first stage. Untracked files (build output such as __pycache__/) do not count."""
-        out = subprocess.run(["git", "-C", str(self.wt), "status", "--porcelain", "--untracked-files=no"],
-                             check=True, capture_output=True, text=True).stdout
         own = f"docs/tasks/{self.task}/"   # a person edits STATE.md to resume: that is not a change to the code
-        names = ", ".join(n for n in (line[3:] for line in out.splitlines()) if not n.startswith(own))
+        names = []
+        for tree in dict.fromkeys((self.wt, self.code)):   # R10: the child worktree too
+            out = subprocess.run(["git", "-C", str(tree), "status", "--porcelain", "--untracked-files=no"],
+                                 check=True, capture_output=True, text=True).stdout
+            names += [n for n in (line[3:] for line in out.splitlines()) if not n.startswith(own)]
+        names = ", ".join(names)
         if names:
             raise Blocked(f"readiness: the worktree has changes: {names}")
         if self.front("stage") != "build" or (self.folder / "BUILD.md").exists():
             return   # gates on the base commit run once, before the first build
-        gates = self.config().get("gates") or {}
+        gates, where = self.gate_list(), self.gates_where()
         if "security" in gates and list(gates)[-1] != "security":
-            raise Blocked("readiness: the security gate must be last in .kairyn/afk.yml, so it checks the final code")
+            raise Blocked(f"readiness: the security gate must be last in {where}, so it checks the final code")
         if not gates.get("testing"):
-            raise Blocked("readiness: the testing gate in .kairyn/afk.yml has no command")
+            raise Blocked(f"readiness: the testing gate in {where} has no command")
         for name, command in gates.items():
             if command:
-                code = self.command(str(command), self.wt, f"at gate {name} on the base commit")
+                code = self.command(str(command), self.code, f"at gate {name} on the base commit")
                 if code:
                     raise Blocked(f"readiness: gate {name} exits {code} on the base commit")
 
