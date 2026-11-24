@@ -2,16 +2,16 @@
 task: 2026-11-24-multi-repo
 title: kairyn tasks in a home repo change code in child repos
 stage: review
-status: in-progress
+status: blocked
 stages:
   grill: done
   requirements: done   # pending | in-progress | done
   design: done
   build: done
   gates: done
-  review: pending
+  review: in-progress
 created: 2026-11-24T02:30:13Z
-updated: 2026-11-24T08:28:32Z
+updated: 2026-11-24T08:30:52Z
 ---
 
 # Log
@@ -45,3 +45,5 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-24T06:56:02Z [review] Review started.
 2026-11-24T06:59:12Z [review] Cost $0.90. Waiting for the merge decision: /kairyn:review 2026-11-24-multi-repo approve or reject.
 2026-11-24T08:28:32Z [review] Fixed review F1 (a child with no remote blocks approve) and F3 (a retry skips a merged child), test first. F2 and F4 left as they are. Review runs again. Decided by Jayson De los Reyes ("yes").
+2026-11-24T08:28:38Z [review] Review started.
+2026-11-24T08:30:52Z [review] Cost $0.49. Waiting for the merge decision: /kairyn:review 2026-11-24-multi-repo approve or reject.

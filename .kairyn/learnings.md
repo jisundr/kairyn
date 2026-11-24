@@ -9,3 +9,4 @@ Stages append here.
 - review: Ban a re-merge of an already merged child pull request in afk.py with a retry test, because a home merge failure followed by a new approve calls `gh pr merge` on the child again.
 - review: Ban hashes of never-released file text in `plugin/release-hashes.json` with a check, because a reverted fix-round text stays listed as a known release.
 - review: Ban a fix-round test edit (flag on `evals/promptfoo/design-repo.yaml` and `design.yaml`) with no new eval run, with a gate, because the move left the flag open with no fresh evidence.
+- review: Ban an approve retry that needs a hand edit of REVIEW.md with a documented step or a retry command, because a blocked merge leaves no `Decision: pending` line and afk.py refuses the retry.
