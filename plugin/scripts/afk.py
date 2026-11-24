@@ -219,11 +219,26 @@ def git(cwd: Path, *args: str) -> str:
     return subprocess.run(["git", "-C", str(cwd), *args], check=True, capture_output=True, text=True).stdout.strip()
 
 
+def common_dir(root: Path) -> Path:
+    common = Path(git(root, "rev-parse", "--git-common-dir"))
+    return common if common.is_absolute() else (root / common).resolve()
+
+
+def add_worktree(root: Path, wt: Path, branch: str) -> None:
+    """Reuse the worktree at `wt`, or add it on `branch`: the branch if it exists, else a new one at HEAD."""
+    if wt.is_dir():
+        return
+    wt.parent.mkdir(parents=True, exist_ok=True)
+    exists = subprocess.run(["git", "-C", str(root), "rev-parse", "--verify", "-q", branch],
+                            capture_output=True).returncode == 0
+    args = [str(wt), branch] if exists else ["-b", branch, str(wt)]
+    git(root, "worktree", "add", "-q", *args)
+
+
 class Run:
     def __init__(self, root: Path, task: str):
         self.root, self.task = root, task
-        common = Path(git(root, "rev-parse", "--git-common-dir"))
-        self.common = common if common.is_absolute() else (root / common).resolve()
+        self.common = common_dir(root)
         self.wt = self.common / "kairyn" / "worktrees" / task
         self.branch = f"kairyn/{task}"
         self.code, self.code_root, self.repo_entry = self.wt, root, None   # the child repo, if STATE.md names one
@@ -236,13 +251,7 @@ class Run:
         return self.wt / "docs" / "tasks" / self.task
 
     def ensure_worktree(self) -> None:
-        if self.wt.is_dir():
-            return
-        self.wt.parent.mkdir(parents=True, exist_ok=True)
-        exists = subprocess.run(["git", "-C", str(self.root), "rev-parse", "--verify", "-q", self.branch],
-                                capture_output=True).returncode == 0
-        args = [str(self.wt), self.branch] if exists else ["-b", self.branch, str(self.wt)]
-        git(self.root, "worktree", "add", "-q", *args)
+        add_worktree(self.root, self.wt, self.branch)
 
     # STATE.md
     def state(self) -> str:
@@ -284,6 +293,9 @@ class Run:
         if top.returncode or Path(top.stdout.strip()).resolve() != target:
             raise Blocked(f"repo {name}: path `{path}` is not a git repo")
         self.code_root, self.repo_entry = target, entry
+        # R5: the code goes on a kairyn/<task> branch and worktree of the child repo, made if absent.
+        self.code = common_dir(target) / "kairyn" / "worktrees" / self.task
+        add_worktree(target, self.code, self.branch)
 
     def commit(self, message: str) -> None:
         git(self.wt, "add", "-A", f"docs/tasks/{self.task}")
