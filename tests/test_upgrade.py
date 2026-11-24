@@ -257,20 +257,20 @@ def test_a_pre_manifest_repo_owned_file_kept_by_resolving_stays_the_users(tmp_pa
 
 # --- files the new plugin no longer ships ----------------------------------------
 
-GONE = ".kairyn/stages/EXIT.md"
+GONE = ".kairyn/stages/EXIT.md"  # old-name
 
 
 def old_install(tmp_path):
-    """A repo installed from a plugin copy that ships stages/EXIT.md, and a newer plugin that does not."""
+    """A repo installed from a plugin copy that ships stages/EXIT.md, and a newer plugin that does not."""  # old-name
     old = tmp_path / "plugin-old"
     shutil.copytree(PLUGIN, old)
-    if not (old / "stages" / "EXIT.md").is_file():
-        (old / "stages" / "EXIT.md").write_text("---\nname: exit\n---\n\n# Stage: exit\n")
+    if not (old / "stages" / "EXIT.md").is_file():  # old-name
+        (old / "stages" / "EXIT.md").write_text("---\nname: exit\n---\n\n# Stage: exit\n")  # old-name
     repo = tmp_path / "repo"
     repo.mkdir()
     subprocess.run(["bash", str(old / "scripts" / "init.sh"), str(repo)], check=True, capture_output=True)
     plugin = new_plugin(tmp_path)
-    (plugin / "stages" / "EXIT.md").unlink(missing_ok=True)
+    (plugin / "stages" / "EXIT.md").unlink(missing_ok=True)  # old-name
     assert GONE in read_manifest(repo)["files"] and (repo / GONE).is_file()
     return repo, plugin
 

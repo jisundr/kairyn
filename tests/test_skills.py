@@ -83,9 +83,9 @@ def test_close_skill_runs_the_close_script():
     assert "scripts/close.py" in front(skill("close"))[1]
 
 
-@pytest.mark.parametrize("path", ["skills/exit", "stages/EXIT.md", "scripts/exit.py"])
+@pytest.mark.parametrize("path", ["skills/exit", "stages/EXIT.md", "scripts/exit.py"])  # old-name
 def test_no_exit_name_is_shipped(path):
-    """R1-R3: a bare /exit is the Claude Code built-in, so the stage is close."""
+    """R1-R3: a bare /exit is the Claude Code built-in, so the stage is close."""  # old-name
     assert not (PLUGIN / path).exists()
 
 

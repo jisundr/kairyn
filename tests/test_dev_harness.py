@@ -58,9 +58,9 @@ def test_this_repo_kairyn_is_upgraded_to_the_plugin_version():
     manifest = json.loads((ROOT / ".kairyn" / "manifest.json").read_text())
     assert manifest["version"] == plugin_version(PLUGIN)
     assert (ROOT / ".kairyn" / "stages" / "CLOSE.md").is_file()
-    assert not (ROOT / ".kairyn" / "stages" / "EXIT.md").exists()
+    assert not (ROOT / ".kairyn" / "stages" / "EXIT.md").exists()  # old-name
     assert ".kairyn/stages/CLOSE.md" in manifest["files"]
-    assert ".kairyn/stages/EXIT.md" not in manifest["files"]
+    assert ".kairyn/stages/EXIT.md" not in manifest["files"]  # old-name
 
 
 def test_plugin_version_is_0_11_0_or_later():
