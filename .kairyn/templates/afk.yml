@@ -36,3 +36,12 @@ escape_hatches:
   - 'pytest\.mark\.skip'
   - '\.skip\('
   - '\bxit\('
+
+# Home repo only: child repos that hold the code of a task. Design writes `repo: <name>` in STATE.md;
+# the run then builds in a kairyn/<task> worktree of that repo, with its own gates. A relative path starts at this repo.
+# Example:
+#   cerna-ui:
+#     path: ../cerna-ui
+#     gates:
+#       testing: pnpm test
+repos:

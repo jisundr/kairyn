@@ -14,7 +14,7 @@
     },
     ".kairyn/stages/DESIGN.md": {
       "owner": "repo",
-      "sha256": "85c409642f76d6b931e60c94cfc96e8e11a4de83b5699871bc51048a2a0667d8"
+      "sha256": "4a7404d9c912c21d3b0171822c8ebc45dd35a78752e01fc9b33727d631d2b05e"
     },
     ".kairyn/stages/EXIT.md": {
       "owner": "repo",
@@ -82,12 +82,12 @@
     },
     ".kairyn/templates/afk.yml": {
       "owner": "plugin",
-      "sha256": "cf1ab3db122953d7beb18875c76ac64dab11dcbf6d2b7ab8827f598e8cdd3379"
+      "sha256": "e40d5f924a4fb007ce24545787fcfb2c4917d3bbf9a58bb01ab393cc2ab109f0"
     },
     "CLAUDE.md#kairyn": {
       "owner": "plugin",
       "sha256": "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
     }
   },
-  "version": "0.9.0"
+  "version": "0.10.0"
 }
