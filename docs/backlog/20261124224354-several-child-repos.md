@@ -1,6 +1,6 @@
 ---
 title: A home-repo task can change only one child repo
-status: inbox
+status: parked
 requester: Jayson De los Reyes
 date: 2026-11-25
 appetite:
@@ -16,3 +16,4 @@ review_by: 2027-02-23
 # Log
 
 2026-11-24T22:43:54Z [capture] Created by the exit of 2026-11-24-multi-repo. Status inbox, waiting for triage.
+2026-11-24T23:07:13Z [triage] Parked: no real task has needed two child repos yet. Review after the first real child-repo run. Decided by Jayson De los Reyes.

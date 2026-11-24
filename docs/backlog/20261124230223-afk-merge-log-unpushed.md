@@ -1,6 +1,6 @@
 ---
 title: afk.py commits its merge log line after the merge and never pushes it
-status: inbox
+status: dropped
 requester: Jayson De los Reyes
 date: 2026-11-25
 appetite:
@@ -18,3 +18,4 @@ review_by: 2027-02-23
 # Log
 
 2026-11-24T23:02:23Z [capture] Created after the cleanup of 2026-11-24-multi-repo. Status inbox, waiting for triage.
+2026-11-24T23:07:13Z [triage] Dropped: merged into approve-retry, same function. Decided by Jayson De los Reyes.

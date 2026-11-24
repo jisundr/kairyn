@@ -1,9 +1,9 @@
 ---
 title: The design stage has no room under its token budget
-status: inbox
+status: triaged
 requester: Jayson De los Reyes
 date: 2026-11-25
-appetite:
+appetite: small batch
 review_by: 2027-02-23
 ---
 
@@ -16,3 +16,5 @@ review_by: 2027-02-23
 # Log
 
 2026-11-24T22:43:54Z [capture] Created by the exit of 2026-11-24-multi-repo. Status inbox, waiting for triage.
+2026-11-24T23:07:13Z [triage] Kept. Status triaged. Decided by Jayson De los Reyes.
+2026-11-24T23:07:13Z [appetite] Set to small batch. Decided by Jayson De los Reyes.

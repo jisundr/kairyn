@@ -1,6 +1,7 @@
 ---
 title: afk.py does not flag a fix-round edit to stage text
-status: inbox
+status: triaged
+appetite: small batch
 date: 2026-11-25
 requester: Jayson De los Reyes
 ---
@@ -14,3 +15,5 @@ requester: Jayson De los Reyes
 # Log
 
 2026-11-24T22:46:01Z [capture] Created by the retro of 2026-11-25 from a learning. Status inbox, waiting for triage.
+2026-11-24T23:07:13Z [triage] Kept. Status triaged. Decided by Jayson De los Reyes.
+2026-11-24T23:07:13Z [appetite] Set to small batch. Decided by Jayson De los Reyes.
