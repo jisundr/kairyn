@@ -2,7 +2,8 @@
 """A stand-in for `gh` in afk.py tests. GH_LOG gets one line of arguments per call, GH_LOG.cwd the cwd.
 
 pr create prints a pull request URL and remembers it for its cwd; pr view exits 0 only after a create
-in the same cwd (one pull request per repo). GH_MODE=merge_fail makes pr merge exit 1.
+in the same cwd (one pull request per repo). GH_MODE=merge_fail makes pr merge exit 1;
+merge_fail_after_first lets only the first pr merge pass. pr view --json state prints MERGED after a merge in that cwd.
 """
 import os
 import sys
@@ -15,6 +16,8 @@ with log.open("a") as f:
 with open(str(log) + ".cwd", "a") as f:
     f.write(cwd + "\n")
 created = log.with_suffix(".created")
+merged_file = log.with_suffix(".merged")
+merged = merged_file.read_text().splitlines() if merged_file.exists() else []
 made = created.read_text().splitlines() if created.exists() else []
 cmd = sys.argv[1:3]
 if cmd == ["pr", "create"]:
@@ -24,7 +27,10 @@ elif cmd == ["pr", "view"]:
     if cwd not in made:
         print("no pull requests found", file=sys.stderr)
         sys.exit(1)
-    print("https://github.com/example/repo/pull/1")
-elif cmd == ["pr", "merge"] and os.environ.get("GH_MODE") == "merge_fail":
-    print("Pull request is not mergeable: the base branch policy prohibits the merge", file=sys.stderr)
-    sys.exit(1)
+    print(("MERGED" if cwd in merged else "OPEN") if "state" in sys.argv else "https://github.com/example/repo/pull/1")
+elif cmd == ["pr", "merge"]:
+    mode = os.environ.get("GH_MODE")
+    if mode == "merge_fail" or (mode == "merge_fail_after_first" and merged):
+        print("Pull request is not mergeable: the base branch policy prohibits the merge", file=sys.stderr)
+        sys.exit(1)
+    merged_file.write_text("\n".join(merged + [cwd]) + "\n")

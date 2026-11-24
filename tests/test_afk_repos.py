@@ -376,3 +376,35 @@ def test_t5_child_merge_fails(repo, tmp_path):
     state = task_file(repo, "STATE.md")
     assert front(state, "status") == "blocked"
     assert re.search(r"\[review\] Blocked: repo ui: gh pr merge failed: .*base branch policy", state), state
+
+
+def test_t5_child_with_no_remote_blocks(repo, tmp_path):
+    """Review F1: a child with no origin blocks approve, and the home branch stays unmerged (R13)."""
+    child = child_repo(tmp_path / "ui")
+    base.with_remote(repo)
+    point_at(repo, "ui", "../ui")
+    git(repo, "push", "-q", "origin", "main")
+    assert base.run_gh(repo, "run", TASK).returncode == 0
+    result = base.run_gh(repo, "approve", TASK, "--words", "Ship it")
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert [a for a in base.gh_calls(repo) if a.startswith("pr merge")] == []   # home not merged
+    state = task_file(repo, "STATE.md")
+    assert front(state, "status") == "blocked"
+    assert re.search(rf"\[review\] Blocked: repo ui: no origin remote: merge kairyn/{TASK} in .*ui by hand", state), state
+
+
+def test_t5_retry_skips_a_merged_child(repo, tmp_path):
+    """Review F3: after the child merges and the home merge fails, a retry merges only the home."""
+    child, _, _ = two_repos(repo, tmp_path)
+    assert base.run_gh(repo, "run", TASK).returncode == 0
+    first = base.run_gh(repo, "approve", TASK, "--words", "Ship it", gh_mode="merge_fail_after_first")
+    assert first.returncode == 1, first.stdout + first.stderr
+    review = base.worktree(repo) / "docs" / "tasks" / TASK / "REVIEW.md"   # a person resets the decision
+    review.write_text(re.sub(r"^Decision: .*$", "Decision: pending", review.read_text(), flags=re.M))
+    second = base.run_gh(repo, "approve", TASK, "--words", "Ship it")
+    assert second.returncode == 0, second.stdout + second.stderr
+    merges = [c for c, a in gh_cwd_calls(repo) if a.startswith("pr merge")]
+    assert merges == [child.resolve(), repo.resolve(), repo.resolve()]   # the child merged once
+    state = task_file(repo, "STATE.md")
+    assert front(state, "status") == "done"
+    assert re.search(r"\[review\] repo ui: Already merged\.", state), state
