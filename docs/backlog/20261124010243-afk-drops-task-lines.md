@@ -1,9 +1,9 @@
 ---
 title: afk.py drops a malformed task line with no error
-status: inbox
+status: triaged
 requester: Jayson De los Reyes
 date: 2026-11-24
-appetite:
+appetite: small batch
 review_by:
 ---
 
@@ -19,6 +19,11 @@ review_by:
 
 **Notes:** Inference: fail when a line starts with `- T<n>` but does not match, or when the test plan names a task that `task_graph` does not return.
 
+**Merged (2026-11-24):** gate-open-approval-task. A done build with an approval task and no `BUILD.md` row must not pass.
+
 # Log
 
 2026-11-24T01:02:43Z [capture] Created by Claude from the T6 skip. Status inbox, waiting for triage.
+2026-11-24T02:11:01Z [triage] Kept. Status triaged. Decided by Jayson De los Reyes.
+2026-11-24T02:11:01Z [appetite] Set to small batch. Decided by Jayson De los Reyes.
+2026-11-24T02:11:01Z [merge] Holds gate-open-approval-task: a T<n> with no BUILD.md row cannot pass when afk.py fails on a malformed task line. Decided by Jayson De los Reyes.

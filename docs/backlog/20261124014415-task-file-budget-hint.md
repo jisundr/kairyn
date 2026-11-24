@@ -1,7 +1,9 @@
 ---
 title: Say the task file budget where tasks are made
-status: inbox
+status: dropped
 date: 2026-11-24
+appetite: 
+requester: Jayson De los Reyes
 ---
 
 # Say the task file budget where tasks are made
@@ -13,3 +15,4 @@ date: 2026-11-24
 # Log
 
 2026-11-24T01:44:15Z [capture] Created by the retro of 2026-11-24 from a learning. Status inbox, waiting for triage.
+2026-11-24T02:11:01Z [triage] Dropped: the budget test already reports a task file over budget. Decided by Jayson De los Reyes.
