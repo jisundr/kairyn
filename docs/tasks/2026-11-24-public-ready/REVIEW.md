@@ -43,4 +43,4 @@ summary: "Repo files and tests pass (546). T6 did not run: live main protection,
 - F3: Some content tests are loose. `test_contributing_md_states_the_three_rules` passes if the words "open an issue" and "before" are anywhere in the file. `test_security_md_points_to_private_reporting` passes if "latest" is anywhere. The files are correct now, but the tests do not hold the rules.
 - F4: The protection payload sets `contexts` with no app. A check of the same name from any app satisfies the rule. This is not in REQUIREMENTS.md. Low risk on a repo with one maintainer.
 
-Decision: pending
+Decision: Jayson De los Reyes, 2026-11-24T01:15:47Z, "approved"

@@ -2,16 +2,16 @@
 task: 2026-11-24-public-ready
 title: Public-ready hardening
 stage: review
-status: blocked
+status: done
 stages:
   grill: done
   requirements: done
   design: done
   build: done
   gates: done
-  review: in-progress
+  review: done
 created: 2026-11-23T23:10:10Z
-updated: 2026-11-24T01:02:28Z
+updated: 2026-11-24T01:15:47Z
 ---
 
 # Log
@@ -43,3 +43,4 @@ Blocked: the T5 test identifies the learnings line by the prefix "- grill:", whi
 2026-11-24T00:49:09Z [review] Review started.
 2026-11-24T00:51:23Z [review] Cost $0.57. Waiting for the merge decision: /kairyn:review 2026-11-24-public-ready approve or reject.
 2026-11-24T01:02:28Z [review] T6 by hand: afk.py dropped the line `- T6 (approval):` (its pattern needs `- T6:`). Approved by Jayson De los Reyes: "yes, run the apply". `github_settings.py --apply` then `--check`: OK, exit 0. F1 resolved.
+2026-11-24T01:15:47Z [review] Approved by Jayson De los Reyes.
