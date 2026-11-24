@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""The scripted half of the kairyn exit stage: what must always work, so the model does not do it.
+"""The scripted half of the kairyn close stage: what must always work, so the model does not do it.
 
-    python3 exit.py check <task>                  # OK, or FAIL: <why> (exit 1)
-    python3 exit.py adr-path <slug>               # next free docs/adr/<NNNN>-<slug>.md
-    python3 exit.py close <task> --entry "<text>" # changelog entry, then delete the task and its backlog files
-    python3 exit.py release <version>             # ## Unreleased -> ## <version>, local tag v<version>
+    python3 close.py check <task>                  # OK, or FAIL: <why> (exit 1)
+    python3 close.py adr-path <slug>               # next free docs/adr/<NNNN>-<slug>.md
+    python3 close.py close <task> --entry "<text>" # changelog entry, then delete the task and its backlog files
+    python3 close.py release <version>             # ## Unreleased -> ## <version>, local tag v<version>
 
 All take --root (default: the current directory). A task is done when its STATE.md has
 `status: done` and the output of its last stage (`stage:` in STATE.md, e.g. RETRO.md) has an
@@ -14,7 +14,7 @@ approval line. close deletes:
   - docs/backlog files with `status: dropped` that link no task folder that still exists
 and removes their rows from docs/backlog/README.md. Git history keeps every deleted file.
 Its last line is `RETRO: learnings.md <used>/<budget>` when learnings.md is past half its
-budget (retro.py): the exit stage then runs the retro stage.
+budget (retro.py): the close stage then runs the retro stage.
 release never pushes: it prints the push command for the user.
 
 Standard library only: consumers run this with a plain python3 (3.9 on macOS).
