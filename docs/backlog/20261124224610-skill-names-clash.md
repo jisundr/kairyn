@@ -1,9 +1,9 @@
 ---
 title: /kairyn:exit shares its name with the built-in /exit
-status: inbox
+status: triaged
 requester: Jayson De los Reyes
 date: 2026-11-25
-appetite:
+appetite: small batch
 review_by: 2027-02-23
 ---
 
@@ -18,3 +18,6 @@ review_by: 2027-02-23
 # Log
 
 2026-11-24T22:46:10Z [capture] Created by the exit of 2026-11-24-multi-repo from a user request. Status inbox, waiting for triage.
+2026-11-24T23:07:13Z [triage] Kept. Status triaged. Decided by Jayson De los Reyes.
+2026-11-24T23:07:13Z [appetite] Set to small batch. Decided by Jayson De los Reyes.
+2026-11-24T23:07:13Z [next] Chosen as Next: typing /exit quits Claude instead of running the stage. Decided by Jayson De los Reyes.

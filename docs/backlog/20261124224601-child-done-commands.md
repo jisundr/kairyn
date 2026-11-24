@@ -1,6 +1,6 @@
 ---
 title: afk-run.md does not say where child-repo done commands run
-status: inbox
+status: dropped
 date: 2026-11-25
 requester: Jayson De los Reyes
 ---
@@ -14,3 +14,4 @@ requester: Jayson De los Reyes
 # Log
 
 2026-11-24T22:46:01Z [capture] Created by the retro of 2026-11-25 from a learning. Status inbox, waiting for triage.
+2026-11-24T23:07:13Z [triage] Dropped: merged into shipped-afk-run-child-repos, same file. Decided by Jayson De los Reyes.
