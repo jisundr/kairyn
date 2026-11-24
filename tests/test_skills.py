@@ -6,7 +6,7 @@ import yaml
 
 from helpers import PLUGIN, split_front_matter
 
-STAGE_SKILLS = {"requirements": "REQUIREMENTS", "design": "DESIGN", "grill": "GRILL", "model-routing": "MODEL-ROUTING", "exit": "EXIT",
+STAGE_SKILLS = {"requirements": "REQUIREMENTS", "design": "DESIGN", "grill": "GRILL", "model-routing": "MODEL-ROUTING", "close": "CLOSE",
                 "retro": "RETRO"}
 MODELS = {"haiku", "sonnet", "opus", "inherit"}
 SCRIPT_COMMANDS = ("init", "check", "upgrade", "release")
@@ -66,7 +66,7 @@ def test_design_skill_runs_on_opus():
 
 
 def test_retro_is_optional_and_runs_its_script():
-    """D1, D6: an optional stage like exit; its size checks run in retro.py, so the skill may call python3."""
+    """D1, D6: an optional stage like close; its size checks run in retro.py, so the skill may call python3."""
     stage, _ = front(PLUGIN / "stages" / "RETRO.md")
     assert stage["optional"] is True
     data, body = front(skill("retro"))
@@ -74,9 +74,19 @@ def test_retro_is_optional_and_runs_its_script():
     assert "scripts/retro.py" in body
 
 
-def test_exit_skill_can_run_retro():
-    """Option A: exit follows RETRO.md in the same turn, so it names the retro script too."""
-    assert "scripts/retro.py" in front(skill("exit"))[1]
+def test_close_skill_can_run_retro():
+    """Option A: close follows RETRO.md in the same turn, so it names the retro script too."""
+    assert "scripts/retro.py" in front(skill("close"))[1]
+
+
+def test_close_skill_runs_the_close_script():
+    assert "scripts/close.py" in front(skill("close"))[1]
+
+
+@pytest.mark.parametrize("path", ["skills/exit", "stages/EXIT.md", "scripts/exit.py"])
+def test_no_exit_name_is_shipped(path):
+    """R1-R3: a bare /exit is the Claude Code built-in, so the stage is close."""
+    assert not (PLUGIN / path).exists()
 
 
 @pytest.mark.parametrize("name,command", [("build", "run"), ("review", "approve")])
