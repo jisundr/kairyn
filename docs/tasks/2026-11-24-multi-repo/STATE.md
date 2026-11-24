@@ -7,11 +7,11 @@ stages:
   grill: done
   requirements: done   # pending | in-progress | done
   design: done
-  build: pending
+  build: in-progress
   gates: pending
   review: pending
 created: 2026-11-24T02:30:13Z
-updated: 2026-11-24T03:19:40Z
+updated: 2026-11-24T03:26:06Z
 ---
 
 # Log
@@ -32,3 +32,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-24T03:02:09Z [requirements] Approved by Jayson De los Reyes: "approved, A1 A3 A4 confirmed". Next: design.
 2026-11-24T03:17:20Z [design] Wrote DESIGN.md: option A (code worktree on Run), slices T1-T6, AC1-AC12. Waiting for approval.
 2026-11-24T03:19:40Z [design] Approved by Jayson De los Reyes: "approved, T1-T5 AFK, T6 by hand". T6 marked (approval) so the AFK build stops before it. Next: build.
+2026-11-24T03:26:06Z [build] Build started.
