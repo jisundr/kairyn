@@ -113,3 +113,37 @@ def test_each_repo_setting_off_is_a_problem():
     assert repo_problems({}, alerts_on=True, reporting={"enabled": True})
     assert repo_problems(on, alerts_on=False, reporting={"enabled": True})
     assert repo_problems(on, alerts_on=True, reporting={"enabled": False})
+
+
+KB_LINES = [
+    (ROOT / ".harness" / "README.md", "5. **Playbooks"),
+    (ROOT / ".kairyn" / "learnings.md", "- grill:"),
+    (ROOT / "docs" / "backlog" / "README.md", "Options, not commitments."),
+]
+
+
+def kb_line(path, start):
+    lines = [line for line in path.read_text().splitlines() if line.startswith(start)]
+    assert len(lines) == 1, (path, start)
+    return lines[0]
+
+
+def test_knowledge_base_lines_are_conditional_and_private():
+    for path, start in KB_LINES:
+        line = kb_line(path, start)
+        assert "`../knowledge-base`" in line, path
+        assert "private" in line, path
+        assert re.search(r"only if `\.\./knowledge-base` exists", line), path
+
+
+def test_backlog_knowledge_base_line_is_line_3():
+    path = ROOT / "docs" / "backlog" / "README.md"
+    assert path.read_text().splitlines()[2] == kb_line(path, "Options, not commitments.")
+
+
+def test_pull_request_doc_names_checks_and_protection():
+    text = (ROOT / ".harness" / "workflows" / "pull-request.md").read_text()
+    for check in REQUIRED_CHECKS:
+        assert f"`{check}`" in text, check
+    for rule in ("0 approvals", "admins", "force push", "deletion"):
+        assert rule in text, rule
