@@ -1,17 +1,17 @@
 ---
 task: 2026-11-24-public-ready
 title: Public-ready hardening
-stage: build
-status: in-progress
+stage: review
+status: done
 stages:
   grill: done
   requirements: done
   design: done
-  build: pending
-  gates: pending
-  review: pending
+  build: done
+  gates: done
+  review: done
 created: 2026-11-23T23:10:10Z
-updated: 2026-11-23T23:41:28Z
+updated: 2026-11-24T01:15:47Z
 ---
 
 # Log
@@ -31,3 +31,16 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-23T23:39:32Z [requirements] Wording only: R6, R7, R9, R12, R15, R16 to EARS form; R10, R14 and CONCEPT D3 split into short sentences. Meaning unchanged.
 2026-11-23T23:39:32Z [design] DESIGN.md written: option B (settings script with --apply and --check), T1-T6, T6 needs approval. Waiting for user approval.
 2026-11-23T23:41:28Z [design] Approved by Jayson De los Reyes: "Approve". Next: /kairyn:build.
+2026-11-23T23:52:56Z [build] Build started.
+2026-11-24T00:04:42Z [build] Blocked: T5: no test(T5) and feat(T5) commits. Session said: h` and left the working tree clean. To finish T5: fix that prefix in the test, run `git apply` on the patch, then commit `feat(T5)`.
+
+Blocked: the T5 test identifies the learnings line by the prefix "- grill:", which matches 2 lines in .kairyn/learnings.md, so it can't pass without editing the test.
+2026-11-24T00:39:52Z [build] Fixed by Claude, user approved: test(T5) 32152b3 finds the learnings line by "- grill: The knowledge base". Resumed.
+2026-11-24T00:39:54Z [build] Build started.
+2026-11-24T00:47:57Z [build] All 5 tasks green. Cost $0.89. Next: gates.
+2026-11-24T00:48:05Z [build] Pushed kairyn/2026-11-24-public-ready. Pull request: https://github.com/jisundr/kairyn/pull/11
+2026-11-24T00:49:06Z [gates] 2 pass, 4 not set: accessibility, performance, observability, security. Cost $0.00. Next: review.
+2026-11-24T00:49:09Z [review] Review started.
+2026-11-24T00:51:23Z [review] Cost $0.57. Waiting for the merge decision: /kairyn:review 2026-11-24-public-ready approve or reject.
+2026-11-24T01:02:28Z [review] T6 by hand: afk.py dropped the line `- T6 (approval):` (its pattern needs `- T6:`). Approved by Jayson De los Reyes: "yes, run the apply". `github_settings.py --apply` then `--check`: OK, exit 0. F1 resolved.
+2026-11-24T01:15:47Z [review] Approved by Jayson De los Reyes.

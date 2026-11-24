@@ -24,5 +24,9 @@ budgets:
   - {pattern: "docs/backlog/*.md", max_tokens: 600, load: on-demand}
   - {pattern: "docs/adr/*.md", max_tokens: 500, load: on-demand}
   - {pattern: CHANGELOG.md, max_tokens: 2000, load: on-demand}
+  # Files for outsiders: GitHub shows them; agents rarely read them.
+  - {pattern: SECURITY.md, max_tokens: 200, load: on-demand}
+  - {pattern: CONTRIBUTING.md, max_tokens: 250, load: on-demand}
+  - {pattern: .github/pull_request_template.md, max_tokens: 100, load: on-demand}
   # Frozen test data (a v0.1.0 consumer repo for upgrade tests). Never loaded; budgeted so it stays small.
   - {pattern: "tests/fixtures/*", max_tokens: 1000, load: on-demand}
