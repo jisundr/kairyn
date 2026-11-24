@@ -14,7 +14,7 @@ HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
 from helpers import PLUGIN, ROOT, make_good_repo, run_verify  # noqa: E402
-from runner import (RETRO_ENTRIES, make_retro_repo, run_retro, run_retro_approval, DESIGN_REQUEST, DESIGN_REQUIREMENTS, make_design_repo, run_design, run_design_approval, EXIT_DECISION_TASK, EXIT_PLAIN_TASK, make_exit_repo, run_exit, APPROVAL_WORDS, APPROVER, CONCEPT_DECISIONS, CONCEPT_TASK, CONCEPT_VALUE, GRILL_APP, GRILL_README, GRILL_REQUEST, MODEL, REQUEST, RESULTS, ROUTING_REQUEST,  # noqa: E402
+from runner import (RETRO_ENTRIES, make_retro_repo, run_retro, run_retro_approval, DESIGN_REQUEST, DESIGN_REQUIREMENTS, make_design_repo, run_design, run_design_approval, DESIGN_CHILD_REQUIREMENTS, make_design_child_repo, run_design_child, EXIT_DECISION_TASK, EXIT_PLAIN_TASK, make_exit_repo, run_exit, APPROVAL_WORDS, APPROVER, CONCEPT_DECISIONS, CONCEPT_TASK, CONCEPT_VALUE, GRILL_APP, GRILL_README, GRILL_REQUEST, MODEL, REQUEST, RESULTS, ROUTING_REQUEST,  # noqa: E402
                     claude, make_concept_repo, make_grill_repo, make_routing_repo, new_repo, run_grill, run_model_routing,
                     run_requirements, run_requirements_approval, run_requirements_with_concept, set_cost_dir, tree_hash)
 
@@ -160,6 +160,15 @@ def design(work: Path, scenario: str, run_id: str) -> dict:
     return _design_evidence(run_design(_design_repo(work, run_dir)), run_dir)
 
 
+def design_child_repo(work: Path, scenario: str, run_id: str) -> dict:
+    """A home repo whose task changes code in one child repo (multi-repo R14)."""
+    run_dir = RESULTS / scenario / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+    repo = make_design_child_repo(make_good_repo(new_repo(work, "repo")))
+    out = _design_evidence(run_design_child(repo), run_dir)
+    return {**out, "requirements": DESIGN_CHILD_REQUIREMENTS}
+
+
 def design_approval(work: Path, scenario: str, run_id: str) -> dict:
     run_dir = RESULTS / scenario / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -284,7 +293,7 @@ def afk_review(work: Path, scenario: str, run_id: str) -> dict:
 
 SCENARIOS = {f.__name__: f for f in (afk_build, afk_gates_pass, afk_gates_fail, afk_review, init_fresh, init_keeps_edits, init_keeps_claude_md, check_broken_doc, requirements,
                                      model_routing, grill, requirements_with_concept, requirements_approval,
-                                     upgrade_conflict, exit_decision, exit_plain, design, design_approval,
+                                     upgrade_conflict, exit_decision, exit_plain, design, design_approval, design_child_repo,
                                      retro, retro_approval, exit_retro)}
 
 

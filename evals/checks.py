@@ -587,6 +587,19 @@ def design_run_problems(run: dict, approved: bool = False) -> list[str]:
     return problems
 
 
+def repo_line_problems(state: str, expected: str | None) -> list[str]:
+    """STATE.md front matter `repo:` names the child repo of a home-repo task (multi-repo D3). None: no line."""
+    m = re.search(r"\A---\n(.*?)\n---\n", state, re.S)
+    if not m:
+        return ["STATE.md has no front matter"]
+    found = re.findall(r"^repo:\s*(\S*)\s*$", m.group(1), re.M)
+    if expected is None:
+        return [f"repo: {found[0]} in STATE.md, expected no repo: line"] if found else []
+    if not found:
+        return [f"no repo: line in STATE.md, expected repo: {expected}"]
+    return [] if found == [expected] else [f"repo: {', '.join(found)} in STATE.md, expected repo: {expected}"]
+
+
 # --- retro stage ------------------------------------------------------------------
 # RETRO.md has one table row per learning, numbered L<n> in learnings.md order:
 #   | L1 | move | `<home>` | <text to add> |

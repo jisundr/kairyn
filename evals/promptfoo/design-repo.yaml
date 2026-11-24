@@ -1,0 +1,15 @@
+# depends: plugin/skills/design/SKILL.md, plugin/stages/DESIGN.md, plugin/stages/_template.md, plugin/templates/STATE.md, plugin/templates/DESIGN.md, plugin/templates/afk.yml, plugin/scripts/init.sh, plugin/harness/**/*
+description: design stage in a home repo whose code is in one child repo (multi-repo R14)
+prompts: ["{{scenario}}"]
+providers:
+  - id: file://provider.py
+    config: {timeout: 1800000}
+tests:
+  - description: Design writes repo report-cli in STATE.md when the code is in that child repo
+    vars: {scenario: design_child_repo, child_repo: report-cli}
+    metadata:
+      min_pass_rate: {design_names_repo: 0.9, design_well_formed: 0.9, design_traceable: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:design_names_repo", metric: design_names_repo}
+      - {type: python, value: "file://asserts.py:design_well_formed", metric: design_well_formed}
+      - {type: python, value: "file://asserts.py:design_traceable", metric: design_traceable}

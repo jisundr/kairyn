@@ -13,7 +13,7 @@ from checks import (build_row_problems, flags_problems, gate_row, new_constraint
                     retro_applied_problems, retro_proposal_problems, retro_scope_problems, chosen_option, design_run_problems, design_test_plan_problems, grounded_problems, options_problems,  # noqa: E402
                     exit_problems, TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_reply_problems, next_routing_stage,  # noqa: E402
                     open_decisions, routing_problems, state_fields, ste_problems, ste_rate, structural_problems,
-                    traceability_problems)
+                    traceability_problems, repo_line_problems)
 from runner import JUDGE_MODEL, NO_QUESTIONS, claude  # noqa: E402
 
 
@@ -334,6 +334,15 @@ def _design_run(d: dict) -> dict:
 def design_well_formed(output, context):
     d = json.loads(output)
     return _result(design_run_problems(_design_run(d)) if d["task_path"] else ["no task folder"])
+
+
+def design_names_repo(output, context):
+    """STATE.md has `repo: report-cli` for the child-repo scenario, and no repo: line for the others (R1, R14)."""
+    d = json.loads(output)
+    if not d["task_path"]:
+        return _result(["no task folder"])
+    expected = (context.get("vars") or {}).get("child_repo")
+    return _result(repo_line_problems((Path(d["task_path"]) / "STATE.md").read_text(), expected))
 
 
 def design_traceable(output, context):
