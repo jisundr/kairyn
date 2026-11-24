@@ -2,7 +2,7 @@
 task: 2026-11-25-skill-names-clash
 title: Skill names clash with built-in commands
 stage: build
-status: in-progress   # in-progress | blocked | done
+status: blocked
 stages:
   grill: done
   requirements: done
@@ -11,7 +11,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-24T23:13:12Z
-updated: 2026-11-24T23:20:37Z
+updated: 2026-11-24T23:29:07Z
 ---
 
 # Log
@@ -29,3 +29,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-24T23:18:20Z [requirements] Approved by Jayson De los Reyes. Next stage: design.
 2026-11-24T23:20:19Z [design] Wrote DESIGN.md: option A, T1-T4, AC1-AC11. Waiting for user approval.
 2026-11-24T23:20:37Z [design] Approved by Jayson De los Reyes. Next stage: build.
+2026-11-24T23:29:07Z [build] Blocked: readiness: gate testing exits 1 on the base commit
