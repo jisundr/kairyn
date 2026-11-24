@@ -101,3 +101,62 @@ def test_t1_bad_repo_blocks(repo, tmp_path, name, make, cause):
     blocked = [line for line in state.splitlines() if "Blocked:" in line]
     assert blocked and f"repo {name}" in blocked[-1] and cause in blocked[-1]
     assert not (repo.parent / "stub.log").exists()   # no session ran
+
+
+# --- T2: the child kairyn/<task> branch and worktree are `code`; task files commit only in `wt` --
+
+
+def child_worktree(child):
+    return child / ".git" / "kairyn" / "worktrees" / TASK
+
+
+def test_t2_branches_split(repo, tmp_path):
+    child = child_repo(tmp_path / "ui")
+    child_head = git(child, "rev-parse", "HEAD").strip()
+    point_at(repo, "ui", "../ui")
+    r = afk.Run(repo, TASK)
+    r.ensure_worktree()
+    r.resolve_repo()
+    assert r.code == child_worktree(child).resolve() and r.code != r.wt
+    assert git(r.code, "rev-parse", "--abbrev-ref", "HEAD").strip() == f"kairyn/{TASK}"
+    assert git(r.code, "rev-parse", "HEAD").strip() == child_head   # A2: starts at the child HEAD
+    assert git(r.wt, "rev-parse", "--abbrev-ref", "HEAD").strip() == f"kairyn/{TASK}"
+    home_head = git(r.wt, "rev-parse", "HEAD").strip()
+    r.update("build", "a log line")
+    (r.code / "app.py").write_text("x = 1\n")   # code the session left uncommitted
+    r.commit(f"kairyn({TASK}): build")
+    assert git(r.wt, "rev-parse", "HEAD").strip() != home_head   # the task files went to the home branch
+    assert git(r.wt, "diff", "--name-only", "HEAD~1", "HEAD").split() == [f"docs/tasks/{TASK}/STATE.md"]
+    assert git(child, "rev-parse", f"kairyn/{TASK}").strip() == child_head   # nothing on the child branch
+    assert "docs" not in git(child, "ls-tree", "-r", "--name-only", f"kairyn/{TASK}")
+    assert (r.code / "app.py").is_file()
+
+
+def test_t2_run_creates_the_child_worktree(repo, tmp_path):
+    child = child_repo(tmp_path / "ui")
+    point_at(repo, "ui", "../ui")
+    run(repo, "run", TASK)
+    assert child_worktree(child).is_dir()
+    assert git(child, "rev-parse", "--verify", f"kairyn/{TASK}")
+    assert "docs" not in git(child, "ls-tree", "-r", "--name-only", f"kairyn/{TASK}")
+
+
+def test_t2_reuse_worktree(repo, tmp_path):
+    child = child_repo(tmp_path / "ui")
+    point_at(repo, "ui", "../ui")
+    first = afk.Run(repo, TASK)
+    first.ensure_worktree()
+    first.resolve_repo()
+    (first.code / "keep.txt").write_text("left by the first run\n")
+    second = afk.Run(repo, TASK)
+    second.ensure_worktree()
+    second.resolve_repo()   # a second run reuses the worktree, no error
+    assert second.code == first.code and (second.code / "keep.txt").is_file()
+    # The branch exists but its worktree is gone: the worktree comes back on the same branch.
+    git(child, "commit", "-q", "--allow-empty", "-m", "on main")   # main moves on; the task branch does not
+    branch_head = git(child, "rev-parse", f"kairyn/{TASK}").strip()
+    git(child, "worktree", "remove", "--force", str(first.code))
+    third = afk.Run(repo, TASK)
+    third.ensure_worktree()
+    third.resolve_repo()
+    assert third.code.is_dir() and git(third.code, "rev-parse", "HEAD").strip() == branch_head
