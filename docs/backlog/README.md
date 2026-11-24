@@ -19,7 +19,6 @@ Next: not chosen. Parked ideas are reviewed by 2027-02-23. Closed ideas are in `
 | [Security gate not set](20261124014415-gate-security-not-set.md) | triaged | small | |
 | [Loose content tests](20261124014415-lint-loose-content-tests.md) | triaged | small | |
 | [Branch names in checks](20261124014415-grounded-branch-names.md) | triaged | small | |
-| [Multi-repo support](20261122080759-multi-repo.md) | triaged | | |
 | [AFK-run doc pitfalls](20261124014415-max-budget-soft-cap.md) | triaged | small | |
 | [Release and monitoring stage](20261122080759-release-stage.md) | parked | | |
 | [Parallel slices](20261123225741-parallel-slices.md) | parked | | |
