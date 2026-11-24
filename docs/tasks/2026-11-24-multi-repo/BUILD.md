@@ -19,3 +19,9 @@ summary: "Red and green evidence for each T<n>, written by afk.py."
 
 ## Approvals
 Approval T6: Jayson De los Reyes, 2026-11-24T05:44:35Z, "eval passes, approved"
+
+## Flags
+- None
+
+## Review
+- Review 1: `plugin/stages/DESIGN.md` makes changes that are outside DESIGN.md. T6 only says "the design stage writes `repo:`", but the diff also deletes the exit criterion "Each named file exists or is marked `(new)`". It also rewords step 1 ("Ask for requirements approval" becomes "Ask for approval") and changes step 6 from `.kairyn/afk.yml` to `afk.yml`. Dropping the exit criterion removes a check the design stage made before, and no test or eval covers its removal.; The diff adds a new eval file, `evals/promptfoo/design-repo.yaml`, and edits `evals/promptfoo/provider.py` and `evals/promptfoo/asserts.py`. None of these is in T6's file list, which names only `evals/promptfoo/design.yaml`, `evals/runner.py` and `evals/checks.py`. The test plan also says AC11 runs with `/run-evals design`, but the `design_child_repo` scenario is in `design-repo.yaml`, not `design.yaml`, so that command may not run it.
