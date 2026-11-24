@@ -122,30 +122,48 @@ def _strip_comment(line: str) -> str:
 
 
 def parse_afk(text: str) -> dict:
-    """.kairyn/afk.yml: top-level `section:` keys, each holding `key: value` lines or `- item` lines."""
-    data, section = {}, None
+    """.kairyn/afk.yml: top-level `section:` keys. Under each, `key: value` lines or `- item` lines, and a
+    `key:` line with deeper lines holds a nested map, as in `repos:` (name, then `path:` and `gates:`)."""
+    lines = []
     for raw in text.splitlines():
         line = _strip_comment(raw)
-        if not line.strip():
-            continue
-        if not line[0].isspace():
-            key, sep, rest = line.partition(":")
-            if not sep or rest.strip():
-                raise ValueError(f"afk.yml: expected `section:`, got {raw!r}")
-            section = key.strip()
-            data[section] = None
-            continue
-        if section is None:
+        if line.strip():
+            lines.append((len(line) - len(line.lstrip()), line.strip(), raw))
+    data, i = {}, 0
+    while i < len(lines):
+        indent, item, raw = lines[i]
+        if indent:
             raise ValueError(f"afk.yml: indented line before a section: {raw!r}")
-        item = line.strip()
+        key, sep, rest = item.partition(":")
+        if not sep or rest.strip():
+            raise ValueError(f"afk.yml: expected `section:`, got {raw!r}")
+        data[key.strip()], i = _block(lines, i + 1, 0, {})
+    return data
+
+
+def _block(lines: list, i: int, parent: int, empty):
+    """The value under a `key:` line at indent `parent`: its deeper lines, or `empty` when it has none."""
+    if i >= len(lines) or lines[i][0] <= parent:
+        return empty, i
+    indent, value = lines[i][0], None
+    while i < len(lines) and lines[i][0] > parent:
+        at, item, raw = lines[i]
+        if at != indent:
+            raise ValueError(f"afk.yml: unexpected indent: {raw!r}")
         if item.startswith("- "):
-            data[section] = (data[section] or []) + [_value(item[2:])]
+            if isinstance(value, dict):
+                raise ValueError(f"afk.yml: a `- item` among `key: value` lines: {raw!r}")
+            value, i = (value or []) + [_value(item[2:])], i + 1
+            continue
+        key, sep, rest = item.partition(":")
+        if not sep or isinstance(value, list):
+            raise ValueError(f"afk.yml: expected `key: value`, got {raw!r}")
+        value = {} if value is None else value
+        if rest.strip():
+            value[key.strip()], i = _value(rest), i + 1
         else:
-            key, sep, rest = item.partition(":")
-            if not sep:
-                raise ValueError(f"afk.yml: expected `key: value`, got {raw!r}")
-            data[section] = {**(data[section] or {}), key.strip(): _value(rest) if rest.strip() else ""}
-    return {k: (v if v is not None else {}) for k, v in data.items()}
+            value[key.strip()], i = _block(lines, i + 1, at, "")
+    return value, i
 
 
 def path_matches(path: str, pattern: str) -> bool:
@@ -208,6 +226,7 @@ class Run:
         self.common = common if common.is_absolute() else (root / common).resolve()
         self.wt = self.common / "kairyn" / "worktrees" / task
         self.branch = f"kairyn/{task}"
+        self.code, self.code_root, self.repo_entry = self.wt, root, None   # the child repo, if STATE.md names one
         self.rounds = []
         self.run_cost, self.stage_cost, self.stage_name, self.stage_start = 0.0, 0.0, "", 0.0
         self.last_failed = "none"
@@ -245,6 +264,26 @@ class Run:
         text = set_front(text, "updated", stamp)
         text = text.rstrip("\n") + f"\n{stamp} [{at}] {log}\n"
         (self.folder / "STATE.md").write_text(text)
+
+    def resolve_repo(self) -> None:
+        """R1, R3: `repo: <name>` in STATE.md names the code repo in afk.yml `repos:`. No line: the home repo.
+        A relative `path:` resolves from the home repo root (A1)."""
+        head = self.state().partition("\n---\n")[0]
+        m = re.search(r"^repo:[ \t]*([\w.-]+)[ \t]*$", head, re.M)
+        if not m:
+            return
+        name = m.group(1)
+        entry = (self.config().get("repos") or {}).get(name)
+        if not isinstance(entry, dict):
+            raise Blocked(f"repo {name}: no entry in the repos: map of .kairyn/afk.yml")
+        path = str(entry.get("path") or "")
+        target = (self.root / path).resolve()
+        if not path or not target.is_dir():
+            raise Blocked(f"repo {name}: path `{path}` does not exist")
+        top = subprocess.run(["git", "-C", str(target), "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+        if top.returncode or Path(top.stdout.strip()).resolve() != target:
+            raise Blocked(f"repo {name}: path `{path}` is not a git repo")
+        self.code_root, self.repo_entry = target, entry
 
     def commit(self, message: str) -> None:
         git(self.wt, "add", "-A", f"docs/tasks/{self.task}")
@@ -650,6 +689,7 @@ class Run:
         self.start_stage(self.front("stage") or "")
         if self.front("status") == "in-progress":
             try:
+                self.resolve_repo()
                 self.readiness()
             except Blocked as e:
                 self.update(self.front("stage"), f"Blocked: {e}", status="blocked")
