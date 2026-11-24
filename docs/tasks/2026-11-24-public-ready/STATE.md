@@ -2,16 +2,16 @@
 task: 2026-11-24-public-ready
 title: Public-ready hardening
 stage: review
-status: in-progress
+status: blocked
 stages:
   grill: done
   requirements: done
   design: done
   build: done
   gates: done
-  review: pending
+  review: in-progress
 created: 2026-11-23T23:10:10Z
-updated: 2026-11-24T00:49:06Z
+updated: 2026-11-24T00:51:23Z
 ---
 
 # Log
@@ -40,3 +40,5 @@ Blocked: the T5 test identifies the learnings line by the prefix "- grill:", whi
 2026-11-24T00:47:57Z [build] All 5 tasks green. Cost $0.89. Next: gates.
 2026-11-24T00:48:05Z [build] Pushed kairyn/2026-11-24-public-ready. Pull request: https://github.com/jisundr/kairyn/pull/11
 2026-11-24T00:49:06Z [gates] 2 pass, 4 not set: accessibility, performance, observability, security. Cost $0.00. Next: review.
+2026-11-24T00:49:09Z [review] Review started.
+2026-11-24T00:51:23Z [review] Cost $0.57. Waiting for the merge decision: /kairyn:review 2026-11-24-public-ready approve or reject.

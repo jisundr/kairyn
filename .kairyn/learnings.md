@@ -14,3 +14,7 @@ Stages append here.
 - 2026-11-24 [exit] Test a new AFK path with one real run on a fixture built to hit it. The build-stage stub tests passed, but one real reviewer run found three defects.
 - grill: "No Actions runs" on a new public repo was not billing. `gh workflow run` on a branch with `workflow_dispatch` and a draft PR proved runs start. Test a trigger before you blame billing.
 - requirements: A requirement must start with "The <system> shall" or When/While/If/Where. "`SECURITY.md` shall…" fails `ears_problems`; write "The `SECURITY.md` file shall…".
+- review: Ban a done build with an approval task that has no BUILD.md row, with a gate, because T6 (live GitHub settings) never ran and BUILD.md still said "Flags: None".
+- review: Ban a not-set security gate on a task whose requirements name security needs, with a gate that runs the task's own check (here `github_settings.py --check`), because AC1-AC5 and AC8 failed with every gate green.
+- review: Ban content tests that match loose words anywhere in a file, with a lint rule on test asserts, because the CONTRIBUTING.md and SECURITY.md tests pass with the rules removed.
+- review: Ban required status checks with no app id, with a test on the protection payload, because a check of the same name from any app satisfies it.
