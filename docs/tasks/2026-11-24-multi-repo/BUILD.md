@@ -15,3 +15,6 @@ summary: "Red and green evidence for each T<n>, written by afk.py."
 | T3 | 3e5027b | 1 | 1c08408 | 0 |
 | T4 | ab5ce54 | 1 | ee65c88 | 0 |
 | T5 | fe5448c | 1 | 8388338 | 0 |
+
+## Approvals
+Approval T6: Jayson De los Reyes, 2026-11-24T05:44:35Z, "eval passes, approved"
