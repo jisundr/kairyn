@@ -18,3 +18,4 @@ Stages append here.
 - review: Ban a not-set security gate on a task whose requirements name security needs, with a gate that runs the task's own check (here `github_settings.py --check`), because AC1-AC5 and AC8 failed with every gate green.
 - review: Ban content tests that match loose words anywhere in a file, with a lint rule on test asserts, because the CONTRIBUTING.md and SECURITY.md tests pass with the rules removed.
 - review: Ban required status checks with no app id, with a test on the protection payload, because a check of the same name from any app satisfies it.
+- design: Write an approval slice as `- T6: <text> (approval).` `afk.py` reads only `- T<n>:` lines, so `- T6 (approval):` was dropped with no error and the build never stopped for it.
