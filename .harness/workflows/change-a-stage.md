@@ -27,6 +27,7 @@ Lessons already learned, so you do not repeat them:
 - `checks.structural_problems` expects requirements to hand off to `design`. A stage after design must change `design_run_problems` and the design eval too.
 - A line in `_template.md` Writing changes every stage. Run all its dependent evals at 10 runs.
 - Give every stage output a template. Read the failure reasons before you blame the model.
+- A stage at its token budget takes a new rule only with cuts. Name each cut in the task's DESIGN.md, or the reviewer reads it as out of scope.
 
 ## Stage file format
 

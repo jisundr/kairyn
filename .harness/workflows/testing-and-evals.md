@@ -71,5 +71,6 @@ Each run saves `<name>.json`, evidence and `summary.md` to `evals/results/<run-i
 3. Run it on current instructions; confirm it can fail.
 4. The fixture must pass the repo's own checks. After adding a harness doc, run `harness_docs.py --write`, or the agent cannot find it.
 5. Give an LLM judge every file the stage could read. A judge given only `report.py` scored true README facts as invented.
+6. An eval runs every scenario in its yaml file. Put a new scenario in its own file for the watch-it-fail run, then merge it. When you move or rename an eval test, run its new file once before a release.
 
 To lint a stage output by hand, import `evals/checks.py` with `evals` and `tests` on `sys.path`: it imports `tests/helpers.py`.
