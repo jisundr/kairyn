@@ -1,17 +1,17 @@
 ---
 task: 2026-11-24-multi-repo
 title: kairyn tasks in a home repo change code in child repos
-stage: build
+stage: gates
 status: in-progress
 stages:
   grill: done
   requirements: done   # pending | in-progress | done
   design: done
-  build: in-progress
+  build: done
   gates: pending
   review: pending
 created: 2026-11-24T02:30:13Z
-updated: 2026-11-24T06:53:46Z
+updated: 2026-11-24T06:54:36Z
 ---
 
 # Log
@@ -39,3 +39,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-24T05:55:48Z [build] Blocked: the reviewer still objects after the fix round: `plugin/stages/DESIGN.md` still has changes outside DESIGN.md that the fix round did not undo. Step 2 drops "(see `_template.md`, Time)". Step 3 drops "Mark new files `(new)`". T6 only says "the design stage writes `repo:`". The exit criterion "Each named file exists or is marked `(new)`" is back, but no step tells the model to mark new files any more, so the stage now asks for something it never told the model to do. No test or eval covers either removal.
 2026-11-24T06:52:20Z [build] Resumed by Jayson De los Reyes ("option 1, restore the eval-tested text"). plugin/stages/DESIGN.md is back to the text at a31efbd (evals 20261124T045044Z, 20261124T052325Z). The fix round's move of design_child_repo into design.yaml stays. DESIGN.md T6 now names the budget cuts and the eval files.
 2026-11-24T06:53:46Z [build] Build started.
+2026-11-24T06:54:36Z [build] All 6 tasks green. Cost $0.64. Next: gates.
