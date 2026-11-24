@@ -22,6 +22,9 @@ uv run pytest
 
 No `claude` calls.
 
+- A stub `claude` that picks its action from words in the prompt breaks when two prompts share a word. Match a fixed marker, not a word.
+- Test a new AFK path with one real run on a fixture built to hit it. Stub tests passed, but one real reviewer run found three defects.
+
 ## Evals
 
 Evals use promptfoo (`npx`, pinned in `evals/run.py`), one `evals/promptfoo/<name>.yaml` each, each test repeated N times. Each repeat calls `provider.py`: one headless `claude` session in a fresh repo, evidence as JSON. `asserts.py` checks it with `evals/checks.py` and a `claude` judge (scores 1 to 5). The `build`, `gates` and `review` evals run `afk.py` with `evals/afk_claude.py` as its `claude`: it keeps each session's transcript and cost.

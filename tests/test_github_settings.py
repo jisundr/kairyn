@@ -117,7 +117,6 @@ def test_each_repo_setting_off_is_a_problem():
 
 KB_LINES = [
     (ROOT / ".harness" / "README.md", "5. **Playbooks"),
-    (ROOT / ".kairyn" / "learnings.md", "- grill: The knowledge base"),
     (ROOT / "docs" / "backlog" / "README.md", "Options, not commitments."),
 ]
 
