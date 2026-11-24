@@ -301,3 +301,78 @@ def test_t4_readiness_needs_a_clean_child_worktree(repo, tmp_path):
     state = task_file(repo, "STATE.md")
     assert re.search(r"\[build\] Blocked: readiness: the worktree has changes: README.md", state), state
     assert base.calls(repo) == []
+
+
+# --- T5: publish each repo; REVIEW.md on the child pull request; approve merges child, then home --
+
+
+def child_remote(child):
+    remote = child.parent / "ui-remote.git"
+    subprocess.run(["git", "init", "-q", "--bare", str(remote)], check=True)
+    git(child, "remote", "add", "origin", str(remote))
+    git(child, "push", "-q", "origin", "main")
+    return remote
+
+
+def gh_cwd_calls(repo):
+    """(cwd, arguments) for each gh call."""
+    log = repo.parent / "gh.log"
+    if not log.exists():
+        return []
+    return list(zip((Path(c) for c in Path(str(log) + ".cwd").read_text().splitlines()), base.gh_calls(repo)))
+
+
+def two_repos(repo, tmp_path):
+    child = child_repo(tmp_path / "ui")
+    home_remote, ui_remote = base.with_remote(repo), child_remote(child)
+    point_at(repo, "ui", "../ui")
+    git(repo, "push", "-q", "origin", "main")
+    return child, home_remote, ui_remote
+
+
+def tip(remote):
+    return subprocess.run(["git", "-C", str(remote), "rev-parse", f"kairyn/{TASK}"], capture_output=True,
+                          text=True).stdout.strip()
+
+
+def test_t5_publish_both(repo, tmp_path):
+    child, home_remote, ui_remote = two_repos(repo, tmp_path)
+    result = base.run_gh(repo, "run", TASK)
+    assert result.returncode == 0, result.stdout + result.stderr
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("review", "blocked"), state
+    calls_ = gh_cwd_calls(repo)
+    home, ui = repo.resolve(), child.resolve()
+    creates = [c for c, a in calls_ if a.startswith(f"pr create --base main --head kairyn/{TASK}")]
+    assert sorted(map(str, creates)) == sorted([str(home), str(ui)])   # one pull request per repo
+    comments = [c for c, a in calls_ if a.startswith(f"pr comment kairyn/{TASK} --body-file ")
+                and a.endswith("REVIEW.md")]
+    assert ui in comments
+    assert tip(ui_remote) == git(child_worktree(child), "rev-parse", "HEAD").strip()   # the child code is pushed
+    assert tip(home_remote) == git(base.worktree(repo), "rev-parse", "HEAD").strip()
+    assert "feature_t1.py" in git(ui_remote, "ls-tree", "-r", "--name-only", f"kairyn/{TASK}").split()
+    assert "docs" not in git(ui_remote, "ls-tree", "-r", "--name-only", f"kairyn/{TASK}")
+
+
+def test_t5_merge_order(repo, tmp_path):
+    child, _, _ = two_repos(repo, tmp_path)
+    assert base.run_gh(repo, "run", TASK).returncode == 0
+    result = base.run_gh(repo, "approve", TASK, "--words", "Ship it")
+    assert result.returncode == 0, result.stdout + result.stderr
+    merges = [(c, a) for c, a in gh_cwd_calls(repo) if a.startswith("pr merge")]
+    assert merges == [(child.resolve(), f"pr merge kairyn/{TASK} --merge"),
+                      (repo.resolve(), f"pr merge kairyn/{TASK} --merge")]   # child first, then home
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("review", "done")
+
+
+def test_t5_child_merge_fails(repo, tmp_path):
+    child, _, _ = two_repos(repo, tmp_path)
+    assert base.run_gh(repo, "run", TASK).returncode == 0
+    result = base.run_gh(repo, "approve", TASK, "--words", "Ship it", gh_mode="merge_fail")
+    assert result.returncode == 1 and "base branch policy" in result.stdout
+    merges = [c for c, a in gh_cwd_calls(repo) if a.startswith("pr merge")]
+    assert merges == [child.resolve()]   # the home branch is left unmerged
+    state = task_file(repo, "STATE.md")
+    assert front(state, "status") == "blocked"
+    assert re.search(r"\[review\] Blocked: repo ui: gh pr merge failed: .*base branch policy", state), state
