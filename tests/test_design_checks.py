@@ -1,10 +1,11 @@
 """DESIGN.md checks: four sections, options with a smallest thing, a test plan for every criterion, grounded paths."""
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 
 from checks import (slice_problems, chosen_option, design_run_problems, design_section_problems, design_test_plan_problems, grounded_problems, option_labels,
-                    options_problems, rejected_option)
+                    options_problems, rejected_option, repo_line_problems)
 
 REQUIREMENTS = """## Acceptance criteria
 - [ ] A dry run lists the files. (R1)
@@ -205,3 +206,30 @@ def test_path_marked_new_once_counts_everywhere(tmp_path):
     text = GOOD.replace("| AC1 lists the files | T1, T2 | `tests/test_dry_run.py` (new), list test |",
                         "| AC1 lists the files | T1, T2 | `tests/test_dry_run.py` list test |")
     assert grounded_problems(text, root) == []
+
+
+STATE_HEAD = "---\ntask: 2026-01-01-x\nstage: design\n{extra}status: blocked\n---\n\n# Log\n"
+
+
+@pytest.mark.parametrize("extra, expected, ok", [
+    ("repo: report-cli\n", "report-cli", True),
+    ("", "report-cli", False),
+    ("repo: other\n", "report-cli", False),
+    ("", None, True),
+    ("repo: report-cli\n", None, False),
+])
+def test_repo_line_problems(extra, expected, ok):
+    assert (repo_line_problems(STATE_HEAD.format(extra=extra), expected) == []) is ok
+
+
+def test_repo_line_in_log_does_not_count():
+    state = STATE_HEAD.format(extra="") + "repo: report-cli\n"
+    assert repo_line_problems(state, "report-cli")
+
+
+def test_t6_docs_name_the_repos_map():
+    """multi-repo R14, R15: the design stage writes `repo:`; the afk.yml template and afk-run.md show `repos:`."""
+    root = Path(__file__).resolve().parent.parent
+    assert "repo: <name>" in (root / "plugin" / "stages" / "DESIGN.md").read_text()
+    assert "repos:" in (root / "plugin" / "templates" / "afk.yml").read_text()
+    assert "repos:" in (root / ".harness" / "workflows" / "afk-run.md").read_text()

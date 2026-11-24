@@ -59,8 +59,10 @@ def _result(output: str) -> str:
 
 
 def claude(prompt: str, cwd: Path, *, plugin: bool = False, model: str | None = None, timeout: int = 600,
-           role: str = "run", cost_dir: Path | None = None) -> str:
+           role: str = "run", cost_dir: Path | None = None, add_dirs: tuple = ()) -> str:
     cmd = ["claude", "-p", prompt, "--permission-mode", "acceptEdits", "--output-format", "json"]
+    for extra in add_dirs:
+        cmd += ["--add-dir", str(extra)]
     if plugin:
         cmd += ["--plugin-dir", str(PLUGIN)]
     if model:
@@ -452,6 +454,44 @@ def run_design_approval(repo: Path) -> dict:
         APPROVAL_ANSWERS[0], pick_option, APPROVAL_ANSWERS[1]], repo, model=MODEL, on_turn=snapshot)
     return {"task": task, "turns": turns, "option": picked[0] if picked else None,
             "start": start, "end": utcnow()}
+
+
+# A home repo (tasks only) whose afk.yml `repos:` map names one child repo, report-cli, that holds the code.
+# The same customer-filter task: design must write `repo: report-cli` in STATE.md (multi-repo R14).
+DESIGN_CHILD = "report-cli"
+DESIGN_CHILD_REQUIREMENTS = DESIGN_REQUIREMENTS.replace(
+    "Today `report.py` prints every customer.",
+    f"Today `report.py` prints every customer. The code is in the child repo {DESIGN_CHILD} (`../{DESIGN_CHILD}`), "
+    "not in this home repo.")
+DESIGN_CHILD_REPOS = f"""
+repos:
+  {DESIGN_CHILD}:
+    path: ../{DESIGN_CHILD}
+    gates:
+      testing: python3 -m pytest
+"""
+
+
+def make_design_child_repo(repo: Path) -> Path:
+    """repo is the home repo (after init). Its sibling report-cli is a git repo with the code and data."""
+    child = new_repo(repo.parent, DESIGN_CHILD)
+    make_grill_repo(child)
+    (child / "data").mkdir(exist_ok=True)
+    (child / "data" / "orders.csv").write_text(DESIGN_ORDERS)
+    afk = repo / ".kairyn" / "afk.yml"
+    afk.write_text(afk.read_text().rstrip("\n") + "\n" + DESIGN_CHILD_REPOS)
+    task = repo / "docs" / "tasks" / DESIGN_TASK
+    task.mkdir(parents=True)
+    (task / "STATE.md").write_text(DESIGN_STATE)
+    (task / "REQUIREMENTS.md").write_text(DESIGN_CHILD_REQUIREMENTS)
+    return repo
+
+
+def run_design_child(repo: Path) -> dict:
+    start = utcnow()
+    claude(f"/kairyn:design docs/tasks/{DESIGN_TASK}/ {NO_QUESTIONS}", repo, plugin=True, model=MODEL,
+           add_dirs=(repo.parent / DESIGN_CHILD,))
+    return {"task": repo / "docs" / "tasks" / DESIGN_TASK, "start": start, "end": utcnow()}
 
 
 # --- exit stage --------------------------------------------------------------------
