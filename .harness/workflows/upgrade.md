@@ -27,6 +27,9 @@ A consumer repo keeps the kairyn files it installed. `/kairyn:upgrade` (`plugin/
 | Repo-owned and edited | `git merge-file`: `MERGED` or `CONFLICT` |
 | No manifest and no release matches | `CONFLICT` |
 | A file the user had before init | never touched |
+| Recorded, no longer shipped, missing or unedited | `REMOVED`: file, `.base/` copy and entry |
+| Recorded, no longer shipped, edited | `CONFLICT`: kept; the user moves the edits and deletes it, then the next upgrade prints `REMOVED` |
+| Not recorded, no longer shipped | never touched |
 
 On `CONFLICT` the local file stays and the merge goes to `<file>.kairyn-new`. The user takes what they want and deletes it. The next upgrade marks it resolved. If the conflict had nothing to merge from and they kept their version, the file is theirs from then on. The manifest takes the new version only when no conflict is open.
 
