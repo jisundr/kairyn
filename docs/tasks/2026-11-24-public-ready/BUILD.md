@@ -14,3 +14,4 @@ summary: "Red and green evidence for each T<n>, written by afk.py."
 | T2 | 97258f6 | 1 | 4ed39b4 | 0 |
 | T3 | 33469a5 | 2 | 51e3aee | 0 |
 | T4 | 134da52 | 1 | 2a069bf | 0 |
+| T5 | 32152b3 | 1 | c460fe1 | 0 |

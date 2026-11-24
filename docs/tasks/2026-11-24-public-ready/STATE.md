@@ -2,7 +2,7 @@
 task: 2026-11-24-public-ready
 title: Public-ready hardening
 stage: build
-status: blocked
+status: in-progress
 stages:
   grill: done
   requirements: done
@@ -11,7 +11,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-23T23:10:10Z
-updated: 2026-11-24T00:04:42Z
+updated: 2026-11-24T00:39:54Z
 ---
 
 # Log
@@ -35,3 +35,5 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-24T00:04:42Z [build] Blocked: T5: no test(T5) and feat(T5) commits. Session said: h` and left the working tree clean. To finish T5: fix that prefix in the test, run `git apply` on the patch, then commit `feat(T5)`.
 
 Blocked: the T5 test identifies the learnings line by the prefix "- grill:", which matches 2 lines in .kairyn/learnings.md, so it can't pass without editing the test.
+2026-11-24T00:39:52Z [build] Fixed by Claude, user approved: test(T5) 32152b3 finds the learnings line by "- grill: The knowledge base". Resumed.
+2026-11-24T00:39:54Z [build] Build started.
