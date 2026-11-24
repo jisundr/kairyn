@@ -11,7 +11,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-24T23:13:12Z
-updated: 2026-11-24T23:58:15Z
+updated: 2026-11-24T23:58:16Z
 ---
 
 # Log
@@ -34,3 +34,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-24T23:33:39Z [build] Build started.
 2026-11-24T23:56:57Z [build] Blocked: the reviewer still objects after the fix round: `tests/test_dev_harness.py:66` `test_plugin_version_is_0_11_0_or_later` still checks almost nothing, though the fix round raised it. It only checks a version floor. `test_this_repo_kairyn_is_upgraded_to_the_plugin_version`, next to it, already ties the manifest to `plugin_version(PLUGIN)`, and the dogfood test now expects `CLOSE.md`, which only 0.11.0 ships. Remove it, or say why it stays.
 2026-11-24T23:58:15Z [build] Fixed the reviewer objection: removed test_plugin_version_is_0_11_0_or_later (decided by Jayson De los Reyes). Resumed.
+2026-11-24T23:58:16Z [build] Build started.
