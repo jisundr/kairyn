@@ -61,10 +61,6 @@ Out: `## Exit criteria` headings. They name a stage section, not the stage. (A1)
 - [ ] `uv run pytest` and `claude plugin validate plugin` pass. (R1, R2, R3, R5)
 
 ## Open questions and answers
-- Q1: Which names clash? A: Only `exit`, the confirmed one. (D1, Jayson De los Reyes)
-- Q2: What is the new name? A: `close`. (D2, Jayson De los Reyes)
-- Q3: How far does the rename go? A: All that is shipped or tested. History stays. (D3, Jayson De los Reyes)
-- Q4: What does upgrade do with the old file? A: A general removal step. (D4, Jayson De los Reyes)
-- Q5: Do subcommands change? A: No. (D5, Jayson De los Reyes)
+- None. The grill answered Q1-Q5 as D1-D5 in `CONCEPT.md`. (Jayson De los Reyes)
 
 Approval: Jayson De los Reyes, 2026-11-24T23:18:20Z, "Yes, approved."
