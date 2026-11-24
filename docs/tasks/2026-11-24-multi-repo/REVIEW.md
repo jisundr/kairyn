@@ -47,4 +47,4 @@ Reviewer findings in BUILD.md: Review 1: none.
 - F4 (minor, open): `plugin/release-hashes.json` adds two hashes for `.kairyn/stages/DESIGN.md`. One is the text of ecf14b8, which 8152acc reverted and no release shipped.
 - F5 (minor): A retry of approve needs `Decision: pending` in `REVIEW.md`, but the blocked approve already wrote the decision line. `test_t5_retry_skips_a_merged_child` resets the line by hand. `afk-run.md` says "A retry skips a child that is already merged" but does not say how to start a retry. Add that step to `afk-run.md`, or let approve run again on a task with status `blocked` after a merge failure.
 
-Decision: pending
+Decision: Jayson De los Reyes, 2026-11-24T09:49:20Z, "F1 F3 fixed, approved"
