@@ -11,3 +11,4 @@ summary: "Red and green evidence for each T<n>, written by afk.py."
 | Task | Test commit | Red exit | Feat commit | Green exit |
 |---|---|---|---|---|
 | T1 | 9eaf38f | 1 | 24c24de | 0 |
+| T2 | df7d733 | 1 | a264489 | 0 |
