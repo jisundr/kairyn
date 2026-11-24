@@ -39,11 +39,17 @@ def child_repo(path):
     return path
 
 
-def point_at(repo, name, path):
-    """Give the task `repo: <name>` and afk.yml a repos map whose `ui` entry has `path`."""
+def point_at(repo, name, path, child_gates=None, home_gate=GOOD_GATE):
+    """Give the task `repo: <name>` and afk.yml a repos map whose `ui` entry has `path`.
+
+    child_gates replaces the `ui` gates block (default: testing is GOOD_GATE, security unset)."""
     state = repo / "docs" / "tasks" / TASK / "STATE.md"
     state.write_text(state.read_text().replace("status: in-progress\n", f"status: in-progress\nrepo: {name}\n"))
-    (repo / ".kairyn" / "afk.yml").write_text(REPOS.format(gate=GOOD_GATE, path=path))
+    if child_gates is None:
+        child_gates = {"testing": GOOD_GATE, "security": ""}
+    block = "".join(f"      {k}: {v}\n" if v else f"      {k}:\n" for k, v in child_gates.items())
+    text = REPOS.format(gate=home_gate, path=path).replace("      testing: pytest -q\n      security:\n", block)
+    (repo / ".kairyn" / "afk.yml").write_text(text)
     git(repo, "add", "-A")
     git(repo, "commit", "-q", "-m", "child task")
 
@@ -79,7 +85,7 @@ def test_t1_no_repo_line_keeps_the_home_repo(repo):
 
 def test_t1_repo_line_sets_code_root(repo, tmp_path):
     child = child_repo(tmp_path / "ui")
-    point_at(repo, "ui", "../ui")   # A1: relative to the home repo root
+    point_at(repo, "ui", "../ui", {"testing": "pytest -q", "security": ""})   # A1: relative to the home repo root
     r = afk.Run(repo, TASK)
     r.ensure_worktree()
     r.resolve_repo()
@@ -236,3 +242,62 @@ def test_t3_backstop_child(repo, tmp_path):
     assert (front(state, "stage"), front(state, "status")) == ("gates", "blocked")
     assert re.search(r"\[gates\] Blocked: approval: `feature_t2.py` matches `\*\*/feature_t2.py` in feat\(T2\)", state)
     assert "feature_t2.py" in git(child, "ls-tree", "-r", "--name-only", f"kairyn/{TASK}").split()
+
+
+# --- T4: gates and readiness take the child entry's gates: and run in `code` ---------------------
+
+HOME_FAILS = "python3 -c 'raise SystemExit(7)'"   # the home gate: a run that used it would block
+
+
+def test_t4_child_gates(repo, tmp_path):
+    child = child_repo(tmp_path / "ui")
+    cwd_log = tmp_path / "gate.cwd"
+    point_at(repo, "ui", "../ui", {"testing": f"pwd >> {cwd_log} && {GOOD_GATE}", "security": ""}, HOME_FAILS)
+    result = run(repo, "run", TASK)
+    assert result.returncode == 0, result.stdout + result.stderr
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("review", "blocked"), state
+    gates = task_file(repo, "GATES.md")
+    assert re.search(r"^\| testing \| pass \| 0 \|", gates, re.M)
+    assert re.search(r"^\| security \| not set \|", gates, re.M)
+    cwds = cwd_log.read_text().splitlines()
+    assert len(cwds) == 2   # readiness on the base commit, then the gates stage
+    assert all(Path(c).resolve() == child_worktree(child).resolve() for c in cwds)
+
+
+def test_t4_child_gate_fails_blocks(repo, tmp_path):
+    child_repo(tmp_path / "ui")
+    gate = "python3 -c \"import os, sys; sys.exit(3 if os.path.exists('feature_t1.py') else 0)\""
+    point_at(repo, "ui", "../ui", {"testing": gate})
+    assert run(repo, "run", TASK).returncode == 0
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("gates", "blocked")
+    assert re.search(r"\[gates\] Blocked: gate testing failed", state)
+
+
+@pytest.mark.parametrize("child_gates, cause", [
+    ({"testing": "", "security": ""}, r"readiness: .*testing.* has no command"),
+    ({"testing": "python3 -c 'raise SystemExit(4)'"}, r"readiness: gate testing exits 4 on the base commit"),
+    ({"security": "", "testing": GOOD_GATE}, r"readiness: the security gate must be last"),
+], ids=["unset-testing", "failing-base", "security-not-last"])
+def test_t4_readiness_blocks(repo, tmp_path, child_gates, cause):
+    child_repo(tmp_path / "ui")
+    point_at(repo, "ui", "../ui", child_gates)   # the home gates are good: only the child gates can block
+    assert run(repo, "run", TASK).returncode == 0
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("build", "blocked")
+    assert re.search(r"\[build\] Blocked: " + cause, state), state
+    assert base.calls(repo) == []
+
+
+def test_t4_readiness_needs_a_clean_child_worktree(repo, tmp_path):
+    child = child_repo(tmp_path / "ui")
+    point_at(repo, "ui", "../ui")
+    r = afk.Run(repo, TASK)
+    r.ensure_worktree()
+    r.resolve_repo()
+    (r.code / "README.md").write_text("edited\n")   # a tracked change in the child worktree
+    assert run(repo, "run", TASK).returncode == 0
+    state = task_file(repo, "STATE.md")
+    assert re.search(r"\[build\] Blocked: readiness: the worktree has changes: README.md", state), state
+    assert base.calls(repo) == []
