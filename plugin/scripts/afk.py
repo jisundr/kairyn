@@ -31,6 +31,8 @@ needs an approval of the slice that changed it.
 Publish: with an `origin` remote, each stage ends with a push of kairyn/<task>. Build then opens one
 pull request with gh, review posts REVIEW.md on it, and approve merges it with a merge commit. With no
 remote or no gh, the run logs that and goes on; approve then only records the decision.
+A child-repo task publishes the child repo the same way, first: REVIEW.md goes on both pull requests,
+and approve merges the child, then the home. A failed child merge blocks and leaves the home unmerged.
 A repo with no .kairyn/afk.yml gets one from the template, and the run stops so a person sets it.
 KAIRYN_GH overrides the gh binary (tests use a stub).
 KAIRYN_CLAUDE overrides the claude binary (tests use a stub).
@@ -242,6 +244,7 @@ class Run:
         self.wt = self.common / "kairyn" / "worktrees" / task
         self.branch = f"kairyn/{task}"
         self.code, self.code_root, self.repo_entry = self.wt, root, None   # the child repo, if STATE.md names one
+        self.repo_name = ""
         self.rounds = []
         self.run_cost, self.stage_cost, self.stage_name, self.stage_start = 0.0, 0.0, "", 0.0
         self.last_failed = "none"
@@ -296,7 +299,7 @@ class Run:
         top = subprocess.run(["git", "-C", str(target), "rev-parse", "--show-toplevel"], capture_output=True, text=True)
         if top.returncode or Path(top.stdout.strip()).resolve() != target:
             raise Blocked(f"repo {name}: path `{path}` is not a git repo")
-        self.code_root, self.repo_entry = target, entry
+        self.code_root, self.repo_entry, self.repo_name = target, entry, name
         # R5: the code goes on a kairyn/<task> branch and worktree of the child repo, made if absent.
         self.code = common_dir(target) / "kairyn" / "worktrees" / self.task
         add_worktree(target, self.code, self.branch)
@@ -662,47 +665,58 @@ class Run:
             return path if Path(path).is_file() else None
         return shutil.which("gh")
 
-    def has_remote(self) -> bool:
-        return "origin" in git(self.root, "remote").split()
+    def targets(self) -> list:
+        """(log prefix, repo root, worktree) of each repo to publish: the child repo first, then the home repo."""
+        home = [("", self.root, self.wt)]
+        return home if self.code == self.wt else [(f"repo {self.repo_name}: ", self.code_root, self.code)] + home
 
-    def pr_exists(self, gh: str) -> bool:
-        return subprocess.run([gh, "pr", "view", self.branch, "--json", "url"], cwd=self.root,
+    def has_remote(self, root: Path) -> bool:
+        return "origin" in git(root, "remote").split()
+
+    def pr_exists(self, gh: str, root: Path) -> bool:
+        return subprocess.run([gh, "pr", "view", self.branch, "--json", "url"], cwd=root,
                               capture_output=True).returncode == 0
 
-    def push(self) -> None:
-        result = subprocess.run(["git", "-C", str(self.wt), "push", "-q", "-u", "origin", self.branch],
+    def push(self, wt: Path, prefix: str = "") -> None:
+        result = subprocess.run(["git", "-C", str(wt), "push", "-q", "-u", "origin", self.branch],
                                 capture_output=True, text=True)
         if result.returncode:
-            raise Blocked(f"git push failed: {' '.join(result.stderr.split())[-200:]}")
+            raise Blocked(f"{prefix}git push failed: {' '.join(result.stderr.split())[-200:]}")
 
     def publish(self, done: str) -> None:
-        """After a stage commit: push; after build, open the pull request; after review, post REVIEW.md."""
+        """After a stage commit, for each repo: push; after build, open its pull request; after review, post
+        REVIEW.md on it (R11: on the child pull request too)."""
         built = done == "build" and self.front("stage") == "gates"
-        if not self.has_remote():
-            if built:
-                self.update("build", "No remote: no push and no pull request.")
-                self.commit(f"kairyn({self.task}): no remote")
-            return
-        self.push()
         gh = self.gh()
-        if built:
-            if not gh:
-                self.update("build", f"Pushed {self.branch}. No gh: no pull request.")
-            elif not self.pr_exists(gh):
-                base = git(self.root, "symbolic-ref", "--short", "HEAD")
-                title = re.search(r"^title:\s*(.+)$", self.state(), re.M)
-                result = subprocess.run([gh, "pr", "create", "--base", base, "--head", self.branch, "--title",
-                                         title.group(1) if title else self.task, "--body-file",
-                                         str(self.folder / "BUILD.md")], cwd=self.root, capture_output=True, text=True)
-                if result.returncode:
-                    raise Blocked(f"gh pr create failed: {' '.join(result.stderr.split())[-200:]}")
-                self.update("build", f"Pushed {self.branch}. Pull request: {result.stdout.strip()}")
-            self.commit(f"kairyn({self.task}): pull request")
-            self.push()
-        if done == "review" and gh and _DECISION_PENDING.search((self.folder / "REVIEW.md").read_text() if (
-                self.folder / "REVIEW.md").is_file() else "") and self.pr_exists(gh):
-            subprocess.run([gh, "pr", "comment", self.branch, "--body-file", str(self.folder / "REVIEW.md")],
-                           cwd=self.root, capture_output=True)
+        review = self.folder / "REVIEW.md"
+        pending = done == "review" and gh and review.is_file() and _DECISION_PENDING.search(review.read_text())
+        for prefix, root, wt in self.targets():
+            home = root == self.root
+            if not self.has_remote(root):
+                if built:
+                    self.update("build", f"{prefix}No remote: no push and no pull request.")
+                    if home:
+                        self.commit(f"kairyn({self.task}): no remote")
+                continue
+            self.push(wt, prefix)
+            if built:
+                if not gh:
+                    self.update("build", f"{prefix}Pushed {self.branch}. No gh: no pull request.")
+                elif not self.pr_exists(gh, root):
+                    base = git(root, "symbolic-ref", "--short", "HEAD")
+                    title = re.search(r"^title:\s*(.+)$", self.state(), re.M)
+                    result = subprocess.run([gh, "pr", "create", "--base", base, "--head", self.branch, "--title",
+                                             title.group(1) if title else self.task, "--body-file",
+                                             str(self.folder / "BUILD.md")], cwd=root, capture_output=True, text=True)
+                    if result.returncode:
+                        raise Blocked(f"{prefix}gh pr create failed: {' '.join(result.stderr.split())[-200:]}")
+                    self.update("build", f"{prefix}Pushed {self.branch}. Pull request: {result.stdout.strip()}")
+                if home:
+                    self.commit(f"kairyn({self.task}): pull request")
+                    self.push(wt)
+            if pending and self.pr_exists(gh, root):
+                subprocess.run([gh, "pr", "comment", self.branch, "--body-file", str(review)], cwd=root,
+                               capture_output=True)
 
     def ensure_config(self) -> bool:
         """A repo set up before afk.yml existed gets it from the template. False: a person must set it first."""
@@ -765,18 +779,21 @@ class Run:
         self.commit(f"kairyn({self.task}): decision")
         print(line)
         gh = self.gh()
-        if not self.has_remote():
-            return 0
         try:
-            self.push()
-            if gh and self.pr_exists(gh):
-                result = subprocess.run([gh, "pr", "merge", self.branch, "--merge"], cwd=self.root,
-                                        capture_output=True, text=True)
-                if result.returncode:
-                    raise Blocked(f"gh pr merge failed: {' '.join((result.stderr or result.stdout).split())[-200:]}")
-                self.update("review", "Merged with gh pr merge --merge.")
-            else:
-                self.update("review", f"Pushed {self.branch}. No pull request to merge: merge it by hand.")
+            self.resolve_repo()
+            for prefix, root, wt in self.targets():   # R12, R13: the child merges first; a failure stops here
+                if not self.has_remote(root):
+                    continue
+                self.push(wt, prefix)
+                if gh and self.pr_exists(gh, root):
+                    result = subprocess.run([gh, "pr", "merge", self.branch, "--merge"], cwd=root,
+                                            capture_output=True, text=True)
+                    if result.returncode:
+                        why = " ".join((result.stderr or result.stdout).split())[-200:]
+                        raise Blocked(f"{prefix}gh pr merge failed: {why}")
+                    self.update("review", f"{prefix}Merged with gh pr merge --merge.")
+                else:
+                    self.update("review", f"{prefix}Pushed {self.branch}. No pull request to merge: merge it by hand.")
         except Blocked as e:
             self.update("review", f"Blocked: {e}", status="blocked")
             self.commit(f"kairyn({self.task}): merge")
