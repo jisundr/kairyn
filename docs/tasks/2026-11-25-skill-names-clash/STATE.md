@@ -1,0 +1,31 @@
+---
+task: 2026-11-25-skill-names-clash
+title: Skill names clash with built-in commands
+stage: build
+status: in-progress   # in-progress | blocked | done
+stages:
+  grill: done
+  requirements: done
+  design: done
+  build: pending
+  gates: pending
+  review: pending
+created: 2026-11-24T23:13:12Z
+updated: 2026-11-24T23:20:37Z
+---
+
+# Log
+
+Newest entry last. One entry per stage run or notable event.
+
+2026-11-24T23:13:12Z [grill] Task created from backlog idea 20261124224610-skill-names-clash. Waiting for answer to Q1.
+2026-11-24T23:14:18Z [grill] D1: rename only exit; init and review stay. Waiting for answer to Q2.
+2026-11-24T23:14:56Z [grill] D2: new name is close. Waiting for answer to Q3.
+2026-11-24T23:15:22Z [grill] D3: rename everything shipped or tested; history stays. Waiting for answer to Q4.
+2026-11-24T23:15:50Z [grill] D4: upgrade gets a general removal step. Waiting for answer to Q5.
+2026-11-24T23:16:51Z [grill] D5: close.py keeps its subcommands. No open branch. Waiting for concept confirmation.
+2026-11-24T23:17:06Z [grill] User confirmed the concept (D1-D5). Next stage: requirements.
+2026-11-24T23:18:00Z [requirements] Wrote REQUIREMENTS.md: R1-R10, A1-A5, K1-K3. Waiting for user approval.
+2026-11-24T23:18:20Z [requirements] Approved by Jayson De los Reyes. Next stage: design.
+2026-11-24T23:20:19Z [design] Wrote DESIGN.md: option A, T1-T4, AC1-AC11. Waiting for user approval.
+2026-11-24T23:20:37Z [design] Approved by Jayson De los Reyes. Next stage: build.
