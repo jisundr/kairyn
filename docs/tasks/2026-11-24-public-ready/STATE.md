@@ -2,7 +2,7 @@
 task: 2026-11-24-public-ready
 title: Public-ready hardening
 stage: build
-status: in-progress
+status: blocked
 stages:
   grill: done
   requirements: done
@@ -11,7 +11,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-23T23:10:10Z
-updated: 2026-11-23T23:52:56Z
+updated: 2026-11-24T00:04:42Z
 ---
 
 # Log
@@ -32,3 +32,6 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-23T23:39:32Z [design] DESIGN.md written: option B (settings script with --apply and --check), T1-T6, T6 needs approval. Waiting for user approval.
 2026-11-23T23:41:28Z [design] Approved by Jayson De los Reyes: "Approve". Next: /kairyn:build.
 2026-11-23T23:52:56Z [build] Build started.
+2026-11-24T00:04:42Z [build] Blocked: T5: no test(T5) and feat(T5) commits. Session said: h` and left the working tree clean. To finish T5: fix that prefix in the test, run `git apply` on the patch, then commit `feat(T5)`.
+
+Blocked: the T5 test identifies the learnings line by the prefix "- grill:", which matches 2 lines in .kairyn/learnings.md, so it can't pass without editing the test.
