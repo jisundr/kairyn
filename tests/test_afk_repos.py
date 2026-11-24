@@ -3,8 +3,10 @@
 Test names carry the design slice (`t1` ... `t5`) so each slice's done command is `pytest -k t<n>`.
 """
 import importlib
+import re
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -160,3 +162,77 @@ def test_t2_reuse_worktree(repo, tmp_path):
     third.ensure_worktree()
     third.resolve_repo()
     assert third.code.is_dir() and git(third.code, "rev-parse", "HEAD").strip() == branch_head
+
+
+# --- T3: sessions run in `code`; red, green, flags, diff and backstop use the child commits ------
+
+
+def lines(repo, suffix):
+    log = repo.parent / f"stub.log{suffix}"
+    return log.read_text().splitlines() if log.exists() else []
+
+
+def test_t3_session_cwd(repo, tmp_path):
+    child = child_repo(tmp_path / "ui")
+    point_at(repo, "ui", "../ui")
+    result = run(repo, "run", TASK)
+    assert result.returncode == 0, result.stdout + result.stderr
+    wt, code = base.worktree(repo).resolve(), child_worktree(child).resolve()
+    cwds = lines(repo, ".cwd")
+    assert cwds and all(Path(c).resolve() == code for c in cwds)   # every session, read-only ones too
+    assert all(f"--add-dir {wt}" in a for a in lines(repo, ".args"))
+    prompts = base.calls(repo)
+    builds = [p for p in prompts if re.search(r"\bT\d\b", p) and "BUILD.md" in p and "reviewer" not in p]
+    assert len(builds) == 2
+    for p in builds + [p for p in prompts if "REVIEW.md" in p and "reviewer" not in p]:
+        assert f"{wt}/.kairyn/stages/" in p and f"{wt}/docs/tasks/{TASK}" in p
+
+
+def test_t3_home_task_session_cwd_is_unchanged(repo):
+    assert run(repo, "run", TASK).returncode == 0
+    wt = base.worktree(repo).resolve()
+    assert all(Path(c).resolve() == wt for c in lines(repo, ".cwd"))
+    assert not any("--add-dir" in a for a in lines(repo, ".args"))
+
+
+def test_t3_red_green_child(repo, tmp_path):
+    child = child_repo(tmp_path / "ui")
+    point_at(repo, "ui", "../ui")
+    result = run(repo, "run", TASK)
+    assert result.returncode == 0, result.stdout + result.stderr
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("review", "blocked"), state
+    build = task_file(repo, "BUILD.md")
+    child_log = git(child, "log", "--format=%h %s", f"kairyn/{TASK}")
+    for tid in ("T1", "T2"):
+        row = next(line for line in build.splitlines() if line.startswith(f"| {tid} |"))
+        test_sha, red, feat_sha, green = [c.strip() for c in row.strip("|").split("|")][1:5]
+        assert f"{test_sha} test({tid})" in child_log and f"{feat_sha} feat({tid})" in child_log
+        assert red != "0" and green == "0"
+    home_files = git(repo, "ls-tree", "-r", "--name-only", f"kairyn/{TASK}").split()
+    assert not any(f.startswith(("check_", "feature_")) for f in home_files)   # code only in the child
+    assert (base.worktree(repo) / "docs" / "tasks" / TASK / "REVIEW.md").is_file()
+    reviewer = next(p for p in base.calls(repo) if "reviewer" in p)
+    assert "feature_t1.py" in reviewer and "check_t2.py" in reviewer   # the reviewer diff is the child diff
+
+
+def test_t3_flags_child(repo, tmp_path):
+    child = child_repo(tmp_path / "ui")
+    point_at(repo, "ui", "../ui")
+    assert run(repo, "run", TASK, mode="noqa").returncode == 0
+    assert "feature_t1.py" in git(child, "ls-tree", "-r", "--name-only", f"kairyn/{TASK}").split()
+    build = task_file(repo, "BUILD.md")
+    assert "escape hatch: `feature_t1.py:1` `# noqa` in feat(T1)" in build
+
+
+def test_t3_backstop_child(repo, tmp_path):
+    child = child_repo(tmp_path / "ui")
+    point_at(repo, "ui", "../ui")
+    afk_yml = repo / ".kairyn" / "afk.yml"
+    afk_yml.write_text("approval:\n  - '**/feature_t2.py'\n" + afk_yml.read_text())
+    git(repo, "commit", "-q", "-am", "approval glob")
+    assert run(repo, "run", TASK).returncode == 0
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("gates", "blocked")
+    assert re.search(r"\[gates\] Blocked: approval: `feature_t2.py` matches `\*\*/feature_t2.py` in feat\(T2\)", state)
+    assert "feature_t2.py" in git(child, "ls-tree", "-r", "--name-only", f"kairyn/{TASK}").split()
