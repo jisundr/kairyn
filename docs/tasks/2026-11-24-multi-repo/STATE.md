@@ -1,0 +1,34 @@
+---
+task: 2026-11-24-multi-repo
+title: kairyn tasks in a home repo change code in child repos
+stage: build
+status: in-progress   # in-progress | blocked | done
+stages:
+  grill: done
+  requirements: done   # pending | in-progress | done
+  design: done
+  build: pending
+  gates: pending
+  review: pending
+created: 2026-11-24T02:30:13Z
+updated: 2026-11-24T03:19:40Z
+---
+
+# Log
+
+Newest entry last. One entry per stage run or notable event.
+
+2026-11-24T02:30:13Z [grill] Task created from backlog item docs/backlog/20261122080759-multi-repo.md. User asks to cut the work into small slices that are easy to test. Waiting for the answer to Q1.
+2026-11-24T02:34:26Z [grill] D1: first slice supports one child repo per task; several child repos come later (user accepted Q1 recommendation). Waiting for Q2.
+2026-11-24T02:38:14Z [grill] D2: task files stay in the home repo; the child repo branch gets code commits only (user accepted). Waiting for Q3.
+2026-11-24T02:39:37Z [grill] D3: STATE.md repo: <name>, resolved by a repos: map in .kairyn/afk.yml (user). Waiting for Q4.
+2026-11-24T02:41:18Z [grill] D4: home repo keeps its own kairyn/<task> branch and worktree for task files; child repo gets a second worktree for code (user accepted). Waiting for Q5.
+2026-11-24T02:42:32Z [grill] D5: gate commands come from the child repo's repos: entry and run in the child worktree (user). Waiting for Q6.
+2026-11-24T02:52:45Z [grill] D6: approve merges child branch first, then home; child merge failure blocks and leaves home unmerged (user accepted). Waiting for Q7.
+2026-11-24T02:54:36Z [grill] D7: sessions run in the child worktree with --add-dir to the home worktree (user accepted). Waiting for Q8.
+2026-11-24T02:55:46Z [grill] D8: one task, six slices T1-T6 in order, only T6 needs an eval (user accepted). No branch open. Waiting for concept confirmation.
+2026-11-24T02:59:53Z [grill] User confirmed the concept (D1-D8). Next: requirements for docs/tasks/2026-11-24-multi-repo.
+2026-11-24T03:01:23Z [requirements] Wrote REQUIREMENTS.md: R1-R15, A1-A5, K1-K3, X1-X2, 12 criteria. Waiting for approval.
+2026-11-24T03:02:09Z [requirements] Approved by Jayson De los Reyes: "approved, A1 A3 A4 confirmed". Next: design.
+2026-11-24T03:17:20Z [design] Wrote DESIGN.md: option A (code worktree on Run), slices T1-T6, AC1-AC12. Waiting for approval.
+2026-11-24T03:19:40Z [design] Approved by Jayson De los Reyes: "approved, T1-T5 AFK, T6 by hand". T6 marked (approval) so the AFK build stops before it. Next: build.
