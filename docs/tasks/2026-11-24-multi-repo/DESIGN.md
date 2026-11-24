@@ -23,7 +23,7 @@ Each slice changes `afk.py`, a stub where it needs one, and its tests. `afk.py` 
 - T3: Sessions run in `code` with `--add-dir <wt>` and full paths. Red and green checks, flags, diff and backstop use `code` and `code_root`. Files: `plugin/scripts/afk.py`, `tests/stubs/claude`, `tests/test_afk_repos.py`. after: T2. Done: `uv run pytest tests/test_afk.py tests/test_afk_repos.py -q -k "slice or t3"` exits 0.
 - T4: Gates and readiness take the child entry's `gates:` and run in `code`. Files: `plugin/scripts/afk.py`, `tests/test_afk_repos.py`. after: T3. Done: `uv run pytest tests/test_afk.py tests/test_afk_repos.py -q -k "slice or t4"` exits 0.
 - T5: Publish each repo; post `REVIEW.md` on the child pull request; approve merges child, then home. Files: `plugin/scripts/afk.py`, `tests/stubs/gh`, `tests/test_afk_repos.py`. after: T4. Done: `uv run pytest tests/test_afk.py tests/test_afk_repos.py -q -k "slice or t5"` exits 0.
-- T6: (approval) By hand, not AFK: the build stops here. Eval first, then the stage. The design stage writes `repo:`. Add a `repos:` example to the afk.yml template and update `afk-run.md`. Files: `plugin/stages/DESIGN.md`, `plugin/templates/afk.yml`, `.harness/workflows/afk-run.md`, `evals/promptfoo/design.yaml`, `evals/runner.py`, `evals/checks.py`, `tests/test_design_checks.py`. after: T5. Done: `uv run pytest tests/test_design_checks.py tests/test_harness_docs.py -q` exits 0.
+- T6: (approval) By hand, not AFK: the build stops here. Eval first, then the stage. The design stage writes `repo:`. The stage is at its 500-token budget, so T6 also cuts words: it drops the exit criterion that repeats step 3, shortens step 1, and writes `afk.yml` in step 6. Add a `repos:` example to the afk.yml template and update `afk-run.md`. Files: `plugin/stages/DESIGN.md`, `plugin/templates/afk.yml`, `.harness/workflows/afk-run.md`, `evals/promptfoo/design.yaml`, `evals/promptfoo/provider.py`, `evals/promptfoo/asserts.py`, `evals/runner.py`, `evals/checks.py`, `tests/test_design_checks.py`, `plugin/release-hashes.json`. after: T5. Done: `uv run pytest tests/test_design_checks.py tests/test_harness_docs.py -q` exits 0.
 
 ## Test plan
 | Criterion | Task | Test |
@@ -38,7 +38,9 @@ Each slice changes `afk.py`, a stub where it needs one, and its tests. `afk.py` 
 | AC8 Child gate runs in child; readiness blocks | T4 | `test_t4_child_gates`, `test_t4_readiness_blocks` |
 | AC9 Push and PR per repo; REVIEW.md on child PR | T5 | `test_t5_publish_both` |
 | AC10 Child then home merge; child fail blocks | T5 | `test_t5_merge_order`, `test_t5_child_merge_fails` |
-| AC11 Design writes `repo:` | T6 | design eval scenario `design_child_repo` (costs tokens; run with `/run-evals design`) |
+| AC11 Design writes `repo:` | T6 | design eval scenario `design_child_repo` in `design.yaml` (costs tokens; run with `/run-evals design`) |
 | AC12 Template and afk-run.md name the map | T6 | `test_harness_docs.py`, then `/kairyn:check` |
 
 Approval: Jayson De los Reyes, 2026-11-24T03:19:40Z, "approved, T1-T5 AFK, T6 by hand"
+
+Change after approval: Jayson De los Reyes, 2026-11-24T06:52:20Z, "option 1, restore the eval-tested text". T6 names the budget cuts and the eval files.
