@@ -250,6 +250,10 @@ class Run:
     def folder(self) -> Path:
         return self.wt / "docs" / "tasks" / self.task
 
+    def at(self, rel: str) -> str:
+        """A home-worktree path for a prompt: relative when the session runs there, else full (R7)."""
+        return rel if self.code == self.wt else str(self.wt / rel)
+
     def ensure_worktree(self) -> None:
         add_worktree(self.root, self.wt, self.branch)
 
@@ -342,8 +346,10 @@ class Run:
         cmd = [binary, "-p", prompt, "--model", MODELS.get(stage, "sonnet"), "--output-format", "json",
                "--max-budget-usd", f"{budget:.2f}"]
         cmd += READ_ONLY if read_only else ["--permission-mode", "bypassPermissions"]
+        if self.code != self.wt:   # R7: the session works on the child code and reads the home task files
+            cmd += ["--add-dir", str(self.wt)]
         try:
-            result = subprocess.run(cmd, cwd=self.wt, capture_output=True, text=True, timeout=self.seconds_left())
+            result = subprocess.run(cmd, cwd=self.code, capture_output=True, text=True, timeout=self.seconds_left())
         except subprocess.TimeoutExpired:
             raise Blocked(f"limit stage_minutes {limits['stage_minutes']} reached in {self.stage_name}. "
                           f"Last failed command: {self.last_failed}")
@@ -378,44 +384,46 @@ class Run:
         return result.returncode
 
     def run_at(self, sha: str, command: str, label: str) -> int:
-        """Exit code of `command` in a detached checkout of `sha`."""
-        check = self.common / "kairyn" / "check" / self.task
+        """Exit code of `command` in a detached checkout of `sha` of the repo that holds the code."""
+        check = common_dir(self.code_root) / "kairyn" / "check" / self.task
         if check.exists():
-            subprocess.run(["git", "-C", str(self.root), "worktree", "remove", "--force", str(check)], capture_output=True)
+            subprocess.run(["git", "-C", str(self.code_root), "worktree", "remove", "--force", str(check)],
+                           capture_output=True)
             shutil.rmtree(check, ignore_errors=True)
         check.parent.mkdir(parents=True, exist_ok=True)
-        git(self.root, "worktree", "add", "-q", "--detach", str(check), sha)
+        git(self.code_root, "worktree", "add", "-q", "--detach", str(check), sha)
         try:
             return self.command(command, check, label)
         finally:
-            subprocess.run(["git", "-C", str(self.root), "worktree", "remove", "--force", str(check)], capture_output=True)
+            subprocess.run(["git", "-C", str(self.code_root), "worktree", "remove", "--force", str(check)], capture_output=True)
 
     def config(self) -> dict:
         path = self.wt / ".kairyn" / "afk.yml"
         return parse_afk(path.read_text()) if path.is_file() else {}
 
     def base(self) -> str:
-        return git(self.wt, "merge-base", "HEAD", git(self.root, "rev-parse", "HEAD"))
+        """The commit the code branch starts from: with the code repo HEAD (A2 for a child repo)."""
+        return git(self.code, "merge-base", "HEAD", git(self.code_root, "rev-parse", "HEAD"))
 
     def flags(self) -> list:
         """Lines for BUILD.md: test files that a later commit edits, and added lines that match an escape hatch."""
-        commits = git(self.wt, "log", "--reverse", "--format=%h %s", f"{self.base()}..HEAD").splitlines()
+        commits = git(self.code, "log", "--reverse", "--format=%h %s", f"{self.base()}..HEAD").splitlines()
         patterns = [re.compile(p) for p in escape_patterns(self.config())]
         tests, found = set(), []
         for sha, subject in (c.split(" ", 1) for c in commits):
             label = subject.split(":", 1)[0]
             if label.startswith("kairyn("):
                 continue
-            files = git(self.wt, "show", "--name-only", "--format=", sha).splitlines()
+            files = git(self.code, "show", "--name-only", "--format=", sha).splitlines()
             if label.startswith("test("):
                 tests.update(files)
                 continue
             # Adding to a test file is fine. A changed or removed line can weaken it.
             found += [f"test edit: `{f}` in {label}" for f in files if f in tests and any(
                 line.startswith("-") and not line.startswith("---")
-                for line in git(self.wt, "show", "-U0", "--format=", sha, "--", f).splitlines())]
+                for line in git(self.code, "show", "-U0", "--format=", sha, "--", f).splitlines())]
             name, line = None, 0
-            for diff_line in git(self.wt, "show", "-U0", "--format=", sha).splitlines():
+            for diff_line in git(self.code, "show", "-U0", "--format=", sha).splitlines():
                 if diff_line.startswith("+++ "):
                     name = diff_line[6:] if diff_line.startswith("+++ b/") else None
                 elif diff_line.startswith("@@"):
@@ -431,14 +439,14 @@ class Run:
         """The change under review, without the task's own files. In the prompt: a read-only session
         cannot count on running git (a PreToolUse hook rewrote `git diff` in a real run)."""
         spec = [f"{self.base()}..HEAD", "--", ".", f":(exclude)docs/tasks/{self.task}"]
-        return clip_diff(git(self.wt, "diff", *spec), DIFF_LIMIT, git(self.wt, "diff", "--stat", *spec))
+        return clip_diff(git(self.code, "diff", *spec), DIFF_LIMIT, git(self.code, "diff", "--stat", *spec))
 
     def reviewer(self, flags: list, fixed: list = ()) -> list:
         listed = "\n".join(f"- {f}" for f in flags) or "- none"
         earlier = ("\nThe fix round answered these findings. Changes that fix them are in scope, not outside "
                    "DESIGN.md:\n" + "\n".join(f"- {f}" for f in fixed)) if fixed else ""
         said = self.claude("reviewer", (
-            f"You are the reviewer for docs/tasks/{self.task}. Read its REQUIREMENTS.md and DESIGN.md and the diff "
+            f"You are the reviewer for {self.at(f'docs/tasks/{self.task}')}. Read its REQUIREMENTS.md and DESIGN.md and the diff "
             "below. Change nothing. Report each acceptance criterion with no test, each change outside DESIGN.md, "
             "each test that checks nothing, and each flag below with no good reason. "
             "Print one line per finding as `FINDING: <text>`, or `FINDINGS: none`.\nFlags:\n" + listed + earlier
@@ -462,7 +470,7 @@ class Run:
         patterns = self.config().get("approval") or []
         if not patterns:
             return
-        commits = git(self.wt, "log", "--reverse", "--format=%h %s", f"{self.base()}..HEAD").splitlines()
+        commits = git(self.code, "log", "--reverse", "--format=%h %s", f"{self.base()}..HEAD").splitlines()
         for sha, subject in (c.split(" ", 1) for c in commits):
             label = subject.split(":", 1)[0]
             if label.startswith("kairyn("):
@@ -470,7 +478,7 @@ class Run:
             tid = re.search(r"T\d+", label)
             ok = self.approved(tid.group(0)) if tid else bool(re.search(r"^Approval T\d+: ", (
                 self.folder / "BUILD.md").read_text(), re.M))
-            for name in git(self.wt, "show", "--name-only", "--format=", sha).splitlines():
+            for name in git(self.code, "show", "--name-only", "--format=", sha).splitlines():
                 pattern = next((p for p in patterns if path_matches(name, str(p))), None)
                 if pattern and not ok:
                     who = tid.group(0) if tid else "T<n>"
@@ -510,11 +518,12 @@ class Run:
         self.commit(f"kairyn({self.task}): review 1")
         if not findings:
             return
-        self.claude("build", f"Follow .kairyn/stages/BUILD.md for docs/tasks/{self.task}, fix round. "
+        self.claude("build", f"Follow {self.at('.kairyn/stages/BUILD.md')} for {self.at(f'docs/tasks/{self.task}')}, "
+                             "fix round. "
                              "Fix these review findings, keep every test, and commit as `fix: <what>`:\n"
                              + "\n".join(f"- {f}" for f in findings))
         for t in graph:
-            code = self.command(t.done, self.wt, "after the fix round")
+            code = self.command(t.done, self.code, "after the fix round")
             if code:
                 raise Blocked(f"{t.id}: done command exited {code} after the fix round")
         flags = self.flags()
@@ -543,9 +552,9 @@ class Run:
             if t.approval and not self.approved(t.id):
                 raise Blocked(f"{t.id} is marked (approval). Read it in DESIGN.md, then run "
                               f"/kairyn:build {self.task} approve {t.id} \"<words>\"")
-            said = self.claude("build", f"Follow .kairyn/stages/BUILD.md for docs/tasks/{self.task}, task {t.id}. "
-                                 f"Done command: `{t.done}`.")
-            subjects = git(self.wt, "log", "--format=%h %s", "-n", "50").splitlines()
+            said = self.claude("build", f"Follow {self.at('.kairyn/stages/BUILD.md')} for "
+                                        f"{self.at(f'docs/tasks/{self.task}')}, task {t.id}. Done command: `{t.done}`.")
+            subjects = git(self.code, "log", "--format=%h %s", "-n", "50").splitlines()
             test = next((s.split()[0] for s in subjects if s.split(" ", 1)[1].startswith(f"test({t.id})")), None)
             feat = next((s.split()[0] for s in subjects if s.split(" ", 1)[1].startswith(f"feat({t.id})")), None)
             if not test or not feat:
@@ -567,7 +576,8 @@ class Run:
     def gate_check(self, name: str, check: str) -> str:
         """An inferential check inside a gate (D9): '' when it passes, else the reason."""
         said = self.claude("gate", (
-            f"You run the {name} gate check for docs/tasks/{self.task}. Follow .kairyn/stages/GATES.md. "
+            f"You run the {name} gate check for {self.at(f'docs/tasks/{self.task}')}. "
+            f"Follow {self.at('.kairyn/stages/GATES.md')}. "
             f"Read the diff below and change nothing. Check: {check}\n"
             "Print `PASS`, or `FAIL: <one-line reason>`.\nDiff:\n" + self.diff()), read_only=True)
         last = next((line for line in reversed(said.splitlines()) if line.startswith(("PASS", "FAIL"))), "")
@@ -605,7 +615,7 @@ class Run:
     def review(self) -> None:
         self.update("review", "Review started.", stage_status="in-progress")
         base = self.base()
-        self.claude("review", f"Follow .kairyn/stages/REVIEW.md for docs/tasks/{self.task}. "
+        self.claude("review", f"Follow {self.at('.kairyn/stages/REVIEW.md')} for {self.at(f'docs/tasks/{self.task}')}. "
                               f"The change is `git diff {base[:12]}..HEAD`.")
         path = self.folder / "REVIEW.md"
         if not path.is_file() or not _DECISION_PENDING.search(path.read_text()):
