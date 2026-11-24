@@ -29,9 +29,13 @@ claude plugin validate plugin       # manifest and component validation
 - `consumer install`: init and the checkers with plain Python 3.9 (the minimum; macOS's `/usr/bin/python3`) and 3.13, from uv, no dependencies, as a user would run them
 - `shellcheck`: the shell scripts
 
+If push or pull request events start no Actions run, test a trigger first (`workflow_dispatch`, a draft pull request). On the new public repo the cause was not billing.
+
 ## Protection of `main`
 
 `main` takes changes only through a pull request, with 0 approvals required. The merge waits for these checks: `tests (ubuntu-latest)`, `tests (macos-latest)`, `consumer install (plain python3 3.9)`, `consumer install (plain python3 3.13)`, `version-bump`, `shellcheck`. The rules apply to admins. `main` blocks force push and deletion. `python3 scripts/github_settings.py --check` compares the live settings with these rules.
+
+Every change, also a `STATE.md` log line, goes on a branch and merges by pull request.
 
 Evals are **not** in CI: they need credentials and cost tokens. Run them locally and put the summary in the PR.
 
