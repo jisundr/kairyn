@@ -677,6 +677,11 @@ class Run:
         return subprocess.run([gh, "pr", "view", self.branch, "--json", "url"], cwd=root,
                               capture_output=True).returncode == 0
 
+    def pr_merged(self, gh: str, root: Path) -> bool:
+        result = subprocess.run([gh, "pr", "view", self.branch, "--json", "state", "--jq", ".state"], cwd=root,
+                                capture_output=True, text=True)
+        return result.returncode == 0 and result.stdout.strip() == "MERGED"
+
     def push(self, wt: Path, prefix: str = "") -> None:
         result = subprocess.run(["git", "-C", str(wt), "push", "-q", "-u", "origin", self.branch],
                                 capture_output=True, text=True)
@@ -783,6 +788,12 @@ class Run:
             self.resolve_repo()
             for prefix, root, wt in self.targets():   # R12, R13: the child merges first; a failure stops here
                 if not self.has_remote(root):
+                    if prefix:   # a child with no remote: never merge the home branch past unmerged code
+                        raise Blocked(f"{prefix}no origin remote: merge {self.branch} in {root} by hand. "
+                                      "The home branch stays unmerged.")
+                    continue
+                if gh and self.pr_merged(gh, root):   # a retry after the home merge failed
+                    self.update("review", f"{prefix}Already merged.")
                     continue
                 self.push(wt, prefix)
                 if gh and self.pr_exists(gh, root):
