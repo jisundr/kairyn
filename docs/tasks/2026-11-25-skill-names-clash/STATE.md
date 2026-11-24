@@ -7,11 +7,11 @@ stages:
   grill: done
   requirements: done
   design: done
-  build: pending
+  build: in-progress
   gates: pending
   review: pending
 created: 2026-11-24T23:13:12Z
-updated: 2026-11-24T23:32:18Z
+updated: 2026-11-24T23:33:39Z
 ---
 
 # Log
@@ -31,3 +31,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-24T23:20:37Z [design] Approved by Jayson De los Reyes. Next stage: build.
 2026-11-24T23:29:07Z [build] Blocked: readiness: gate testing exits 1 on the base commit
 2026-11-24T23:32:18Z [build] Fixed readiness: REQUIREMENTS.md cut to its 1500-token budget; uv run pytest passes on the base. Resumed.
+2026-11-24T23:33:39Z [build] Build started.
