@@ -2,7 +2,7 @@
 task: 2026-11-25-skill-names-clash
 title: Skill names clash with built-in commands
 stage: build
-status: in-progress
+status: blocked
 stages:
   grill: done
   requirements: done
@@ -11,7 +11,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-24T23:13:12Z
-updated: 2026-11-24T23:33:39Z
+updated: 2026-11-24T23:56:57Z
 ---
 
 # Log
@@ -32,3 +32,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-24T23:29:07Z [build] Blocked: readiness: gate testing exits 1 on the base commit
 2026-11-24T23:32:18Z [build] Fixed readiness: REQUIREMENTS.md cut to its 1500-token budget; uv run pytest passes on the base. Resumed.
 2026-11-24T23:33:39Z [build] Build started.
+2026-11-24T23:56:57Z [build] Blocked: the reviewer still objects after the fix round: `tests/test_dev_harness.py:66` `test_plugin_version_is_0_11_0_or_later` still checks almost nothing, though the fix round raised it. It only checks a version floor. `test_this_repo_kairyn_is_upgraded_to_the_plugin_version`, next to it, already ties the manifest to `plugin_version(PLUGIN)`, and the dogfood test now expects `CLOSE.md`, which only 0.11.0 ships. Remove it, or say why it stays.
