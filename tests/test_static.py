@@ -150,7 +150,8 @@ EXIT_WORD = re.compile(r"(?<![A-Za-z_])exits?(?![A-Za-z])", re.I)
 EXIT_CODE = re.compile(r"sys\.exit|SystemExit|Exit criteria|exits? (with )?code|exits? ([0-9]|\{|non-zero)|exit \"\$"
                        r"|exit \((not )?0\)|exit=|\| Exit \||(red|green|other) exit|\"exit\":|exit: skipped", re.I)
 # History and the tests that check the old name is gone.
-EXIT_ALLOWED = {"plugin/release-hashes.json", "tests/test_static.py", "tests/test_skills.py", "tests/test_upgrade.py"}
+EXIT_ALLOWED = {"plugin/release-hashes.json", "tests/test_static.py", "tests/test_skills.py", "tests/test_upgrade.py",
+                "tests/test_dev_harness.py"}
 
 
 def _guarded_files():

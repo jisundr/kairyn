@@ -7,7 +7,7 @@ purpose: Give each learning one action, wait for approval, then apply it. Run it
 
 # Stage: retro
 
-Optional: `/kairyn:retro` runs it, or exit on a `RETRO:` line.
+Optional: `/kairyn:retro` runs it, or close on a `RETRO:` line.
 
 ## Inputs
 - `.kairyn/learnings.md`, the repo's `CLAUDE.md`, `.harness/` and `.kairyn/stages/`.
