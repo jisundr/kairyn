@@ -24,3 +24,5 @@ Closed ideas are in `CHANGELOG.md`. Inbox: `grep -lx 'status: inbox' docs/backlo
 | [Shipped afk-run child repos](20261124224354-shipped-afk-run-child-repos.md) | small |
 | [Judge sees afk.yml](20261124224354-judge-sees-afk-yml.md) | small |
 | [Logs as bullet lists](20261125014255-logs-as-bullet-lists.md) | small |
+| [Flaky macOS watch test](20261125045806-flaky-watch-test-macos.md) | small |
+| [Ship the review gates](20261125053013-ship-review-gates.md) | big |
