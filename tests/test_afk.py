@@ -811,3 +811,11 @@ def test_build_stage_names_tests_and_code_parts():
     text = (PLUGIN / "stages" / "BUILD.md").read_text()
     assert re.search(r"tests part.*steps 1-3", text, re.I) and re.search(r"code part.*steps 4-6", text, re.I)
     assert re.search(r"code part.*changes? no test file", text, re.I | re.S)
+
+
+@pytest.mark.parametrize("path", ["plugin/scripts/afk.py", ".harness/workflows/afk-run.md",
+                                  "plugin/harness/.harness/workflows/afk-run.md"])
+def test_afk_docs_name_build_parts(path):
+    """R11: each doc names the two build parts and their models."""
+    text = (ROOT / path).read_text()
+    assert re.search(r"tests part[^.\n]*Opus", text) and re.search(r"code part[^.\n]*Sonnet", text), path
