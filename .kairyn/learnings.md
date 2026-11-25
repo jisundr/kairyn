@@ -18,3 +18,6 @@ Stages append here.
 - 2026-11-25T02:35:13Z [review] Ban an unguarded call to an optional side feature in afk.py update() with a lint rule, because a bad milestones.yml stops the AFK run. (2026-11-25-first-mate-hub)
 - 2026-11-25T02:35:13Z [review] Ban hook events and files outside DESIGN.md with a gate, because PostToolUseFailure and 5 files went in unrecorded. (2026-11-25-first-mate-hub)
 - 2026-11-25T02:35:13Z [review] Ban test edits in a fix round with no new red run, with a gate, because the red commits no longer prove tests/test_milestones.py. (2026-11-25-first-mate-hub)
+- 2026-11-25T03:35:53Z [review] Ban hook payload fixtures with no script that records them again, with a gate, because a change in the Claude Code payload shape breaks return_code in milestones.py with no failing test. (2026-11-25-first-mate-hub)
+- 2026-11-25T03:35:53Z [review] Ban test or fixture changes in a feat commit with a lint rule, because d4c5daf changed tests/fixtures/hooks/ in the green step. (2026-11-25-first-mate-hub)
+- 2026-11-25T03:35:53Z [review] Ban a review fix that has only a test which is green before the fix, with a gate, because test_real_hook_payloads_give_label_and_exit proves the payload shape, not a code change. (2026-11-25-first-mate-hub)

@@ -2,7 +2,7 @@
 task: 2026-11-25-first-mate-hub
 title: A first-mate hub that supervises AFK runs
 stage: review
-status: in-progress
+status: blocked
 backlog: docs/backlog/20261125003014-first-mate-hub.md
 stages:
   grill: done
@@ -10,9 +10,9 @@ stages:
   design: done
   build: done
   gates: done
-  review: pending
+  review: in-progress
 created: 2026-11-25T01:02:34Z
-updated: 2026-11-25T03:34:03Z
+updated: 2026-11-25T03:36:31Z
 ---
 
 # Log
@@ -52,3 +52,5 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-25T03:21:54Z [review] Rejected by Jayson De los Reyes: fix F3 and F2
 2026-11-25T03:32:35Z [review] F3 and F2 fixed by hand (0347fc6 red, d4c5daf green, real hook payloads in tests/fixtures/hooks/). Resumed at gates by hand for new gates and a new REVIEW.md.
 2026-11-25T03:34:03Z [gates] 2 pass, 4 not set: accessibility, performance, observability, security. Cost $0.00. Next: review.
+2026-11-25T03:34:07Z [review] Review started.
+2026-11-25T03:36:31Z [review] Cost $0.61. Waiting for the merge decision: /kairyn:review 2026-11-25-first-mate-hub approve or reject.
