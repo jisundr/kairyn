@@ -6,10 +6,10 @@ The index of triaged ideas is [README.md](README.md). Next and Parked were decid
 
 ## Next
 
-None. The shared atomic write for `STATE.md` and `watch.json` (atomic-state-md) shipped, after the atomic `watch.json` write (flaky-watch-test-macos).
+The `_approval.md` slice of split-design-stage (small): the shared approval rules of `DESIGN.md` and `REQUIREMENTS.md` move to `plugin/stages/_approval.md`. A `plugin/` change, so the design and requirements evals first. The rest of split-design-stage, grill-rounds and approval-handoff are big and not Next (2026-11-25 triage). tldr-for-long-docs and instruction-file-checks were dropped.
 
-The earlier batches shipped: the afk.py fixes in #31, the gates and lint rules in #30. ship-review-gates is big and needs shaping first.
+The earlier batches shipped: atomic-state-md, the afk.py fixes in #31, the gates and lint rules in #30. ship-review-gates is big and needs shaping first.
 
 ## Parked
 
-Reviewed by 2027-02-23: release-stage, parallel-slices, pir-stage (needs release-stage), hedge-words-in-backticks, shared-harness-docs, required-checks-app-id, grill-reads-private-notes, several-child-repos, ops-task-close (needs backlog-stage), rerecord-hook-fixtures, grill-reads-other-repo-sessions (with grill-reads-private-notes).
+Reviewed by 2027-02-23: release-stage, parallel-slices, pir-stage (needs release-stage), hedge-words-in-backticks, shared-harness-docs, required-checks-app-id, grill-reads-private-notes, several-child-repos, ops-task-close (needs backlog-stage), rerecord-hook-fixtures, grill-reads-other-repo-sessions (with grill-reads-private-notes), logs-as-bullet-lists (ride along the next `_template.md` change).
