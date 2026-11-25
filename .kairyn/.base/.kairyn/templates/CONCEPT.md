@@ -7,7 +7,7 @@ summary: "<one line, at most 160 characters>"
 # Concept: <title>
 
 ## Concept
-<At most 5 sentences. "Not confirmed yet." until the user confirms.>
+<At most 5 sentences. "Not confirmed yet." until you restate it for approval.>
 
 ## Decisions
 - D1: <the decision>. (<user, or user accepted>)
@@ -19,3 +19,5 @@ summary: "<one line, at most 160 characters>"
 
 ## Open branches
 - <a question not asked yet, or None>
+
+Approval: pending

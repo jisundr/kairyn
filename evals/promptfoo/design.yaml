@@ -19,14 +19,15 @@ tests:
       - {type: python, value: "file://asserts.py:design_names_repo", metric: design_names_repo}
       - {type: python, value: "file://asserts.py:plain_language", metric: plain_language}
       - {type: python, value: "file://asserts.py:design_quality", metric: quality}
-  - description: Design waits for approval, ignores a reply that does not approve, rewrites for another option, then records the approval
+  - description: Design waits for approval, ignores a reply that does not approve, rewrites for another option, then records the approval and names /kairyn:build
     vars: {scenario: design_approval}
     metadata:
-      min_pass_rate: {design_approval_gate: 0.9, rewrites_option: 0.9, design_records_approval: 0.9}
+      min_pass_rate: {design_approval_gate: 0.9, rewrites_option: 0.9, design_records_approval: 0.9, hands_off_build: 0.9}
     assert:
       - {type: python, value: "file://asserts.py:design_approval_gate", metric: design_approval_gate}
       - {type: python, value: "file://asserts.py:rewrites_option", metric: rewrites_option}
       - {type: python, value: "file://asserts.py:design_records_approval", metric: design_records_approval}
+      - {type: python, value: "file://asserts.py:hands_off_build", metric: hands_off_build}
   - description: Design writes repo report-cli in STATE.md when the code is in that child repo
     vars: {scenario: design_child_repo, child_repo: report-cli}
     metadata:

@@ -1,6 +1,6 @@
 ---
 title: Stages do not gate on approval and hand off to the next stage
-status: triaged
+status: committed
 requester: Jayson
 date: 2026-11-23
 appetite: big batch
@@ -17,10 +17,9 @@ review_by: 2027-02-23
 
 **Decided (2026-11-25):** Spike first. Start the next stage only on explicit approval words (ADR 0001). One rule for grill → requirements and requirements → design, through `_approval.md`.
 
-**Spike (2026-11-25):** Scratch repo, `claude -p` 2.1.331, `--model haiku`. Skill `first` (`model: sonnet`) calls the Skill tool for `second` (`model: opus`). JSONL `message.model`: typed `/first` ran all turns, `second`'s too, on `claude-sonnet-5-5`. Controls: typed `/second` ran on opus; the Skill tool from the session ran on haiku. $0.29 in all.
-**Answer: a chained skill runs on the caller's model.** `model:` holds only for a skill the user types. A handoff that calls the next skill would run requirements on grill's Sonnet, not Opus. The handoff must have the user type the next command. ADR 0004 gets this at close.
+**Spike (2026-11-25):** A chained skill runs on the caller's model; `model:` holds only for a skill the user types. So the handoff has the user type the next command. Details: ADR 0004.
 
-**Notes:** Changes the grill eval end state and ADR 0002.
+**Notes:** Changed the grill eval end state and ADR 0002.
 
 # Log
 
@@ -30,3 +29,5 @@ review_by: 2027-02-23
 - 2026-11-25T08:49:41Z [triage] Kept, problem confirmed. Not Next: spike first. Decided by Jayson De los Reyes.
 - 2026-11-25T08:49:41Z [appetite] Set to big batch (was small). Decided by Jayson De los Reyes.
 - 2026-11-25T09:07:16Z [spike] Chained skill runs on the caller's model. Run by Claude.
+- 2026-11-25T10:05:30Z [next] Moved to Next, spike answered. Decided by Jayson De los Reyes.
+- 2026-11-25T10:05:30Z [close] Shipped in #46: grill approval gate, `_approval.md` names the next command, ADR 0002 and 0004 updated, 0.14.0. Delete at release. From an Orca coordinator dispatch.

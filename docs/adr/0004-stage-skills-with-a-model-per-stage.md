@@ -16,3 +16,4 @@ A skill per built-in stage in `plugin/skills/<stage>/SKILL.md`, with a `model:` 
 - `model:` applies to the skill's turn only. Later turns, such as grill answers and the approval reply, run on the session model.
 - User-added stages have no skill and keep the stage-file route.
 - A stage edit takes effect with no change to its skill.
+- A skill that another skill starts runs on the caller's model, not on its own `model:` (spike, 2026-11-25: `claude -p` 2.1.331; a Sonnet skill that called an Opus skill through the Skill tool ran both on Sonnet; the same skill typed by the user ran on Opus). So an approved stage names the next command for the user to type and never starts the next skill (`_approval.md`).

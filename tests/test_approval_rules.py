@@ -1,8 +1,9 @@
-"""The design and requirements stages share one set of approval rules in _approval.md (split-design-stage slice)."""
+"""The grill, requirements and design stages share one set of approval rules in _approval.md."""
 from helpers import PLUGIN
 
 APPROVAL = PLUGIN / "stages" / "_approval.md"
-GATED = ("DESIGN", "REQUIREMENTS")
+GATED = ("DESIGN", "REQUIREMENTS", "GRILL")
+NEXT = {"GRILL": "requirements", "REQUIREMENTS": "design", "DESIGN": "build"}
 LINE = 'Approval: <git config user.name>, <timestamp>, "<the user\'s words>"'
 
 
@@ -27,3 +28,19 @@ def test_gated_stages_read_the_shared_rules_and_do_not_repeat_them():
 def test_the_shared_file_is_not_a_stage():
     """Like _template.md: no stage front matter, so the stage list and STATE.md skip it."""
     assert not APPROVAL.read_text().startswith("---")
+
+
+def test_approval_ends_with_the_next_command_for_the_user():
+    """A chained skill runs on the caller's model (ADR 0004): the user types the next command, the stage never runs it."""
+    text = APPROVAL.read_text()
+    assert "`/kairyn:<next stage> <task folder>`" in text
+    assert "Never run it yourself" in text
+
+
+def test_each_gated_stage_names_its_next_stage():
+    for stage, nxt in NEXT.items():
+        assert f"Next stage: `stage: {nxt}`" in _update(stage), stage
+
+
+def test_concept_template_waits_for_approval():
+    assert "Approval: pending" in (PLUGIN / "templates" / "CONCEPT.md").read_text()

@@ -1,12 +1,12 @@
 ---
 task: <YYYY-MM-DD>-<slug>
 stage: gates
-summary: "One row per gate in .kairyn/afk.yml, written by afk.py."
+summary: "One row per gate, written by afk.py: the review gates, then .kairyn/afk.yml."
 ---
 
 # Gates
 
-The exit code decides, then the gate's AI check if `checks:` has one. `not set` means no command: never a pass.
+`design` and `commits` are built in. The exit code decides, then the gate's AI check if `checks:` has one. `not set` means no command: never a pass.
 
 | Gate | Result | Exit | Check |
 |---|---|---|---|
