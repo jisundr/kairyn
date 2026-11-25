@@ -1,7 +1,7 @@
 ---
 title: Milestones
 summary: "How milestones.py, its hooks and afk.py write and stream milestone lines, and how its tests and eval cover them."
-read_when: "changing milestones.py, its hooks or its eval"
+read_when: "changing milestones"
 load: on-demand
 ---
 
