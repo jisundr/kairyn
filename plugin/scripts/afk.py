@@ -727,9 +727,11 @@ class Run:
                 raise Blocked(f"{t.id} is marked (approval). Read it in DESIGN.md, then run "
                               f"/kairyn:build {self.task} approve {t.id} \"<words>\"")
             stage_file = f"Follow {self.at('.kairyn/stages/BUILD.md')} for {self.at(f'docs/tasks/{self.task}')}, task {t.id}"
-            self.claude("build-tests", f"{stage_file}, tests part. Done command: `{t.done}`. "
-                                       f"Make only the `test({t.id})` commit.")
+            said = self.claude("build-tests", f"{stage_file}, tests part. Done command: `{t.done}`. "
+                                              f"Make only the `test({t.id})` commit.")
             test = self.find_commit(f"test({t.id})")
+            if not test:
+                raise Blocked(f"{t.id}: no test({t.id}) commit. Session said: {said[-300:]}")
             red = self.run_at(test, t.done, "at the red check")
             if red == 0:
                 raise Blocked(f"{t.id}: red check passed at {test}: the test did not fail before the code")
