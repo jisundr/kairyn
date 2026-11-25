@@ -7,7 +7,7 @@ load: on-demand
 
 # .harness
 
-How work gets done in this repo: the workflows for developing kairyn itself. Read these before changing the plugin, tests or evals.
+How work gets done in this repo: the workflows for developing kairyn itself. Read these before changing the plugin, tests or evals. This is about building kairyn, not about using it (the README covers that).
 
 <!-- harness-docs:start -->
 | Workflow | Use it when |
@@ -16,7 +16,6 @@ How work gets done in this repo: the workflows for developing kairyn itself. Rea
 | [Change a stage](workflows/change-a-stage.md) | editing or adding a stage in plugin/stages/ |
 | [Init](workflows/init.md) | changing /kairyn:init, init.sh or verify-init.sh |
 | [Keeping docs lean](workflows/keeping-docs-lean.md) | adding or editing a harness doc, or when /kairyn:check fails |
-| [Milestones](workflows/milestones.md) | changing milestones |
 | [Pull request](workflows/pull-request.md) | committing, or opening or updating a pull request |
 | [Running stages](workflows/running-stages.md) | running a stage, or editing or adding stage instructions |
 | [Task lifecycle](workflows/task-lifecycle.md) | changing STATE.md, task folders or timestamps |

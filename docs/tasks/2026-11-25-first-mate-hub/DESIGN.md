@@ -27,7 +27,7 @@ afk.py writes its own lines from `update()`. It sets `KAIRYN_MILESTONES=off` for
 - T2: Hooks: `hook` reads the hook JSON from stdin. PostToolUse writes the pattern label and exit code; Stop writes the first message line. Tag from `TMUX_PANE`, else the repo folder. Default patterns. afk.py sets `KAIRYN_MILESTONES=off`. Files: `plugin/scripts/milestones.py`, `plugin/hooks/hooks.json`, `plugin/scripts/afk.py`, `tests/test_milestones.py`. after: T1. Done: `uv run pytest tests/test_milestones.py tests/test_afk.py` exits 0.
 - T3: Restart: `catchup` prints the lines after the stored number and the instruction to start `watch` with Monitor. A shorter log starts from line 1. Files: `plugin/scripts/milestones.py`, `plugin/hooks/hooks.json`, `tests/test_milestones.py`. after: T1. Done: `uv run pytest tests/test_milestones.py` exits 0.
 - T4: Host: `watch` reads with `ssh <host> tail -n +<n>`. On failure it prints one "server unreachable since <time>" and stores it; it retries quietly from 15 seconds, doubling to 5 minutes. Files: `plugin/scripts/milestones.py`, `tests/test_milestones.py`. after: T1. Done: `uv run pytest tests/test_milestones.py` exits 0.
-- T5: Docs and eval: a consumer doc `plugin/harness/.harness/workflows/milestones.md` (new) on setup, this repo's `.harness/workflows/milestones.md` (new), their budgets, and an eval that the first mate starts Monitor after the `catchup` text. Files: `.harness/budgets.yml`, `plugin/harness/.harness/budgets.yml`, `evals/promptfoo/milestones.yaml` (new), `evals/promptfoo/asserts.py`. after: T2, T3, T4. Done: `uv run pytest && uv run python plugin/scripts/harness_docs.py` exits 0.
+- T5: Docs and eval: a consumer doc `plugin/harness/.harness/workflows/milestones.md` (new) on setup, a `## Milestones` section in this repo's `.harness/workflows/afk-run.md` (no new doc: `CLAUDE.md` is at its budget), their budgets, and an eval that the first mate starts Monitor after the `catchup` text. Files: `.harness/workflows/afk-run.md`, `plugin/harness/CLAUDE.block.md`, `plugin/scripts/kairyn_files.py`, `plugin/scripts/budgets.py`, `evals/promptfoo/milestones.yaml` (new), `evals/promptfoo/asserts.py`, `evals/promptfoo/provider.py`, `tests/stubs/claude`. after: T2, T3, T4. Done: `uv run pytest && uv run python plugin/scripts/harness_docs.py` exits 0.
 
 ## Test plan
 | Criterion | Task | Test |
@@ -44,6 +44,6 @@ afk.py writes its own lines from `update()`. It sets `KAIRYN_MILESTONES=off` for
 | AC10 Stored 10, log of 3 lines | T3 | `test_shorter_log_starts_from_line_one` |
 | AC11 Default patterns | T2 | `test_default_patterns_match_common_commands` |
 | AC12 Each hook under 1 s on 10,000 lines | T2 | `test_hooks_finish_within_one_second` |
-| AC13 Real cerna-hq session, 0 "status?" asks | T5 | Manual: Jayson runs one cerna-hq session after a plugin update, then counts the asks in its transcript. The eval `milestones.yaml` checks that the first mate starts Monitor. |
+| AC13 Real cerna-hq session, 0 "status?" asks | T5 | Manual: Jayson runs one cerna-hq session after a plugin update, then counts the asks in its transcript. This check is after merge, not a build gate. The eval `milestones.yaml` checks that the first mate starts Monitor. |
 
 Approval: Jayson De los Reyes, 2026-11-25T01:36:34Z, "approved, run build"
