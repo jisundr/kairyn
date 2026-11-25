@@ -1,8 +1,8 @@
 ---
 title: Lint rule: no test or fixture change in a feat commit
-status: inbox
+status: triaged
 date: 2026-11-25
-appetite:
+appetite: small batch
 requester: Jayson De los Reyes
 ---
 
@@ -15,3 +15,5 @@ requester: Jayson De los Reyes
 # Log
 
 - 2026-11-25T04:03:34Z [capture] Created by retro 2026-11-25-retro-2 from a learning. Status inbox, waiting for triage.
+- 2026-11-25T04:18:32Z [triage] Kept. Status triaged. Decided by Jayson De los Reyes.
+- 2026-11-25T04:18:32Z [appetite] Set to small batch. Decided by Jayson De los Reyes.
