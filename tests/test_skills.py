@@ -68,7 +68,7 @@ def test_design_skill_runs_on_opus():
 # Task 2026-11-26-split-build-routing: a step that makes a critical decision runs on Opus;
 # a step that only carries decisions out runs cheaper.
 SKILL_MODELS = {"requirements": "opus", "design": "opus", "grill": "sonnet", "model-routing": "sonnet",
-                "close": "haiku", "retro": "haiku", "build": "haiku", "review": "haiku"}
+                "close": "sonnet", "retro": "sonnet", "build": "haiku", "review": "haiku"}
 
 
 @pytest.mark.parametrize("name,model", SKILL_MODELS.items())
