@@ -1,6 +1,6 @@
 """Pure checks of the AFK stage evals: each can fail (the eval-first rule), at no token cost."""
 from checks import (build_row_problems, flags_problems, gate_row, new_constraint_lines, red_before_code_problems,
-                    review_gap_problems)
+                    review_gap_problems, split_build_problems)
 
 
 def tool_use(i, name, **inp):
@@ -103,3 +103,23 @@ def test_a_python_script_that_edits_the_test_file_is_no_edit_of_the_code():
            "s=s.replace('a', '[sys.executable, os.path.join(HERE, \"textstats.py\")]')\nopen(p,'w').write(s)\nEOF")
     assert red_before_code_problems([tool_use(1, "Bash", command=cmd), tool_result(1, "")], "textstats.py",
                                     "test_lines") == ["the session never edited textstats.py"]
+
+
+# Task 2026-11-26-split-build-routing: the tests part (Opus) runs red and writes no code; the code part writes it.
+TESTS_PART = TEST_FIRST[:4]
+CODE_PART = [tool_use(5, "Edit", file_path="/r/textstats.py"), tool_result(5, "ok"),
+             tool_use(6, "Bash", command="python3 -m unittest test_lines"), tool_result(6, "OK")]
+
+
+def test_split_build_passes_on_a_red_tests_part_and_a_code_part_that_writes_the_code():
+    assert split_build_problems(TESTS_PART, CODE_PART, "textstats.py", "test_lines") == []
+
+
+def test_split_build_fails_when_the_tests_part_writes_the_code():
+    assert split_build_problems(TEST_FIRST, CODE_PART, "textstats.py", "test_lines") == [
+        "the tests part wrote textstats.py"]
+
+
+def test_split_build_fails_with_no_red_run_or_no_code():
+    assert split_build_problems(TESTS_PART[:2], CODE_PART[2:], "textstats.py", "test_lines") == [
+        "the tests part never ran test_lines red", "the code part never wrote textstats.py"]

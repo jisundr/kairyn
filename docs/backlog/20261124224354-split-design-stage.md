@@ -25,3 +25,4 @@ review_by: 2027-02-23
 - 2026-11-25T08:49:41Z [triage] Kept, problem confirmed. Next: the `_approval.md` slice only. Decided by Jayson De los Reyes.
 - 2026-11-25T08:49:41Z [appetite] Set to big batch (was small) for the full split; the slice is small. Decided by Jayson De los Reyes.
 - 2026-11-25T09:04:42Z [slice] The `_approval.md` slice shipped. The full split stays triaged, big. Done by Claude for Jayson De los Reyes.
+- 2026-11-25T22:35:13Z [note] Related idea split-build-routing (2026-11-26) moves the technical decisions of each slice into an Opus test commit. This idea stays open. Noted by Claude for Jayson De los Reyes.

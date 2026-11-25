@@ -11,8 +11,9 @@ order, checks, git and STATE.md. The model only runs stage files, one `claude -p
 slice `T<n>` and per stage, each with a fresh context.
 
   - Worktree: <git common dir>/kairyn/worktrees/<task>, branch kairyn/<task>. STATE.md there is the truth.
-  - build: one session per T<n> of DESIGN.md, in `after:` order. Each T<n> needs a test(T<n>)
-    commit whose done command fails (red) and a feat(T<n>) commit where it exits 0 (green).
+  - build: two sessions per T<n> of DESIGN.md, in `after:` order. The tests part (MODELS: Opus) makes a
+    test(T<n>) commit whose done command fails (red); then the code part (Sonnet) makes a feat(T<n>) commit
+    where it exits 0 (green). A red test commit left by a blocked run is kept: the resume runs the code part.
     BUILD.md gets the SHAs and exit codes. Then the script lists flags (a later commit that edits a
     test file, an added line that matches `escape_hatches:`), and a read-only reviewer session reads
     the diff. Findings get one fix round. If a finding stays or a done command fails, the run blocks.
@@ -68,7 +69,7 @@ import milestones
 
 PLUGIN = Path(__file__).resolve().parent.parent
 AFK_STAGES = ("build", "gates", "review")
-MODELS = {"build": "opus", "reviewer": "opus", "gate": "sonnet", "review": "opus"}
+MODELS = {"build-tests": "opus", "build-code": "sonnet", "reviewer": "opus", "gate": "sonnet", "review": "opus"}
 DEFAULT_ESCAPES = ["# noqa", "# type: ignore", "eslint-disable", "@ts-ignore", "@ts-expect-error",
                    r"pytest\.mark\.skip", r"\.skip\(", r"\bxit\("]
 DEFAULT_LIMITS = {"build_usd": 10, "gates_usd": 5, "review_usd": 3, "run_usd": 20, "stage_minutes": 60}
@@ -434,7 +435,7 @@ class Run:
         budget = min(limits.get(f"{self.stage_name}_usd", limits["run_usd"]) - self.stage_cost,
                      limits["run_usd"] - self.run_cost)
         binary = os.environ.get("KAIRYN_CLAUDE", "claude")
-        cmd = [binary, "-p", prompt, "--model", MODELS.get(stage, "sonnet"), "--output-format", "json",
+        cmd = [binary, "-p", prompt, "--model", MODELS[stage], "--output-format", "json",
                "--max-budget-usd", f"{budget:.2f}"]
         cmd += READ_ONLY if read_only else ["--permission-mode", "bypassPermissions"]
         if self.code != self.wt:   # R7: the session works on the child code and reads the home task files
@@ -677,6 +678,13 @@ class Run:
         print(line)
         return 0
 
+    def find_commit(self, prefix: str):
+        """The newest commit after the base whose subject starts with prefix, or None."""
+        for line in git(self.code, "log", "--format=%h %s", f"{self.base()}..HEAD").splitlines():
+            if line.split(" ", 1)[1].startswith(prefix):
+                return line.split()[0]
+        return None
+
     def review_loop(self, graph: list, path: Path) -> None:
         """D3: a read-only reviewer, one fix round, then escalation."""
         flags = self.flags()
@@ -685,10 +693,10 @@ class Run:
         self.commit(f"kairyn({self.task}): review 1")
         if not findings:
             return
-        self.claude("build", f"Follow {self.at('.kairyn/stages/BUILD.md')} for {self.at(f'docs/tasks/{self.task}')}, "
-                             "fix round. "
-                             "Fix these review findings, keep every test, and commit as `fix: <what>`:\n"
-                             + "\n".join(f"- {f}" for f in findings))
+        self.claude("build-code", f"Follow {self.at('.kairyn/stages/BUILD.md')} for {self.at(f'docs/tasks/{self.task}')}, "
+                                  "fix round. "   # A2: the reviewer's findings are the decision
+                                  "Fix these review findings, keep every test, and commit as `fix: <what>`:\n"
+                                  + "\n".join(f"- {f}" for f in findings))
         for t in graph:
             code = self.command(t.done, self.code, "after the fix round")
             if code:
@@ -719,16 +727,23 @@ class Run:
             if t.approval and not self.approved(t.id):
                 raise Blocked(f"{t.id} is marked (approval). Read it in DESIGN.md, then run "
                               f"/kairyn:build {self.task} approve {t.id} \"<words>\"")
-            said = self.claude("build", f"Follow {self.at('.kairyn/stages/BUILD.md')} for "
-                                        f"{self.at(f'docs/tasks/{self.task}')}, task {t.id}. Done command: `{t.done}`.")
-            subjects = git(self.code, "log", "--format=%h %s", "-n", "50").splitlines()
-            test = next((s.split()[0] for s in subjects if s.split(" ", 1)[1].startswith(f"test({t.id})")), None)
-            feat = next((s.split()[0] for s in subjects if s.split(" ", 1)[1].startswith(f"feat({t.id})")), None)
-            if not test or not feat:
-                raise Blocked(f"{t.id}: no test({t.id}) and feat({t.id}) commits. Session said: {said[-300:]}")
-            red = self.run_at(test, t.done, "at the red check")
+            stage_file = f"Follow {self.at('.kairyn/stages/BUILD.md')} for {self.at(f'docs/tasks/{self.task}')}, task {t.id}"
+            test = self.find_commit(f"test({t.id})")   # R6: a resume keeps a red test
+            red = self.run_at(test, t.done, "at the red check") if test else 0
+            if red == 0:
+                said = self.claude("build-tests", f"{stage_file}, tests part. Done command: `{t.done}`. "
+                                                  f"Make only the `test({t.id})` commit.")
+                test = self.find_commit(f"test({t.id})")
+                if not test:
+                    raise Blocked(f"{t.id}: no test({t.id}) commit. Session said: {said[-300:]}")
+                red = self.run_at(test, t.done, "at the red check")
             if red == 0:
                 raise Blocked(f"{t.id}: red check passed at {test}: the test did not fail before the code")
+            said = self.claude("build-code", f"{stage_file}, code part. Done command: `{t.done}`. "
+                                             f"The test is in commit {test}. Make only the `feat({t.id})` commit.")
+            feat = self.find_commit(f"feat({t.id})")
+            if not feat:
+                raise Blocked(f"{t.id}: no feat({t.id}) commit. Session said: {said[-300:]}")
             green = self.run_at(feat, t.done, "at the green check")
             if green:
                 raise Blocked(f"{t.id}: green check exited {green} at {feat}")

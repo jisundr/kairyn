@@ -65,6 +65,17 @@ def test_design_skill_runs_on_opus():
     assert front(skill("design"))[0]["model"] == "opus"
 
 
+# Task 2026-11-26-split-build-routing: a step that makes a critical decision runs on Opus;
+# a step that only carries decisions out runs cheaper.
+SKILL_MODELS = {"requirements": "opus", "design": "opus", "grill": "sonnet", "model-routing": "sonnet",
+                "close": "sonnet", "retro": "sonnet", "build": "haiku", "review": "haiku"}
+
+
+@pytest.mark.parametrize("name,model", SKILL_MODELS.items())
+def test_skill_runs_on_its_routed_model(name, model):
+    assert front(skill(name))[0]["model"] == model
+
+
 def test_retro_is_optional_and_runs_its_script():
     """D1, D6: an optional stage like close; its size checks run in retro.py, so the skill may call python3."""
     stage, _ = front(PLUGIN / "stages" / "RETRO.md")

@@ -9,7 +9,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
-from checks import (build_row_problems, flags_problems, gate_row, new_constraint_lines, output_header_problems, red_before_code_problems, review_gap_problems,
+from checks import (build_row_problems, flags_problems, gate_row, new_constraint_lines, output_header_problems, review_gap_problems, split_build_problems,
                     retro_applied_problems, retro_proposal_problems, retro_scope_problems, chosen_option, design_run_problems, design_test_plan_problems, grounded_problems, options_problems,
                     close_problems, TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_reply_problems, handoff_problems, next_routing_stage,
                     open_decisions, routing_problems, state_fields, ste_problems, ste_rate, structural_problems,
@@ -580,10 +580,12 @@ def afk_build_green(output, context):
 
 def afk_build_test_first(output, context):
     d = json.loads(output)
-    session = next((s for s in d["sessions"] if "BUILD.md" in s["prompt"] and "T1" in s["prompt"]), None)
-    if session is None:
-        return _result(["no build session for T1"])
-    return _result(red_before_code_problems(session["events"], "textstats.py", "test_lines"))
+    builds = [s for s in d["sessions"] if "BUILD.md" in s["prompt"] and "T1" in s["prompt"]]
+    tests = next((s for s in builds if "tests part" in s["prompt"]), None)
+    code = next((s for s in builds if "code part" in s["prompt"]), None)
+    if tests is None or code is None:
+        return _result(["no tests part and code part sessions for T1"])
+    return _result(split_build_problems(tests["events"], code["events"], "textstats.py", "test_lines"))
 
 
 def afk_build_tests_kept(output, context):

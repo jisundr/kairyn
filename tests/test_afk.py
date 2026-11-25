@@ -7,6 +7,7 @@ import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -134,15 +135,15 @@ def test_slice1_order_resume(repo):
     result = run(repo, "run", TASK)
     assert result.returncode == 0, result.stdout + result.stderr
     prompts = [p for p in calls(repo) if "reviewer" not in p]
-    assert [re.search(r"\bT\d\b", p).group(0) for p in prompts[:2]] == ["T1", "T2"]
-    assert all("BUILD.md" in p for p in prompts[:2]) and "REVIEW.md" in prompts[2] and len(prompts) == 3
+    assert [re.search(r"\bT\d\b", p).group(0) for p in prompts[:4]] == ["T1", "T1", "T2", "T2"]
+    assert all("BUILD.md" in p for p in prompts[:4]) and "REVIEW.md" in prompts[4] and len(prompts) == 5
     state = task_file(repo, "STATE.md")
     assert (front(state, "stage"), front(state, "status")) == ("review", "blocked")
     assert re.search(r"^  build: done$", state, re.M) and re.search(r"^  gates: done$", state, re.M)
     assert git(worktree(repo), "branch", "--show-current").strip() == f"kairyn/{TASK}"
     # A blocked task does not run again.
     again = run(repo, "run", TASK)
-    assert again.returncode == 0 and len(calls(repo)) == 4
+    assert again.returncode == 0 and len(calls(repo)) == 6
     assert "blocked" in again.stdout
 
 
@@ -224,8 +225,8 @@ def test_slice2_reviewer_runs_read_only_after_build(repo):
     prompts = calls(repo)
     order = ["T1" if "T1" in p and "BUILD.md" in p else "T2" if "T2" in p and "BUILD.md" in p else
              "reviewer" if "reviewer" in p else "review" for p in prompts]
-    assert order == ["T1", "T2", "reviewer", "review"]
-    args = (repo.parent / "stub.log.args").read_text().splitlines()[2]
+    assert order == ["T1", "T1", "T2", "T2", "reviewer", "review"]
+    args = (repo.parent / "stub.log.args").read_text().splitlines()[4]
     assert "--disallowedTools" in args and "Edit" in args and "Write" in args
     assert "bypassPermissions" not in args
     assert "Findings: none" in task_file(repo, "BUILD.md")
@@ -385,7 +386,7 @@ def test_slice3_limits_stage_cost(repo):
     state = task_file(repo, "STATE.md")
     assert (front(state, "stage"), front(state, "status")) == ("build", "blocked")
     assert re.search(r"Blocked: limit build_usd \$10 reached: spent \$12\.00 in build, \$12\.00 in this run\. "
-                     r"Last failed command: `python3 check_t2.py` exit 1 at the red check", state)
+                     r"Last failed command: `python3 check_t1.py` exit 1 at the red check", state)
 
 
 def test_slice3_limits_run_cost(repo):
@@ -413,7 +414,7 @@ def test_slice3_limit_names_the_last_failed_command(repo):
 
 def test_slice3_stage_cost_is_logged(repo):
     assert run(repo, "run", TASK).returncode == 0
-    assert re.search(r"\[build\] All 2 tasks green\. Cost \$0\.75\. Next: gates\.", task_file(repo, "STATE.md"))
+    assert re.search(r"\[build\] All 2 tasks green\. Cost \$1\.25\. Next: gates\.", task_file(repo, "STATE.md"))
 
 
 def test_slice3_afk_yml_template_parses_with_defaults():
@@ -732,3 +733,89 @@ def test_afk_run_goes_on_when_milestones_cannot_be_written(repo):
         assert out.returncode == 0 and "Traceback" not in out.stdout + out.stderr, out.stderr
         assert "Build started." in task_file(repo, "STATE.md")
 
+
+
+# --- task 2026-11-26-split-build-routing ----------------------------------------------------
+
+
+def sessions(repo):
+    """(prompt, --model) of each stub call, in order."""
+    return [(p, re.search(r"--model (\S+)", a).group(1)) for p, a in zip(calls(repo), args_log(repo))]
+
+
+def build_parts(repo):
+    """(T<n>, part, model) of each build session; fix rounds left out."""
+    return [(re.search(r"\bT\d+\b", p).group(0), "tests" if "tests part" in p else "code" if "code part" in p else "?", m)
+            for p, m in sessions(repo) if "BUILD.md" in p and "fix round" not in p]
+
+
+def test_build_runs_tests_part_on_opus_then_code_part_on_sonnet(repo):
+    """R1, R4, D3, D5: Opus writes the test commit, Sonnet the code; each prompt names its one commit."""
+    assert run(repo, "run", TASK).returncode == 0
+    assert build_parts(repo) == [("T1", "tests", "opus"), ("T1", "code", "sonnet"),
+                                 ("T2", "tests", "opus"), ("T2", "code", "sonnet")]
+    prompts = [p for p, _ in sessions(repo) if "BUILD.md" in p]
+    test_sha = next(line.split()[0] for line in git(worktree(repo), "log", "--format=%h %s").splitlines()
+                    if line.split(" ", 1)[1].startswith("test(T1)"))
+    assert "`test(T1)`" in prompts[0] and "feat(T1)" not in prompts[0]
+    assert "`feat(T1)`" in prompts[1] and test_sha in prompts[1]
+
+
+@pytest.mark.parametrize("mode,reason", [("no_test", r"no test\(T1\) commit"), ("no_red", r"red check passed")])
+def test_build_blocks_before_code_without_a_red_test(repo, mode, reason):
+    """R2, R3: no test commit, or a test that passes at it, blocks before the Sonnet code part."""
+    assert run(repo, "run", TASK, mode=mode).returncode == 0
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("build", "blocked")
+    assert re.search(rf"\[build\] Blocked: T1: {reason}", state)
+    assert build_parts(repo) == [("T1", "tests", "opus")], "no code part runs"
+
+
+def test_resume_with_red_test_runs_only_the_code_part(repo):
+    """R6, A1: a resume does not write a red test again."""
+    assert run(repo, "run", TASK, mode="no_feat").returncode == 0
+    assert re.search(r"\[build\] Blocked: T1: no feat\(T1\) commit", task_file(repo, "STATE.md"))
+    for suffix in ("", ".args", ".cwd", ".env"):
+        Path(str(repo.parent / "stub.log") + suffix).unlink()
+    assert run(repo, "run", TASK).returncode == 0
+    assert build_parts(repo) == [("T1", "code", "sonnet"), ("T2", "tests", "opus"), ("T2", "code", "sonnet")]
+    subjects = git(worktree(repo), "log", "--format=%s").splitlines()
+    assert sum(s.startswith("test(T1)") for s in subjects) == 1
+
+
+def test_afk_roles_run_on_their_models(repo):
+    """R7, R8, A2: the fix round on Sonnet, the reviewer Opus, a gate check Sonnet, the review Opus."""
+    set_afk(repo, f"gates:\n  testing: {GOOD_GATE}\n  observability: true\n"
+                  "checks:\n  observability: Each new code path writes a log line.\n")
+    assert run(repo, "run", TASK, mode="review_fixable").returncode == 0
+
+    def models(test):
+        return {m for p, m in sessions(repo) if test(p)}
+    assert models(lambda p: "fix round" in p and "reviewer" not in p) == {"sonnet"}
+    assert models(lambda p: "reviewer" in p) == {"opus"}
+    assert models(lambda p: "gate check" in p) == {"sonnet"}
+    assert models(lambda p: "REVIEW.md" in p and "reviewer" not in p) == {"opus"}
+
+
+def test_each_afk_role_has_a_model():
+    """D5: a role with no MODELS entry would run on a silent default."""
+    import afk
+    roles = set(re.findall(r'self\.claude\(\s*"([\w-]+)"', AFK.read_text()))
+    assert roles and roles <= set(afk.MODELS), f"roles with no model: {roles - set(afk.MODELS)}"
+    assert afk.MODELS == {"build-tests": "opus", "build-code": "sonnet", "reviewer": "opus", "gate": "sonnet",
+                          "review": "opus"}
+
+
+def test_build_stage_names_tests_and_code_parts():
+    """R9: each session reads which steps are its own; the code part changes no test file."""
+    text = (PLUGIN / "stages" / "BUILD.md").read_text()
+    assert re.search(r"tests part.*steps 1-3", text, re.I) and re.search(r"code part.*steps 4-6", text, re.I)
+    assert re.search(r"code part.*changes? no test file", text, re.I | re.S)
+
+
+@pytest.mark.parametrize("path", ["plugin/scripts/afk.py", ".harness/workflows/afk-run.md",
+                                  "plugin/harness/.harness/workflows/afk-run.md"])
+def test_afk_docs_name_build_parts(path):
+    """R11: each doc names the two build parts and their models."""
+    text = (ROOT / path).read_text()
+    assert re.search(r"tests part[^.\n]*Opus", text) and re.search(r"code part[^.\n]*Sonnet", text), path
