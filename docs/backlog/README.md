@@ -8,7 +8,7 @@ Closed ideas are in `CHANGELOG.md`. Inbox: `grep -lx 'status: inbox' docs/backlo
 
 | Idea | Appetite |
 |---|---|
-| [Approval gates hand off](20261123004258-approval-handoff.md) | big; shipped in PRNUM, delete at release |
+| [Approval gates hand off](20261123004258-approval-handoff.md) | big; shipped in #46, delete at release |
 | [Grill in rounds](20261122105739-grill-rounds.md) | big |
 | [Backlog stage](20261122080759-backlog-stage.md) | big |
 | [Split the design stage](20261124224354-split-design-stage.md) | big |
