@@ -43,4 +43,4 @@ summary: "12 of 13 criteria have passing tests (621 pass). AC13 is a manual chec
 - F4: Changes outside DESIGN.md: the `PostToolUseFailure` hook in `plugin/hooks/hooks.json`, `tests/test_afk.py`, `plugin/harness/.harness/README.md`, `plugin/release-hashes.json`, `.kairyn/learnings.md` and the backlog file. Review 1 in BUILD.md accepted the first four. They are needed, but DESIGN.md does not record them.
 - F5: Open flag from BUILD.md: `tests/test_milestones.py` was edited in the fix round. The red commits do not prove the tests that exist now.
 
-Decision: pending
+Decision: Jayson De los Reyes, 2026-11-25T03:21:54Z, "fix F3 and F2"
