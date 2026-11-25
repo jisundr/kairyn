@@ -581,3 +581,17 @@ def afk_review_learnings(output, context):
         return _result(["review appended no line to learnings.md"])
     ok = [line for line in lines if re.search(r"lint rule|gate", line, re.I)]
     return _result([] if ok else [f"no new learning is a lint rule or gate: {lines[0][:120]}"])
+
+
+def starts_monitor(output, context):
+    """A Monitor tool call that runs `milestones.py watch`: the first mate follows the catchup instruction."""
+    for tool in json.loads(output)["tools"]:
+        command = json.dumps(tool.get("input") or {})
+        if tool.get("name") == "Monitor" and "milestones.py" in command and " watch" in command:
+            return _result([])
+    return _result(["no Monitor call ran milestones.py watch"])
+
+
+def reports_missed(output, context):
+    d = json.loads(output)
+    return _result([f"reply does not name the missed milestone {m!r}" for m in d["missed"] if m not in d["reply"]])

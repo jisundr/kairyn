@@ -4,6 +4,10 @@
       "owner": "plugin",
       "sha256": "f0b1bb0b5abe012a8a402a9a30d53ce24fd96783e8463905eeea58990258d2b4"
     },
+    ".harness/workflows/milestones.md": {
+      "owner": "plugin",
+      "sha256": "2181d24c27c3e721eb199b8d8f5c5ef5653da12cb07c1cb8c806874c9f41caab"
+    },
     ".harness/workflows/running-stages.md": {
       "owner": "plugin",
       "sha256": "9c8104d87052c7d0128e50d83503686985efc067fdf80822151f5a7c1c6ae045"
@@ -89,5 +93,5 @@
       "sha256": "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
     }
   },
-  "version": "0.11.0"
+  "version": "0.12.0"
 }
