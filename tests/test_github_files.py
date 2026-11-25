@@ -83,11 +83,16 @@ ISSUE_CONFIG = ROOT / ".github" / "ISSUE_TEMPLATE" / "config.yml"
 REPO_URL = "https://github.com/jisundr/kairyn"
 
 
+def sentences(text):
+    """Each sentence of a markdown file, so a rule must sit in one sentence, not in loose words across the file."""
+    return [s.strip() for s in re.split(r"(?<=[.!?])\s+|\n", text) if s.strip()]
+
+
 def test_security_md_points_to_private_reporting():
-    text = SECURITY.read_text()
-    assert f"{REPO_URL}/security/advisories/new" in text
-    assert "public issue" in text.lower()
-    assert "latest" in text.lower()
+    rules = sentences(SECURITY.read_text())
+    assert f"Report it privately at {REPO_URL}/security/advisories/new." in rules
+    assert "Never open a public issue for a vulnerability." in rules
+    assert "Only the latest version gets fixes." in rules
 
 
 def test_bug_report_form_asks_for_the_five_fields():
@@ -109,11 +114,11 @@ def test_issue_chooser_has_no_blank_issues():
 
 
 def test_contributing_md_states_the_three_rules():
-    text = CONTRIBUTING.read_text()
-    lower = text.lower()
-    assert "open an issue" in lower and "before" in lower
-    assert "uv run pytest" in text
-    assert "maintainer" in lower and "evals" in lower
+    rules = [line for line in CONTRIBUTING.read_text().splitlines() if re.match(r"\d+\. ", line)]
+    assert len(rules) == 3
+    assert rules[0].startswith("1. Open an issue before you open a pull request")
+    assert rules[1].startswith("2. Run `uv run pytest` and make it pass.")
+    assert rules[2].startswith("3. Do not run the evals.") and "the maintainer runs them" in rules[2]
 
 
 def test_pull_request_template_has_the_checklist():
