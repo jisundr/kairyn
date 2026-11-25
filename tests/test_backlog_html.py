@@ -421,8 +421,8 @@ def test_desktop_rows_are_one_line_summaries_with_aligned_dates(tmp_path):
 def test_search_shows_a_count_and_highlights_matches(tmp_path):
     page = render_html(browser_repo(tmp_path))
     js = ("d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'/'}));const focused=d.activeElement.id;"
-          "const q=d.getElementById('q');q.value='second';q.dispatchEvent(new w.Event('input'));"
+          "const q=d.getElementById('q');q.value='third';q.dispatchEvent(new w.Event('input'));"
           "return {focused, count:d.getElementById('count').textContent, rows:d.querySelectorAll('.row').length,"
           "mark:d.querySelector('.row mark')&&d.querySelector('.row mark').textContent}")
     got = in_browser(tmp_path, page, 1280, js)
-    assert got == {"focused": "q", "count": "1 of 3", "rows": 1, "mark": "Second"}, got
+    assert got == {"focused": "q", "count": "1 of 3", "rows": 1, "mark": "Third"}, got
