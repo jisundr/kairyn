@@ -105,8 +105,8 @@ def real_event(name):
 
 
 def bash_event(command, code, event=None):
-    """A real Bash hook payload for `command`. Claude Code sends a success as PostToolUse with no exit field,
-    and a nonzero exit as PostToolUseFailure with `error: "Exit code N\n<output>"`."""
+    """A real Bash hook payload for `command`. Claude Code sends a success as PostToolUse with no return code field,
+    and a nonzero return code as PostToolUseFailure with `error: "Exit code N\n<output>"`."""
     payload = real_event("post_tool_use" if code == 0 else "post_tool_use_failure")
     payload["tool_input"]["command"] = command
     if code:
