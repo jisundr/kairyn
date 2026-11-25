@@ -3,7 +3,7 @@
 Date: 2026-11-23
 
 ## Status
-Accepted. Amended by 0019: requirements on Sonnet, close and retro on Haiku.
+Accepted
 
 ## Context
 Task 2026-11-22-stage-skills. Every stage and every eval ran on the session model, and no run recorded its cost. About $400 was already spent. Two options were possible: a subagent per stage, or a skill per stage. The agents playbook says a model per stage is not a reason for a subagent.

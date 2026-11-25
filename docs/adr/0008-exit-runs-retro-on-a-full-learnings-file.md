@@ -3,7 +3,7 @@
 Date: 2026-11-23
 
 ## Status
-Accepted. Amended by 0019: close and retro run on Haiku.
+Accepted
 
 ## Context
 Task 2026-11-23-retro-stage. Every stage appends to `.kairyn/learnings.md`, and nothing removed an entry. This repo's file was at 994 of 1000 tokens, and stages could not append. The user does not need to remember a retro (D5). `EXIT.md` was at 469 of 500 tokens, and exit has no approval gate. Whether one skill can start another on the right model is unproven (K2).

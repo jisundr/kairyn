@@ -65,9 +65,9 @@ def test_design_skill_runs_on_opus():
     assert front(skill("design"))[0]["model"] == "opus"
 
 
-# ADR 0019: the orchestrating session (Opus) reviews requirements and judges reviewer findings,
-# so the hands-on stages run cheaper; design and the final review stay on Opus.
-SKILL_MODELS = {"requirements": "sonnet", "design": "opus", "grill": "sonnet", "model-routing": "sonnet",
+# Task 2026-11-26-split-build-routing: a step that makes a critical decision runs on Opus;
+# a step that only carries decisions out runs cheaper.
+SKILL_MODELS = {"requirements": "opus", "design": "opus", "grill": "sonnet", "model-routing": "sonnet",
                 "close": "haiku", "retro": "haiku", "build": "haiku", "review": "haiku"}
 
 
