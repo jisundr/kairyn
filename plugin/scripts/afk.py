@@ -20,7 +20,9 @@ slice `T<n>` and per stage, each with a fresh context.
     An empty command is `not set`, never a pass. A gate with a `checks:` entry then gets a read-only
     session that prints PASS or FAIL: <why>. GATES.md gets one row per gate.
   - review: one session writes REVIEW.md with `Decision: pending`. The run then stops for the human.
-A failed check sets `status: blocked` and logs why. Running `run` again resumes at `stage:`.
+A failed check sets `status: blocked` and logs why. Running `run` again sets `status: in-progress` and
+resumes at `stage:`, except at the merge decision. A task folder only in the main checkout (not committed)
+is copied to the worktree and committed on kairyn/<task>. A branch checked out elsewhere prints BLOCKED:.
 Readiness (before the first stage): the `testing` gate has a command, each set gate exits 0 on the
 base commit, and the worktree has no tracked changes. Limits (afk.yml `limits:`, else DEFAULT_LIMITS):
 a cost cap per stage and per run, from each session's `total_cost_usd`, and minutes per stage. A limit
@@ -29,7 +31,8 @@ Approval gates: build stops before a slice marked `(approval)` in DESIGN.md unti
 `Approval T<n>: ...`. Before gates and review, each changed path that matches afk.yml `approval:`
 needs an approval of the slice that changed it.
 Publish: with an `origin` remote, each stage ends with a push of kairyn/<task>. Build then opens one
-pull request with gh, review posts REVIEW.md on it, and approve merges it with a merge commit. With no
+pull request with gh, review posts REVIEW.md on it, and approve merges it with a merge commit (its log
+line is pushed first). After a failed merge, approve again retries it and keeps the Decision line. With no
 remote or no gh, the run logs that and goes on; approve then only records the decision.
 A child-repo task publishes the child repo the same way, first: REVIEW.md goes on both pull requests,
 and approve merges the child, then the home. A failed child merge blocks and leaves the home unmerged.
@@ -65,6 +68,7 @@ DEFAULT_LIMITS = {"build_usd": 10, "gates_usd": 5, "review_usd": 3, "run_usd": 2
 READ_ONLY = ["--disallowedTools", "Edit,Write,NotebookEdit",
              "--allowedTools", "Read,Grep,Glob,Bash(git diff:*),Bash(git log:*),Bash(git show:*)"]
 _TASK_LINE = re.compile(r"^- (T\d+):(.*)$", re.M)
+_TASK_START = re.compile(r"^- T\d+\b.*$", re.M)
 _AFTER = re.compile(r"\bafter:\s*((?:T\d+\s*,?\s*)+)")
 _DONE = re.compile(r"\bDone:\s*`([^`]+)`")
 _DECISION_PENDING = re.compile(r"^Decision: pending\s*$", re.M)
@@ -86,6 +90,9 @@ class Blocked(Exception):
 
 def task_graph(design: str) -> list:
     """The T<n> lines of DESIGN.md in dependency order. Ties keep the T<n> number order."""
+    bad = [m.group(0) for m in _TASK_START.finditer(design) if not _TASK_LINE.match(m.group(0))]
+    if bad:   # a skipped slice could skip its approval stop
+        raise ValueError(f"task line `{bad[0][:60]}` is not in the form `- T<n>: ...`")
     tasks = {}
     for tid, rest in _TASK_LINE.findall(design):
         done = _DONE.search(rest)
@@ -231,14 +238,23 @@ def common_dir(root: Path) -> Path:
 
 
 def add_worktree(root: Path, wt: Path, branch: str) -> None:
-    """Reuse the worktree at `wt`, or add it on `branch`: the branch if it exists, else a new one at HEAD."""
+    """Reuse the worktree at `wt`, or add it on `branch`: the branch if it exists, else a new one at HEAD.
+    A branch checked out in another checkout blocks: git refuses a second worktree on it."""
     if wt.is_dir():
         return
+    listed = git(root, "worktree", "list", "--porcelain").split("\n\n")
+    other = next((w.splitlines()[0][len("worktree "):] for w in listed
+                  if f"branch refs/heads/{branch}" in w.splitlines()), None)
+    if other:
+        raise Blocked(f"{branch} is checked out in {other}. Switch that checkout to another branch, then run again.")
     wt.parent.mkdir(parents=True, exist_ok=True)
     exists = subprocess.run(["git", "-C", str(root), "rev-parse", "--verify", "-q", branch],
                             capture_output=True).returncode == 0
     args = [str(wt), branch] if exists else ["-b", branch, str(wt)]
-    git(root, "worktree", "add", "-q", *args)
+    try:
+        git(root, "worktree", "add", "-q", *args)
+    except subprocess.CalledProcessError as e:
+        raise Blocked(f"git worktree add {branch} failed: {' '.join((e.stderr or '').split())[-200:]}")
 
 
 class Run:
@@ -261,8 +277,23 @@ class Run:
         """A home-worktree path for a prompt: relative when the session runs there, else full (R7)."""
         return rel if self.code == self.wt else str(self.wt / rel)
 
+    def has_task(self) -> bool:
+        """The task folder is in the main checkout, the worktree or the committed task branch."""
+        if (self.root / "docs" / "tasks" / self.task).is_dir() or self.folder.is_dir():
+            return True
+        return subprocess.run(["git", "-C", str(self.root), "cat-file", "-e",
+                               f"{self.branch}:docs/tasks/{self.task}"], capture_output=True).returncode == 0
+
     def ensure_worktree(self) -> None:
+        """Add the worktree. A task folder that only the main checkout has (not committed) is copied in and
+        committed on the task branch, so the worktree has STATE.md."""
         add_worktree(self.root, self.wt, self.branch)
+        source = self.root / "docs" / "tasks" / self.task
+        if not self.folder.is_dir() and source.is_dir():
+            shutil.copytree(source, self.folder)
+            self.commit(f"kairyn({self.task}): task folder")
+        if not (self.folder / "STATE.md").is_file():
+            raise Blocked(f"no STATE.md in docs/tasks/{self.task}/ on {self.branch}")
 
     # STATE.md
     def state(self) -> str:
@@ -744,11 +775,30 @@ class Run:
         print("BLOCKED: Created .kairyn/afk.yml. Set the testing gate command, commit the file, then run again.")
         return False
 
+    def resumable(self) -> bool:
+        """A blocked AFK stage resumes when run again, except at the merge decision: one that is pending, or
+        an approval whose merge failed (approve retries it)."""
+        if self.front("status") != "blocked" or self.front("stage") not in AFK_STAGES:
+            return False
+        review = self.folder / "REVIEW.md"
+        return not (self.front("stage") == "review" and (self.merge_approved() or (
+            review.is_file() and _DECISION_PENDING.search(review.read_text()))))
+
+    def merge_approved(self) -> bool:
+        return bool(re.search(r"^  review: done\s*$", self.state().partition("\n---\n")[0], re.M))
+
     def run(self) -> int:
         if not self.ensure_config():
             return 1
-        self.ensure_worktree()
+        try:
+            self.ensure_worktree()
+        except Blocked as e:   # no STATE.md to log in: the line is the report
+            print(f"BLOCKED: {e}")
+            return 1
         self.start_stage(self.front("stage") or "")
+        if self.resumable():
+            self.update(self.front("stage"), "Resumed after a block.", status="in-progress")
+            self.commit(f"kairyn({self.task}): resume")
         if self.front("status") == "in-progress":
             try:
                 self.resolve_repo()
@@ -780,20 +830,25 @@ class Run:
 
     def decide(self, words: str, approve: bool) -> int:
         path = self.folder / "REVIEW.md"
-        if not path.is_file() or not _DECISION_PENDING.search(path.read_text()):
+        name = git(self.root, "config", "user.name")
+        retry = approve and path.is_file() and self.front("status") == "blocked" and self.merge_approved()
+        if retry:   # the merge was approved and then blocked: the Decision line stays, the merge runs again
+            self.update("review", f"Merge retried by {name}.", status="done")
+            self.commit(f"kairyn({self.task}): merge retry")
+        elif not path.is_file() or not _DECISION_PENDING.search(path.read_text()):
             print(f"FAIL: {self.task} has no REVIEW.md with `Decision: pending`")
             return 1
-        name = git(self.root, "config", "user.name")
-        line = f'Decision: {name}, {now()}, "{words}"'
-        path.write_text(_DECISION_PENDING.sub(line.replace("\\", "\\\\"), path.read_text(), count=1))
-        if not approve:
-            self.update("review", f"Rejected by {name}: {words}", status="blocked")
+        else:
+            line = f'Decision: {name}, {now()}, "{words}"'
+            path.write_text(_DECISION_PENDING.sub(line.replace("\\", "\\\\"), path.read_text(), count=1))
+            if not approve:
+                self.update("review", f"Rejected by {name}: {words}", status="blocked")
+                self.commit(f"kairyn({self.task}): decision")
+                print(line)
+                return 0
+            self.update("review", f"Approved by {name}.", stage_status="done", status="done")
             self.commit(f"kairyn({self.task}): decision")
             print(line)
-            return 0
-        self.update("review", f"Approved by {name}.", stage_status="done", status="done")
-        self.commit(f"kairyn({self.task}): decision")
-        print(line)
         gh = self.gh()
         try:
             self.resolve_repo()
@@ -804,18 +859,24 @@ class Run:
                                       "The home branch stays unmerged.")
                     continue
                 if gh and self.pr_merged(gh, root):   # a retry after the home merge failed
-                    self.update("review", f"{prefix}Already merged.")
+                    if prefix:
+                        self.update("review", f"{prefix}Already merged.")
+                    else:
+                        print("Already merged.")
                     continue
+                merge = gh and self.pr_exists(gh, root)
+                # The home log line goes in before its push: a commit after the merge would stay unpushed.
+                self.update("review", f"{prefix}Merge with gh pr merge --merge." if merge else
+                            f"{prefix}Pushed {self.branch}. No pull request to merge: merge it by hand.")
+                if not prefix:
+                    self.commit(f"kairyn({self.task}): merge")
                 self.push(wt, prefix)
-                if gh and self.pr_exists(gh, root):
+                if merge:
                     result = subprocess.run([gh, "pr", "merge", self.branch, "--merge"], cwd=root,
                                             capture_output=True, text=True)
                     if result.returncode:
                         why = " ".join((result.stderr or result.stdout).split())[-200:]
                         raise Blocked(f"{prefix}gh pr merge failed: {why}")
-                    self.update("review", f"{prefix}Merged with gh pr merge --merge.")
-                else:
-                    self.update("review", f"{prefix}Pushed {self.branch}. No pull request to merge: merge it by hand.")
         except Blocked as e:
             self.update("review", f"Blocked: {e}", status="blocked")
             self.commit(f"kairyn({self.task}): merge")
@@ -833,14 +894,19 @@ def main(argv=None) -> int:
     parser.add_argument("--slice", default="", help="approve one (approval) slice T<n>, not the merge")
     parser.add_argument("--root", type=Path, default=Path.cwd())
     args = parser.parse_args(argv)
-    if "/" in args.task or not (args.root / "docs" / "tasks" / args.task).is_dir():
+    run = Run(args.root.resolve(), args.task) if "/" not in args.task else None
+    if run is None or not run.has_task():   # the worktree holds the truth; the main checkout may lack it
         print(f"FAIL: no task folder docs/tasks/{args.task}/")
         return 1
-    run = Run(args.root.resolve(), args.task)
     if args.command == "run":
         return run.run()
     if not args.words:
         print("FAIL: --words is required")
+        return 1
+    try:
+        run.ensure_worktree()
+    except Blocked as e:
+        print(f"FAIL: {e}")
         return 1
     if args.slice:
         if args.command != "approve":

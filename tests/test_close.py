@@ -237,7 +237,7 @@ def test_check_refuses_a_review_task_still_pending(tmp_path):
 
 
 def test_close_without_git_keeps_a_copy_of_what_it_deletes(tmp_path):
-    """Backlog exit-without-git: no git history keeps the folder, so close keeps a copy."""
+    """Backlog idea 20261124021640: no git history keeps the folder, so close keeps a copy."""
     root = tmp_path / "plain"
     make_task(root)
     b = root / "docs" / "backlog"
