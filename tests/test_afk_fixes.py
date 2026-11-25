@@ -147,3 +147,60 @@ def test_approve_does_not_retry_a_rejected_task(repo):
     assert run(repo, "reject", TASK, "--words", "Not yet").returncode == 0
     again = run(repo, "approve", TASK, "--words", "Ship it")
     assert again.returncode == 1 and again.stdout.startswith("FAIL:")
+
+
+# --- approve-waits-for-ci --------------------------------------------------------------------
+
+
+def _approve_with_checks(repo, monkeypatch, checks, **env):
+    base.with_remote(repo)
+    base.run_gh(repo, "run", TASK)
+    monkeypatch.setenv("GH_CHECKS", checks)
+    for key, value in {"KAIRYN_CI_POLL": "0", "KAIRYN_CI_GRACE": "0", "KAIRYN_CI_TIMEOUT": "60", **env}.items():
+        monkeypatch.setenv(key, value)
+    return base.run_gh(repo, "approve", TASK, "--words", "Ship it")
+
+
+def _polls_then_merge(repo):
+    calls = base.gh_calls(repo)
+    polls = [i for i, c in enumerate(calls) if "statusCheckRollup" in c]
+    merges = [i for i, c in enumerate(calls) if c.startswith("pr merge")]
+    return polls, merges
+
+
+def test_approve_merges_only_after_ci_passes_on_the_pushed_head(repo, monkeypatch):
+    result = _approve_with_checks(repo, monkeypatch, "pending:2")
+    assert result.returncode == 0, result.stdout + result.stderr
+    polls, merges = _polls_then_merge(repo)
+    assert len(polls) == 3 and merges and max(polls) < merges[0], base.gh_calls(repo)
+    assert front(task_file(repo, "STATE.md"), "status") == "done"
+
+
+def test_approve_does_not_take_the_old_heads_checks(repo, monkeypatch):
+    result = _approve_with_checks(repo, monkeypatch, "stale:1")
+    assert result.returncode == 0, result.stdout + result.stderr
+    polls, merges = _polls_then_merge(repo)
+    assert len(polls) == 2 and max(polls) < merges[0], base.gh_calls(repo)
+
+
+def test_approve_blocks_on_a_failed_check_and_does_not_merge(repo, monkeypatch):
+    result = _approve_with_checks(repo, monkeypatch, "fail")
+    assert result.returncode == 1
+    no_traceback(result)
+    assert _polls_then_merge(repo)[1] == []
+    state = task_file(repo, "STATE.md")
+    assert front(state, "status") == "blocked"
+    assert re.search(r"\[review\] Blocked: CI failed on [0-9a-f]{7}: tests", state), state
+
+
+def test_approve_merges_after_the_grace_when_the_repo_has_no_ci(repo, monkeypatch):
+    result = _approve_with_checks(repo, monkeypatch, "none")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert _polls_then_merge(repo)[1]
+
+
+def test_approve_blocks_when_ci_never_finishes(repo, monkeypatch):
+    result = _approve_with_checks(repo, monkeypatch, "pending:1000", KAIRYN_CI_TIMEOUT="0")
+    assert result.returncode == 1
+    assert _polls_then_merge(repo)[1] == []
+    assert re.search(r"\[review\] Blocked: CI did not finish on [0-9a-f]{7}", task_file(repo, "STATE.md"))
