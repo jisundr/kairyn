@@ -1,4 +1,4 @@
-"""scripts/gates.py: this repo's evals and sessions gates, run on tiny git repos. afk.py runs design and commits."""
+"""scripts/gates.py: this repo's evals gate, run on tiny git repos. afk.py runs design, commits and sessions."""
 import json
 import subprocess
 import sys
@@ -55,16 +55,15 @@ def gate(repo: Path, check: str, *args: str) -> subprocess.CompletedProcess:
 
 
 def test_every_gate_passes_with_no_code_commits(tmp_path):
-    repo = make_repo(tmp_path, DESIGN + "| AC2 Real | T1 | Manual: one real session |\n")
-    for check in ("evals", "sessions"):
-        result = gate(repo, check)
-        assert result.returncode == 0, (check, result.stdout)
+    repo = make_repo(tmp_path)
+    result = gate(repo, "evals")
+    assert result.returncode == 0, result.stdout
 
 
 def test_gates_skip_outside_a_kairyn_branch(tmp_path):
     repo = make_repo(tmp_path)
     git(repo, "checkout", "-q", "main")
-    assert gate(repo, "sessions").returncode == 0
+    assert gate(repo, "evals").returncode == 0
 
 
 # evals: a plugin/ change needs a recorded eval pass at the current hash
@@ -123,21 +122,3 @@ def test_evals_pass_when_no_plugin_file_changed(tmp_path):
     repo = make_repo(tmp_path)
     commit(repo, "feat(T1): adds", {"app.py": "good\n"})
     assert gate(repo, "evals").returncode == 0
-
-
-# sessions: a Manual test plan row needs a `Run AC<n>:` line in the task folder
-def test_sessions_fail_on_a_manual_row_with_no_run(tmp_path):
-    repo = make_repo(tmp_path, DESIGN + "| AC2 Real session | T1 | Manual: one real session after merge |\n")
-    commit(repo, "feat(T1): adds", {"app.py": "good\n"})
-    result = gate(repo, "sessions")
-    assert result.returncode == 1
-    assert "AC2" in result.stdout and "AC1" not in result.stdout
-
-
-def test_sessions_pass_when_the_run_is_recorded(tmp_path):
-    repo = make_repo(tmp_path, DESIGN + "| AC2 Real session | T1 | Manual: one real session |\n")
-    commit(repo, "feat(T1): adds", {"app.py": "good\n"})
-    commit(repo, f"kairyn({TASK}): run", {f"docs/tasks/{TASK}/BUILD.md":
-                                           '# Build\n\nRun AC2: T, 2026-11-25T05:00:00Z, "0 status asks"\n'})
-    result = gate(repo, "sessions")
-    assert result.returncode == 0, result.stdout
