@@ -1,9 +1,9 @@
 ---
 title: afk.py looks for the task folder in the main checkout, not the worktree
-status: inbox
+status: triaged
 requester: Jayson De los Reyes
 date: 2026-11-25
-appetite:
+appetite: small batch
 review_by:
 ---
 
@@ -18,3 +18,5 @@ review_by:
 # Log
 
 2026-11-25T00:44:39Z [capture] Created after task 2026-11-25-skill-names-clash from a user request. Status inbox, waiting for triage.
+2026-11-25T04:18:32Z [triage] Kept. Status triaged. Decided by Jayson De los Reyes.
+2026-11-25T04:18:32Z [appetite] Set to small batch. Decided by Jayson De los Reyes.
