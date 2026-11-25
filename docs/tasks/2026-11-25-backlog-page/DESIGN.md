@@ -50,4 +50,4 @@ Eval plan, 10 runs each. Costs are from the last run of each eval: run `20261123
 | AC13 runs on Python 3.9 | T1 | `test_backlog_script_runs` in `tests/test_python39.py` |
 | AC14 tests, validate and version bump | T5 | `uv run pytest`, `claude plugin validate plugin`, `python3 scripts/check_version_bump.py origin/main` |
 
-Approval: pending
+Approval: Jayson De los Reyes, 2026-11-25T11:48:00Z, "approved DESIGN.md as written"

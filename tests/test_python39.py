@@ -70,3 +70,12 @@ def test_retro_script_runs(tmp_path):
     assert run39(str(SCRIPTS / "retro.py"), "size", "--root", str(repo)).stdout.startswith("learnings.md ")
     out = run39(str(SCRIPTS / "retro.py"), "fits", "CLAUDE.md", "--add", "rule", "--root", str(repo)).stdout.strip()
     assert out == "FITS"
+
+
+def test_backlog_script_runs(tmp_path):
+    repo = make_good_repo(tmp_path / "repo")
+    (repo / "docs" / "backlog").mkdir(parents=True)
+    (repo / "docs" / "backlog" / "20261125053013-ship-gates.md").write_text("---\ntitle: Ship\n---\n\n# Ship\n")
+    result = run39(str(SCRIPTS / "backlog_html.py"), "--root", str(repo))
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (repo / ".kairyn" / "backlog.html").exists()
