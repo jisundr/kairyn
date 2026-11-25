@@ -305,6 +305,23 @@ def test_an_edited_file_no_longer_shipped_is_kept_as_a_conflict_until_deleted(tm
     assert not (repo / ".kairyn" / ".base" / GONE).exists() and manifest_problems(repo) == []
 
 
+def test_an_edited_file_no_longer_shipped_without_a_base_is_never_removed_while_it_exists(tmp_path):
+    """Review F1: with no .base/ copy, the edited file stays a conflict on each run until the user deletes it."""
+    repo, plugin = old_install(tmp_path)
+    (repo / GONE).write_text((repo / GONE).read_text() + "\nmy edit\n")
+    (repo / ".kairyn" / ".base" / GONE).unlink()
+    for _ in range(3):
+        result, lines = upgrade(repo, plugin)
+        assert result.returncode == 1 and lines[GONE] == "CONFLICT", result.stdout
+        assert (repo / GONE).read_text().endswith("my edit\n")
+    (repo / GONE).unlink()
+    result, lines = upgrade(repo, plugin)
+    assert result.returncode == 0 and lines[GONE] == "REMOVED"
+    manifest = read_manifest(repo)
+    assert GONE not in manifest["files"] and manifest["version"] == "9.9.9"
+    assert not (repo / ".kairyn" / ".base" / GONE).exists() and manifest_problems(repo) == []
+
+
 def test_a_recorded_file_already_deleted_is_removed_from_the_record(tmp_path):
     repo, plugin = old_install(tmp_path)
     (repo / GONE).unlink()
