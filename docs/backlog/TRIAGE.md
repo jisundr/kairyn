@@ -6,9 +6,7 @@ The index of triaged ideas is [README.md](README.md). Next and Parked were decid
 
 ## Next
 
-One small batch: atomic-state-md, a shared atomic-write helper for `milestones.store()` and `afk.py` `Task.update()` (evals first).
-
-The atomic `watch.json` write (flaky-watch-test-macos) shipped.
+None. The shared atomic write for `STATE.md` and `watch.json` (atomic-state-md) shipped, after the atomic `watch.json` write (flaky-watch-test-macos).
 
 The earlier batches shipped: the afk.py fixes in #31, the gates and lint rules in #30. ship-review-gates is big and needs shaping first.
 
