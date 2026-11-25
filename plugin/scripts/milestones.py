@@ -12,12 +12,16 @@ All take --root (default: the current directory). Settings: .kairyn/milestones.y
       patterns:                         # optional: <label>: <regex on the Bash command>; replaces the defaults
         tests: '\bpytest\b'
     watch:
+      host: dev-server                               # optional: read the log over ssh
       log: ~/Projects/home/.session/milestones.log   # first mate repo: the log to read
 A line is `<UTC timestamp> [<run tag>] <text>`, the text cut to 200 characters. A new `.session/`
 folder gets a `.gitignore` that ignores all its files. `watch` stores the number of the last line it
 printed in `.session/watch.json` of its repo; with no stored number it starts at the log's end, and a
 log shorter than the stored number starts from line 1. `catchup` prints the lines after the stored number,
 stores the new number, and tells the first mate to start `watch` with the Monitor tool.
+With a host, both read with `ssh <host> tail -n +<n>`. When ssh fails, `watch` prints one
+`server unreachable since <time>`, stores the time, and retries quietly: --retry seconds (15), doubling
+to 5 minutes. KAIRYN_SSH overrides the ssh binary (tests use a stub).
 `hook` writes the label and the exit code of a Bash command that matches a pattern (never the command text) and
 the first line of the last assistant message at Stop. Its run tag is `<tmux session>:<window> <repo folder>`,
 or the repo folder outside tmux. KAIRYN_MILESTONES=off (afk.py sessions) makes it write nothing.
@@ -31,6 +35,7 @@ import argparse
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -40,6 +45,7 @@ from pathlib import Path
 SETTINGS = Path(".kairyn") / "milestones.yml"
 SESSION = ".session"
 MAX_TEXT = 200
+MAX_RETRY = 300
 DEFAULT_PATTERNS = {
     "tests": r"\b(pytest|(npm|pnpm|yarn|bun)( run)? test|go test|cargo test|jest|vitest|rspec|phpunit)\b",
     "lint": r"\b(ruff|eslint|flake8|pylint|mypy|golangci-lint|(npm|pnpm|yarn|bun) run lint)\b",
@@ -204,10 +210,49 @@ def hook(root: Path, raw: str) -> None:
         write(root, run_tag(root), text)
 
 
-def watch_log(root: Path):
+class Unreachable(Exception):
+    pass
+
+
+def watch_source(root: Path):
+    """(host or None, log) from the watch settings, or None when no log is set."""
     conf = settings(root).get("watch")
     raw = conf.get("log") if isinstance(conf, dict) else None
-    return _path(root, raw) if raw else None
+    if not raw:
+        return None
+    host = conf.get("host") or None
+    return host, (raw if host else _path(root, raw))
+
+
+def _remote(path: str) -> str:
+    return '"$HOME"/' + shlex.quote(path[2:]) if path.startswith("~/") else shlex.quote(path)
+
+
+def fetch(source, after: int):
+    """(line count, the lines after line `after`) of the log, local or over ssh. Raises Unreachable."""
+    host, log = source
+    if not host:
+        lines = _read_lines(log)
+        return len(lines), lines[after:]
+    q = _remote(str(log))
+    script = f"[ -f {q} ] || {{ echo 0; exit 0; }}; wc -l < {q}; tail -n +{after + 1} {q}"
+    try:
+        out = subprocess.run([os.environ.get("KAIRYN_SSH", "ssh"), "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
+                              host, script], capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError) as err:
+        raise Unreachable(str(err))
+    rows = out.stdout.splitlines()
+    if out.returncode != 0 or not rows or not rows[0].strip().isdigit():
+        raise Unreachable(out.stderr.strip())
+    return int(rows[0]), rows[1:]
+
+
+def retry_delays(start: float):
+    """start, doubling, at most MAX_RETRY seconds (R11)."""
+    delay = start
+    while True:
+        yield min(delay, MAX_RETRY)
+        delay = min(delay * 2, MAX_RETRY)
 
 
 def stored_line(state: Path):
@@ -217,50 +262,79 @@ def stored_line(state: Path):
         return None
 
 
+def stored_since(state: Path) -> str:
+    try:
+        return str(json.loads(state.read_text()).get("unreachable") or "")
+    except (OSError, ValueError, AttributeError):
+        return ""
+
+
+def store(state: Path, line: int, since: str = "") -> None:
+    data = {"line": line, **({"unreachable": since} if since else {})}
+    state.write_text(json.dumps(data) + "\n")
+
+
 def catchup(root: Path) -> None:
     """Print the lines after the stored number and the watcher instruction (R10, R13)."""
     if os.environ.get("KAIRYN_MILESTONES", "").lower() == "off":
         return
-    log = watch_log(root)
-    if not log:
+    source = watch_source(root)
+    if not source:
         return
     state = session_dir(root / SESSION) / "watch.json"
-    lines = _read_lines(log)
     done = stored_line(state)
-    if done is None:
-        done = len(lines)
-    elif done > len(lines):
-        done = 0
-    missed = lines[done:]
-    if missed:
-        print(f"Milestones since the last session ({len(missed)}):")
-        for line in missed:
-            print(line)
-    state.write_text(json.dumps({"line": len(lines)}) + "\n")
+    try:
+        count, missed = fetch(source, done or 0)
+        if done is None:
+            done, missed = count, []
+        elif done > count:
+            count, missed = fetch(source, 0)
+        if missed:
+            print(f"Milestones since the last session ({len(missed)}):")
+            for line in missed:
+                print(line)
+        store(state, count)
+    except Unreachable:
+        print(f"Milestones: server {source[0]} unreachable since {stored_since(state) or stamp()}; "
+              "watch catches up when it answers.")
     script = Path(__file__).resolve()
     print(f'Start the milestone watcher now with the Monitor tool: python3 "{script}" watch --root "{root}". '
           "Each line it prints is one milestone; tell the user. When Monitor stops, start it again.")
 
 
-def watch(root: Path, interval: float) -> int:
-    log = watch_log(root)
-    if not log:
+def watch(root: Path, interval: float, retry: float = 15.0) -> int:
+    source = watch_source(root)
+    if not source:
         print("milestones: no watch log set in .kairyn/milestones.yml", file=sys.stderr)
         return 2
     state = session_dir(root / SESSION) / "watch.json"
     done = stored_line(state)
-    if done is None:
-        done = len(_read_lines(log))
-        state.write_text(json.dumps({"line": done}) + "\n")
+    since = stored_since(state)
+    delays = None
     while True:
-        lines = _read_lines(log)
-        if len(lines) < done:   # a shorter log: cleanup removed it, start from line 1 (R13)
+        try:
+            count, new = fetch(source, done or 0)
+        except Unreachable:   # tell once, retry quietly with a growing delay (R11)
+            if not since:
+                since = stamp()
+                print(f"server unreachable since {since}", flush=True)
+                store(state, done or 0, since)
+            delays = delays or retry_delays(retry)
+            time.sleep(next(delays))
+            continue
+        delays = None
+        if done is None:
+            done, new = count, []
+        if count < done:   # a shorter log: cleanup removed it, start from line 1 (R13)
             done = 0
-        if len(lines) > done:
-            for line in lines[done:]:
-                print(line, flush=True)
-            done = len(lines)
-            state.write_text(json.dumps({"line": done}) + "\n")
+            continue
+        for line in new:
+            print(line, flush=True)
+        if new or since:   # back online: the missed lines are out, clear the notice (R12)
+            done, since = done + len(new), ""
+            store(state, done)
+        elif not state.exists():
+            store(state, done)
         time.sleep(interval)
 
 
@@ -272,6 +346,7 @@ def main(argv=None) -> int:
     w.add_argument("text")
     v = sub.add_parser("watch")
     v.add_argument("--interval", type=float, default=5.0)
+    v.add_argument("--retry", type=float, default=15.0)
     h = sub.add_parser("hook")
     c = sub.add_parser("catchup")
     for p in (w, v, h, c):
@@ -293,7 +368,7 @@ def main(argv=None) -> int:
         except Exception as err:   # a session start must never fail
             print(f"milestones: {err}", file=sys.stderr)
         return 0
-    return watch(root, args.interval)
+    return watch(root, args.interval, args.retry)
 
 
 if __name__ == "__main__":
