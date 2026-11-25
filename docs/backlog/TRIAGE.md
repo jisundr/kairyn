@@ -6,7 +6,7 @@ The index of triaged ideas is [README.md](README.md). Next and Parked were decid
 
 ## Next
 
-One small batch: flaky-watch-test-macos, the atomic `watch.json` write in `milestones.py` (evals first).
+None. The atomic `watch.json` write (flaky-watch-test-macos) shipped.
 
 The earlier batches shipped: the afk.py fixes in #31, the gates and lint rules in #30. ship-review-gates is big and needs shaping first.
 

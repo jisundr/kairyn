@@ -420,7 +420,11 @@ def test_watch_host_unreachable_once_then_catches_up(tmp_path):
         assert printed_lines("".join(got[1:])) == ["line 3", "line 4", "line 5"], got
         calls = (tmp_path / "ssh.calls").read_text().splitlines()
         assert len(calls) >= 4 and all("dev-server" in c and "tail -n +3" in c for c in calls[:4]), calls
-        stored = json.loads((mate / ".session" / "watch.json").read_text())
+        state = mate / ".session" / "watch.json"   # watch prints the lines, then stores the number
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline and json.loads(state.read_text()).get("line") != 5:
+            time.sleep(0.05)
+        stored = json.loads(state.read_text())
         assert stored["line"] == 5 and not stored.get("unreachable"), stored
     finally:
         proc.kill()
