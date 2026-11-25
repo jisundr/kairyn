@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from helpers import PLUGIN
 
 from backlog_html import PAGE_PATH, render_html
@@ -216,3 +218,40 @@ def test_relative_links_resolve_from_the_page_in_kairyn(tmp_path):
     body = page_data(render_html(root))[0]["body_html"]
     assert '<a href="../docs/backlog/../tasks/2026-11-25-x/">Task</a>' in body
     assert '<a href="../docs/backlog/TRIAGE.md#next">T</a>' in body
+
+
+# ---------- T4: .gitignore and the error exits ----------
+
+@pytest.mark.parametrize("before", [None, "node_modules/\n", "node_modules/", "node_modules/\n.kairyn/backlog.html\n"])
+def test_gitignore_gets_one_line(tmp_path, before):
+    root = make_repo(tmp_path, {"20261125053013-a.md": idea()})
+    if before is not None:
+        (root / ".gitignore").write_text(before)
+    for _ in range(2):
+        assert run(root).returncode == 0
+    lines = (root / ".gitignore").read_text().splitlines()
+    assert lines.count(".kairyn/backlog.html") == 1
+    if before:
+        assert lines[0] == "node_modules/"
+
+
+def test_no_ideas_writes_nothing(tmp_path):
+    root = make_repo(tmp_path, {"README.md": "# Backlog\n"}, triage="# Triage\n")
+    r = run(root)
+    assert r.returncode == 1 and len((r.stdout + r.stderr).strip().splitlines()) == 1
+    assert "docs/backlog" in r.stdout + r.stderr
+    assert not (root / ".kairyn" / "backlog.html").exists() and not (root / ".gitignore").exists()
+
+
+def test_no_backlog_folder_writes_nothing(tmp_path):
+    (tmp_path / ".kairyn").mkdir()
+    r = run(tmp_path)
+    assert r.returncode == 1 and not (tmp_path / ".kairyn" / "backlog.html").exists()
+
+
+def test_no_kairyn_folder_writes_nothing(tmp_path):
+    root = make_repo(tmp_path, {"20261125053013-a.md": idea()}, kairyn=False)
+    r = run(root)
+    assert r.returncode == 1 and len((r.stdout + r.stderr).strip().splitlines()) == 1
+    assert "/kairyn:init" in r.stdout + r.stderr
+    assert not (root / ".kairyn").exists() and not (root / ".gitignore").exists()
