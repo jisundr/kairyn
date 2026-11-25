@@ -13,9 +13,7 @@ limits:
 gates:
   testing: uv run pytest
   contract: claude plugin validate plugin
-  # Review gates from retro 2026-11-25-retro-2 (scripts/gates.py; see .harness/workflows/afk-run.md).
-  design: python3 scripts/gates.py design --allow .kairyn/learnings.md
-  commits: python3 scripts/gates.py commits
+  # This repo's review gates (scripts/gates.py). afk.py runs design and commits itself.
   evals: python3 scripts/gates.py evals
   sessions: python3 scripts/gates.py sessions
   accessibility:

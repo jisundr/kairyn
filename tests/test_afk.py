@@ -47,8 +47,8 @@ summary: "two slices"
 # Design: Feature
 
 ## Tasks
-- T1: Tracer bullet. Done: `python3 check_t1.py` exits 0.
-- T2: Widen it. after: T1. Done: `python3 check_t2.py` exits 0.
+- T1: Tracer bullet. Files: `check_t1.py`, `feature_t1.py` (new). Done: `python3 check_t1.py` exits 0.
+- T2: Widen it. Files: `check_t2.py`, `feature_t2.py` (new). after: T1. Done: `python3 check_t2.py` exits 0.
 
 Approval: Eval User, 2026-01-05T09:20:00Z, "Approve"
 """
@@ -506,9 +506,11 @@ def test_slice4_design_marks_approval_slices():
 SIX = ("testing", "contract", "accessibility", "performance", "observability", "security")
 
 
-def gate_rows(repo):
-    return [[c.strip() for c in line.strip("|").split("|")] for line in task_file(repo, "GATES.md").splitlines()
+def gate_rows(repo, built_in=False):
+    """GATES.md rows; without built_in, the rows of the afk.yml gates only (the review gates come first)."""
+    rows = [[c.strip() for c in line.strip("|").split("|")] for line in task_file(repo, "GATES.md").splitlines()
             if line.startswith("| ") and not line.startswith("| Gate")]
+    return rows if built_in else [r for r in rows if r[0] not in ("design", "commits")]
 
 
 def test_slice5_gates(repo):
@@ -517,6 +519,7 @@ def test_slice5_gates(repo):
                   "  observability:\n  security: true\n")
     assert run(repo, "run", TASK).returncode == 0
     rows = gate_rows(repo)
+    assert [r[0] for r in gate_rows(repo, built_in=True)] == ["design", "commits", *SIX]
     assert [r[0] for r in rows] == list(SIX)
     assert [r[1] for r in rows] == ["pass", "not set", "not set", "pass", "not set", "pass"]
     assert front(task_file(repo, "STATE.md"), "stage") == "review"

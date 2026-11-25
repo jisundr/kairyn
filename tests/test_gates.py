@@ -1,4 +1,4 @@
-"""scripts/gates.py: the review gates of this repo's .kairyn/afk.yml, run on tiny git repos."""
+"""scripts/gates.py: this repo's evals and sessions gates, run on tiny git repos. afk.py runs design and commits."""
 import json
 import subprocess
 import sys
@@ -9,7 +9,7 @@ from selector import deps_hash
 
 GATES = ROOT / "scripts" / "gates.py"
 TASK = "2026-11-25-demo"
-DESIGN = f"""# Design
+DESIGN = """# Design
 
 ## Tasks
 - T1: Files: `app.py`, `tests/test_app.py`, `tests/fixtures/` . Done: `sh check.sh` exits 0.
@@ -56,7 +56,7 @@ def gate(repo: Path, check: str, *args: str) -> subprocess.CompletedProcess:
 
 def test_every_gate_passes_with_no_code_commits(tmp_path):
     repo = make_repo(tmp_path, DESIGN + "| AC2 Real | T1 | Manual: one real session |\n")
-    for check in ("design", "commits", "evals", "sessions"):
+    for check in ("evals", "sessions"):
         result = gate(repo, check)
         assert result.returncode == 0, (check, result.stdout)
 
@@ -64,102 +64,7 @@ def test_every_gate_passes_with_no_code_commits(tmp_path):
 def test_gates_skip_outside_a_kairyn_branch(tmp_path):
     repo = make_repo(tmp_path)
     git(repo, "checkout", "-q", "main")
-    assert gate(repo, "design").returncode == 0
-
-
-# design: changed files and hook events must be in DESIGN.md
-def test_design_passes_when_each_changed_file_is_named(tmp_path):
-    repo = make_repo(tmp_path)
-    commit(repo, "test(T1): adds", {"tests/test_app.py": "t\n", "tests/fixtures/a.json": "{}\n"})
-    commit(repo, "feat(T1): adds", {"app.py": "good\n"})
-    result = gate(repo, "design")
-    assert result.returncode == 0, result.stdout
-
-
-def test_design_fails_on_a_file_outside_design(tmp_path):
-    repo = make_repo(tmp_path)
-    commit(repo, "feat(T1): adds", {"app.py": "good\n", "other.py": "y\n"})
-    result = gate(repo, "design")
-    assert result.returncode == 1
-    assert "`other.py`" in result.stdout and "app.py" not in result.stdout
-
-
-def test_design_allow_skips_a_file(tmp_path):
-    repo = make_repo(tmp_path)
-    commit(repo, "feat(T1): adds", {"app.py": "good\n", ".kairyn/learnings.md": "- x\n"})
-    assert gate(repo, "design", "--allow", ".kairyn/*.md").returncode == 0
-
-
-def test_design_fails_on_a_hook_event_outside_design(tmp_path):
-    hooks = {"hooks": {"PostToolUse": []}}
-    repo = make_repo(tmp_path, DESIGN.replace("`app.py`", "`app.py`, `hooks.json` (PostToolUse)"))
-    git(repo, "checkout", "-q", "main")
-    commit(repo, "hooks", {"hooks.json": json.dumps(hooks)})
-    git(repo, "checkout", "-q", f"kairyn/{TASK}")
-    git(repo, "rebase", "-q", "main")
-    hooks["hooks"]["PostToolUseFailure"] = []
-    hooks["hooks"]["Stop"] = []
-    commit(repo, "feat(T1): hooks", {"hooks.json": json.dumps(hooks)})
-    result = gate(repo, "design")
-    assert result.returncode == 1
-    assert "PostToolUseFailure" in result.stdout and "`Stop`" in result.stdout
-    assert "`PostToolUse`" not in result.stdout
-
-
-# commits: no test change in a feat commit; a fix-round test edit needs a new red run
-def test_commits_fail_when_a_feat_commit_changes_a_test_or_fixture(tmp_path):
-    repo = make_repo(tmp_path)
-    commit(repo, "test(T1): adds", {"tests/test_app.py": "t\n"})
-    sha = commit(repo, "feat(T1): adds", {"app.py": "good\n", "tests/fixtures/a.json": "{}\n"})
-    result = gate(repo, "commits")
-    assert result.returncode == 1
-    assert sha in result.stdout and "tests/fixtures/a.json" in result.stdout
-
-
-def test_commits_pass_on_a_clean_red_green_pair(tmp_path):
-    repo = make_repo(tmp_path)
-    commit(repo, "test(T1): adds", {"tests/test_app.py": "t\n"})
-    commit(repo, "feat(T1): adds", {"app.py": "good\n"})
-    result = gate(repo, "commits", "--run", "sh check.sh")
-    assert result.returncode == 0, result.stdout
-
-
-def test_commits_fail_when_a_fix_commit_edits_a_test(tmp_path):
-    repo = make_repo(tmp_path)
-    commit(repo, "test(T1): adds", {"tests/test_app.py": "t\n"})
-    commit(repo, "feat(T1): adds", {"app.py": "good\n"})
-    sha = commit(repo, "fix: finding", {"tests/test_app.py": "weaker\n"})
-    result = gate(repo, "commits", "--run", "sh check.sh")
-    assert result.returncode == 1
-    assert sha in result.stdout and "tests/test_app.py" in result.stdout
-
-
-def test_commits_allow_a_fix_commit_that_only_adds_test_lines(tmp_path):
-    repo = make_repo(tmp_path)
-    commit(repo, "test(T1): adds", {"tests/test_app.py": "t\n"})
-    commit(repo, "feat(T1): adds", {"app.py": "good\n"})
-    commit(repo, "fix: finding", {"tests/test_app.py": "t\nmore\n"})
-    assert gate(repo, "commits", "--run", "sh check.sh").returncode == 0
-
-
-def test_commits_fail_when_a_fix_round_test_edit_is_not_red(tmp_path):
-    repo = make_repo(tmp_path)
-    commit(repo, "test(T1): adds", {"tests/test_app.py": "t\n"})
-    commit(repo, "feat(T1): adds", {"app.py": "good\n"})
-    sha = commit(repo, "test(review): reword", {"tests/test_app.py": "t2\n"})
-    result = gate(repo, "commits", "--run", "sh check.sh")
-    assert result.returncode == 1
-    assert sha in result.stdout and "not red" in result.stdout
-
-
-def test_commits_pass_when_a_fix_round_test_edit_is_red(tmp_path):
-    repo = make_repo(tmp_path)
-    commit(repo, "test(T1): adds", {"tests/test_app.py": "t\n"})
-    commit(repo, "feat(T1): adds", {"app.py": "good\n"})
-    commit(repo, "test(review): stricter", {"tests/test_app.py": "t2\n", "check.sh": "grep -q better app.py\n"})
-    commit(repo, "fix(review): stricter", {"app.py": "good better\n"})
-    result = gate(repo, "commits", "--run", "sh check.sh")
-    assert result.returncode == 0, result.stdout
+    assert gate(repo, "sessions").returncode == 0
 
 
 # evals: a plugin/ change needs a recorded eval pass at the current hash

@@ -7,30 +7,35 @@ load: on-demand
 
 # AFK run
 
-After you approve `DESIGN.md`, `/kairyn:build <task>` runs `afk.py`. It works in a git worktree on the branch `kairyn/<task>` with no user turns. The script decides each step by exit codes, not by what the agent says.
+After you approve `DESIGN.md`, `/kairyn:build <task>` runs `afk.py`. It works in a worktree on `kairyn/<task>` with no user turns. Exit codes decide each step, not what the agent says.
 
 ## Set up `.kairyn/afk.yml` first
 - `gates:` in order, security last. Exit 0 passes. An empty command is `not set`: never a pass. The `testing` gate needs a command.
 - `checks:` an optional AI check per gate, for what no command can judge. It runs after its gate command passes.
-- `limits:` cost caps per stage and per run, and minutes per stage.
+- `limits:` cost caps per stage and run, and minutes per stage.
 - `approval:` glob patterns for high-risk paths, such as `**/migrations/**`.
 - `escape_hatches:` regex patterns for added lines that turn off a check, such as `# noqa`.
 
 ## What the run does
-1. Readiness: the `testing` gate has a command, set gates pass on the base commit, no uncommitted code.
-2. Build: one fresh `claude -p` per slice `T<n>`, in `after:` order. Each slice needs a `test(T<n>)` commit where its done command fails, then a `feat(T<n>)` commit where it passes.
-3. A read-only reviewer reads the diff and the flags: an edited test file, an added escape hatch. Its findings get one fix round.
-4. Push and one pull request, if the repo has an `origin` remote and `gh`.
-5. Gates, then a `REVIEW.md` session. `REVIEW.md` goes on the pull request.
+1. Readiness: `testing` has a command, set gates pass on the base, nothing uncommitted.
+2. Build: a fresh `claude -p` per slice `T<n>`, in `after:` order. Each needs a `test(T<n>)` commit where its done command fails, then a `feat(T<n>)` commit where it passes.
+3. A read-only reviewer reads the diff and flags (edited tests, added escape hatches). Its findings get one fix round.
+4. Push and a pull request, given an `origin` remote and `gh`.
+5. Review gates, gates, then a `REVIEW.md` session that goes on the pull request.
+
+## Review gates
+Before `gates:`, afk.py checks the commits after the base:
+- `design`: `DESIGN.md` names each changed file (a backticked path, `dir/` or glob) and new `hooks.json` event. Not the task folder or `.kairyn/learnings.md`.
+- `commits`: no `feat` commit changes a test or fixture. A later test edit is a red `test(...)` commit.
 
 ## Code in a child repo
-The tasks stay in the home repo, the code goes to a child: list it under `repos:` in `afk.yml` with `path:` and `gates:`. Design writes `repo: <name>` in `STATE.md`.
+Tasks stay in the home repo, code goes to a child: list it under `repos:` with `path:` and `gates:`. Design writes `repo: <name>` in `STATE.md`.
 - Sessions, done commands and gates run in a `kairyn/<task>` checkout of the child repo.
 - Each repo gets a pull request. Approve merges the child, then the home.
 
 ## Pitfalls
 - `--max-budget-usd` is a soft cap: a session stops after the turn that passes it.
-- A user's `PreToolUse` hook can rewrite Bash commands, so the reviewer's Bash allowlist stops matching.
+- A user's `PreToolUse` hook can rewrite Bash commands; then the reviewer's Bash allowlist stops matching.
 
 ## Where it stops
 Each stop sets `status: blocked` and logs why in `STATE.md`:
@@ -38,10 +43,8 @@ Each stop sets `status: blocked` and logs why in `STATE.md`:
 - a slice marked `(approval)`, or a changed path that matches `approval:` with no approval;
 - the merge decision, the one planned stop.
 
-Fix the cause on the `kairyn/<task>` branch, then run `/kairyn:build <task>` again. It sets `status: in-progress` and resumes at `stage:` in `STATE.md`. A pending merge decision does not resume.
-
-The task folder can be uncommitted in the main checkout: the run copies it to `kairyn/<task>` and commits it there. Keep the main checkout off `kairyn/<task>`: git cannot check out one branch twice, and the run prints `BLOCKED:`.
+Fix the cause on `kairyn/<task>`, then run `/kairyn:build <task>` again: it resumes at `stage:`, but not at a pending merge decision. An uncommitted task folder is committed to `kairyn/<task>`. Keep the main checkout off that branch, or the run prints `BLOCKED:`.
 
 ## Approve
 - A slice: `/kairyn:build <task> approve T<n> "<words>"`.
-- The merge: read the diff and `REVIEW.md`, then `/kairyn:review <task> approve "<words>"` or `reject "<reason>"`. Approve merges the pull request with a merge commit. If the merge fails, fix the cause and run approve again: it keeps the `Decision:` line.
+- The merge: read the diff and `REVIEW.md`, then `/kairyn:review <task> approve "<words>"` or `reject "<reason>"`. Approve merges the pull request with a merge commit. Approve again retries a failed merge.

@@ -16,7 +16,10 @@ slice `T<n>` and per stage, each with a fresh context.
     BUILD.md gets the SHAs and exit codes. Then the script lists flags (a later commit that edits a
     test file, an added line that matches `escape_hatches:`), and a read-only reviewer session reads
     the diff. Findings get one fix round. If a finding stays or a done command fails, the run blocks.
-  - gates: each command in .kairyn/afk.yml `gates:`, in order, security last. The exit code decides.
+  - gates: first the built-in review gates, which read the commits after the base: `design` (each changed
+    file and each new hooks.json event is named in DESIGN.md) and `commits` (a feat commit changes no test
+    or fixture; a later commit that changes a test line is a test(...) commit where the testing gate fails).
+    Then each command in .kairyn/afk.yml `gates:`, in order, security last. The exit code decides.
     An empty command is `not set`, never a pass. A gate with a `checks:` entry then gets a read-only
     session that prints PASS or FAIL: <why>. GATES.md gets one row per gate.
   - review: one session writes REVIEW.md with `Decision: pending`. The run then stops for the human.
@@ -219,6 +222,24 @@ DIFF_LIMIT = 60000
 def escape_patterns(config: dict) -> list:
     """The `escape_hatches:` regex list of afk.yml, or the defaults when it has none."""
     return list(config.get("escape_hatches") or DEFAULT_ESCAPES)
+
+
+_GREEN_PAIR = re.compile(r"(test|feat)\(T\d+\)")
+REVIEW_GATES = ("design", "commits")
+DESIGN_ALLOW = (".kairyn/learnings.md",)
+
+
+def is_test(path: str) -> bool:
+    """A test or fixture by its path: a tests/, test/, fixtures/ or __tests__/ folder, test_*, *_test.*, *.test.*, *.spec.*."""
+    parts = path.split("/")
+    return bool({"tests", "test", "fixtures", "__tests__"} & set(parts[:-1])) or parts[-1].startswith("test_") or \
+        bool(re.search(r"(_test|\.test|\.spec)\.", parts[-1]))
+
+
+def design_names(text: str, path: str) -> bool:
+    """DESIGN.md names the path in backticks: the path, a folder `dir/` above it, or a glob that matches it."""
+    return any(path == n or (n.endswith("/") and path.startswith(n)) or ("*" in n and fnmatch.fnmatch(path, n))
+               for n in re.findall(r"`([^`\s]+)`", text))
 
 
 def now() -> str:
@@ -457,6 +478,61 @@ class Run:
         finally:
             subprocess.run(["git", "-C", str(self.code_root), "worktree", "remove", "--force", str(check)], capture_output=True)
 
+    def code_commits(self) -> list:
+        """(sha, label) of each commit after the base, oldest first, without afk.py's own kairyn(...) commits."""
+        lines = git(self.code, "log", "--reverse", "--format=%h %s", f"{self.base()}..HEAD").splitlines()
+        return [(sha, subject.split(":", 1)[0]) for sha, subject in (c.split(" ", 1) for c in lines)
+                if not subject.startswith("kairyn(")]
+
+    def edits(self, sha: str, path: str) -> bool:
+        """True when the commit changes or removes a line of the file. Adding lines is fine."""
+        return any(line.startswith("-") and not line.startswith("---")
+                   for line in git(self.code, "show", "-U0", "--format=", sha, "--", path).splitlines())
+
+    def gate_design(self) -> list:
+        """Review gate: each changed file and each new hooks.json event is named in DESIGN.md."""
+        text = (self.folder / "DESIGN.md").read_text() if (self.folder / "DESIGN.md").is_file() else ""
+        own, base = f"docs/tasks/{self.task}/", self.base()
+        changed = [p for p in git(self.code, "diff", "--name-only", f"{base}..HEAD").splitlines()
+                   if not p.startswith(own) and p not in DESIGN_ALLOW]
+        problems = [f"`{p}` changed, but DESIGN.md does not name it" for p in changed if not design_names(text, p)]
+        for path in (p for p in changed if p.endswith("hooks.json")):
+            def events(rev: str) -> set:
+                raw = subprocess.run(["git", "-C", str(self.code), "show", f"{rev}:{path}"],
+                                     capture_output=True, text=True).stdout
+                try:
+                    return set(json.loads(raw).get("hooks") or {}) if raw.strip() else set()
+                except (ValueError, AttributeError):
+                    return set()
+            for event in sorted(events("HEAD") - events(base)):
+                if not re.search(rf"\b{re.escape(event)}\b", text):
+                    problems.append(f"hook event `{event}` added to `{path}`, but DESIGN.md does not name it")
+        return problems
+
+    def gate_commits(self) -> list:
+        """Review gate: a feat commit changes no test or fixture. A later commit that changes a test line is a
+        test(...) commit where the testing gate fails (red). A test file: one a test(...) commit touched, or is_test()."""
+        problems, tests = [], set()
+        testing = str(self.gate_list().get("testing") or "")
+        for sha, label in self.code_commits():
+            files = git(self.code, "show", "--name-only", "--format=", sha).splitlines()
+            if label.startswith("test("):
+                tests.update(files)
+            if label.startswith("feat"):
+                problems += [f"{sha} {label} changes the test file `{f}`: a green commit changes no test"
+                             for f in files if f in tests or is_test(f)]
+                continue
+            if _GREEN_PAIR.fullmatch(label):
+                continue
+            edited = [f for f in files if (f in tests or is_test(f)) and self.edits(sha, f)]
+            if edited and not label.startswith("test"):
+                problems += [f"{sha} {label} edits the test file `{f}` in the fix round: edit it in a test commit "
+                             "that is red" for f in edited]
+            elif edited and testing and self.run_at(sha, testing, f"at the red check of {sha}") == 0:
+                problems.append(f"{sha} {label} edits {', '.join(f'`{f}`' for f in edited)} but is not red: "
+                                f"`{testing}` passes there")
+        return problems
+
     def config(self) -> dict:
         path = self.wt / ".kairyn" / "afk.yml"
         return parse_afk(path.read_text()) if path.is_file() else {}
@@ -660,6 +736,11 @@ class Run:
         path = self.folder / "GATES.md"
         rows = []
         try:
+            for name in REVIEW_GATES:   # built in: they read the commits, so they need no command in afk.yml
+                problems = getattr(self, f"gate_{name}")()
+                rows.append(f"| {name} | {'fail' if problems else 'pass'} | {1 if problems else 0} | built in |")
+                if problems:
+                    raise Blocked(f"gate {name} failed: " + "; ".join(problems))
             for name, command in gates.items():
                 if not command:
                     rows.append(f"| {name} | not set | - | - |")

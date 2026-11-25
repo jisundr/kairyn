@@ -78,6 +78,8 @@ def test_run_resumes_a_blocked_task(repo):
     assert front(task_file(repo, "STATE.md"), "status") == "blocked"
     wt = base.worktree(repo)   # the person fixes the cause on the task branch
     (wt / ".kairyn" / "afk.yml").write_text(f"gates:\n  testing: {base.GOOD_GATE}\n")
+    design = wt / "docs" / "tasks" / TASK / "DESIGN.md"   # the design gate needs each changed file named
+    design.write_text(design.read_text() + "\nThe fix also sets `.kairyn/afk.yml`.\n")
     git(wt, "commit", "-qam", "set the testing gate")
     second = run(repo, "run", TASK)
     assert second.returncode == 0, second.stdout + second.stderr
