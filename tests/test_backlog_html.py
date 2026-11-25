@@ -209,3 +209,10 @@ def test_page_follows_the_system_theme_and_fits_a_phone(tmp_path):
     assert "@media (prefers-color-scheme: dark)" in html
     assert 'name="viewport" content="width=device-width' in html
     assert "@media (max-width:560px)" in html
+
+
+def test_relative_links_resolve_from_the_page_in_kairyn(tmp_path):
+    root = make_repo(tmp_path, {"20261125053013-a.md": idea(extra="[Task](../tasks/2026-11-25-x/) and [T](TRIAGE.md#next).")})
+    body = page_data(render_html(root))[0]["body_html"]
+    assert '<a href="../docs/backlog/../tasks/2026-11-25-x/">Task</a>' in body
+    assert '<a href="../docs/backlog/TRIAGE.md#next">T</a>' in body
