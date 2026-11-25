@@ -16,13 +16,13 @@ Optional: run it before `requirements` on a vague or solution-first request. `/k
 ## Steps
 1. Get timestamps from `date` (see `_template.md`, Time). For a topic, create the task folder and `STATE.md` as `requirements` step 1 does.
 2. Read the repo before each question. Never ask what a file answers.
-3. Ask for the problem before any solution. Challenge each vague term: "faster" asks how fast, for whom.
+3. Ask for the problem before any solution. A named solution ("a cache") is a guess: ask if it fits the problem better than other fixes. Challenge each vague term: "faster" asks how fast, for whom.
 4. Ask one question per message, then wait: `grill: in-progress`, `stage: grill`, `status: blocked`. Follow each branch of the decision tree. End each message with:
    `**Q<n>:** <one question>`
    `**Recommended:** <answer>, because <reason>.`
    Give one answer, based on the repo or earlier answers. Mark a guessed number `(guess)`.
 5. After each answer, write it to `CONCEPT.md` as `D<n>`. Then ask about a new open branch.
-6. When no branch is open or the user says stop, restate the concept in at most 5 sentences. Ask the user to approve it. A stop is not approval.
+6. When no branch is open or the user says stop, restate the concept in at most 5 sentences and set `grill: done`. Ask the user to approve it. A stop is not approval.
 
 ## Output
 `CONCEPT.md` in the task folder: fill `.kairyn/templates/CONCEPT.md`. Keep its four `##` sections.
