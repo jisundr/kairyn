@@ -366,3 +366,71 @@ def test_catchup_reads_the_host_log(tmp_path):
                             text=True, env=env)
     assert result.returncode == 0 and "server unreachable" in result.stdout and "Monitor" in result.stdout
     assert json.loads((down / ".session" / "watch.json").read_text())["line"] == 2
+
+
+# --- T5: docs and eval ----------------------------------------------------------------------------------
+
+MILESTONE_DOCS = ("plugin/harness/.harness/workflows/milestones.md", ".harness/workflows/milestones.md")
+
+
+def _asserts():
+    import importlib.util
+    from helpers import ROOT
+    spec = importlib.util.spec_from_file_location("kairyn_asserts", ROOT / "evals" / "promptfoo" / "asserts.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_milestone_docs_have_valid_headers():
+    from harness_docs import doc_problems, read_meta
+    from helpers import ROOT
+    for rel in MILESTONE_DOCS:
+        path = ROOT / rel
+        assert path.is_file(), rel
+        assert doc_problems(path, read_meta(path)) == [], rel
+        assert "milestones.yml" in path.read_text(), rel
+
+
+def test_shipped_milestone_doc_is_installed_and_indexed():
+    from kairyn_files import owner_of
+    assert owner_of(".harness/workflows/milestones.md") == "plugin"
+    for index in (PLUGIN / "harness" / "CLAUDE.block.md", PLUGIN / "harness" / ".harness" / "README.md"):
+        assert "workflows/milestones.md" in index.read_text(), index
+
+
+def test_milestones_eval_names_its_dependencies_scenario_and_asserts():
+    import yaml
+    from helpers import ROOT
+    config_path = ROOT / "evals" / "promptfoo" / "milestones.yaml"
+    text = config_path.read_text()
+    depends = text.splitlines()[0]
+    for dep in ("plugin/scripts/milestones.py", "plugin/hooks/hooks.json"):
+        assert dep in depends
+    config = yaml.safe_load(text)
+    provider = (ROOT / "evals" / "promptfoo" / "provider.py").read_text()
+    asserts = _asserts()
+    for test in config["tests"]:
+        scenario = test["vars"]["scenario"]
+        assert f"def {scenario}(" in provider and re.search(rf"\b{scenario}\b", provider.split("SCENARIOS = ")[1])
+        for check in test["assert"]:
+            assert callable(getattr(asserts, check["value"].split(":")[-1]))
+            assert check["metric"] in test["metadata"]["min_pass_rate"]
+
+
+def test_starts_monitor_passes_only_for_a_monitor_on_milestones_watch():
+    asserts = _asserts()
+    watch = {"name": "Monitor", "input": {"command": 'python3 "/p/scripts/milestones.py" watch --root "/r"'}}
+    assert asserts.starts_monitor(json.dumps({"tools": [watch]}), {})["pass"]
+    bash = {"name": "Bash", "input": {"command": 'python3 "/p/scripts/milestones.py" watch --root "/r"'}}
+    assert not asserts.starts_monitor(json.dumps({"tools": [bash]}), {})["pass"]
+    other = {"name": "Monitor", "input": {"command": "tail -f app.log"}}
+    assert not asserts.starts_monitor(json.dumps({"tools": [other]}), {})["pass"]
+    assert not asserts.starts_monitor(json.dumps({"tools": []}), {})["pass"]
+
+
+def test_reports_missed_passes_only_when_the_reply_names_each_missed_milestone():
+    asserts = _asserts()
+    evidence = {"missed": ["tests exit 0", "push exit 0"]}
+    assert asserts.reports_missed(json.dumps({**evidence, "reply": "Missed: tests exit 0, push exit 0."}), {})["pass"]
+    assert not asserts.reports_missed(json.dumps({**evidence, "reply": "Missed: tests exit 0."}), {})["pass"]
