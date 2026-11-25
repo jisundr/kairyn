@@ -1,17 +1,17 @@
 ---
 task: 2026-11-25-skill-names-clash
 title: Skill names clash with built-in commands
-stage: gates
+stage: review
 status: in-progress
 stages:
   grill: done
   requirements: done
   design: done
   build: done
-  gates: pending
+  gates: done
   review: pending
 created: 2026-11-24T23:13:12Z
-updated: 2026-11-25T00:03:00Z
+updated: 2026-11-25T00:04:24Z
 ---
 
 # Log
@@ -37,3 +37,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-24T23:58:16Z [build] Build started.
 2026-11-25T00:02:53Z [build] All 4 tasks green. Cost $1.84. Next: gates.
 2026-11-25T00:03:00Z [build] Pushed kairyn/2026-11-25-skill-names-clash. Pull request: https://github.com/jisundr/kairyn/pull/24
+2026-11-25T00:04:24Z [gates] 2 pass, 4 not set: accessibility, performance, observability, security. Cost $0.00. Next: review.
