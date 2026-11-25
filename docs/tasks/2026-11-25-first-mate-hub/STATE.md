@@ -1,18 +1,18 @@
 ---
 task: 2026-11-25-first-mate-hub
 title: A first-mate hub that supervises AFK runs
-stage: build
+stage: gates
 status: in-progress
 backlog: docs/backlog/20261125003014-first-mate-hub.md
 stages:
   grill: done
   requirements: done
   design: done
-  build: in-progress
+  build: done
   gates: pending
   review: pending
 created: 2026-11-25T01:02:34Z
-updated: 2026-11-25T02:25:26Z
+updated: 2026-11-25T02:31:35Z
 ---
 
 # Log
@@ -44,3 +44,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-25T02:21:28Z [build] Blocked: the reviewer still objects after the fix round: The last acceptance criterion (a real cerna-hq session with tests, a push and a post gives one message per milestone and 0 "status?" asks; R1, R2, R8) still has no automated test. DESIGN.md makes it a manual check by Jayson. The eval `milestones.yaml` only checks that a session names 2 missed lines and starts `milestones.py watch` with Monitor. The criterion stays unproven until Jayson runs that session and counts the "status?" asks in its transcript.; The diff still shows prose changes outside DESIGN.md in `CLAUDE.md` and `.harness/README.md`:
 2026-11-25T02:25:22Z [build] Resumed by hand after the user chose option A: this repo's milestones notes moved into afk-run.md, CLAUDE.md and .harness/README.md restored to main, DESIGN.md marks AC13 as a check after merge. Status set to in-progress by hand (afk.py does not resume a blocked task).
 2026-11-25T02:25:26Z [build] Build started.
+2026-11-25T02:31:35Z [build] All 5 tasks green. Cost $1.70. Next: gates.
