@@ -511,8 +511,14 @@ def design_test_plan_problems(design: str, requirements: str) -> list[str]:
     return problems
 
 
+def _looks_like_branch(path: str, repo: Path) -> bool:
+    """`feat/x`: no file extension, no trailing slash, and its first folder is not in the repo."""
+    return "." not in path.rsplit("/", 1)[-1] and not path.endswith("/") and not (repo / path.split("/")[0]).exists()
+
+
 def grounded_problems(text: str, repo: Path) -> list[str]:
-    """Each path in backticks exists in the repo, unless it carries `(new)` somewhere in the text."""
+    """Each path in backticks exists in the repo, unless it carries `(new)` somewhere in the text.
+    A branch name such as `feat/x` is not a path."""
     found = _PATH.findall(text)
     created = {path for path, new in found if new}
     problems = []
@@ -520,6 +526,8 @@ def grounded_problems(text: str, repo: Path) -> list[str]:
         if path in created or path.startswith("/") or "://" in path or any(c in path for c in "<>*{}$"):
             continue
         path = re.sub(r":\d+(-\d+)?$", "", path)
+        if _looks_like_branch(path, repo):
+            continue
         if not (repo / path).exists() and f"names a missing file: {path}" not in problems:
             problems.append(f"names a missing file: {path}")
     return problems
