@@ -23,8 +23,9 @@ slice `T<n>` and per stage, each with a fresh context.
 A failed check sets `status: blocked` and logs why. Running `run` again sets `status: in-progress` and
 resumes at `stage:`, except at the merge decision. A task folder only in the main checkout (not committed)
 is copied to the worktree and committed on kairyn/<task>. A branch checked out elsewhere prints BLOCKED:.
-Readiness (before the first stage): the `testing` gate has a command, each set gate exits 0 on the
-base commit, and the worktree has no tracked changes. Limits (afk.yml `limits:`, else DEFAULT_LIMITS):
+Readiness (before the first stage): the `testing` gate has a command, the `security` gate has one when
+REQUIREMENTS.md names a security need, each set gate exits 0 on the base commit, and the worktree has no
+tracked changes. Limits (afk.yml `limits:`, else DEFAULT_LIMITS):
 a cost cap per stage and per run, from each session's `total_cost_usd`, and minutes per stage. A limit
 blocks the run with the limit, the cost so far and the last failed command.
 Approval gates: build stops before a slice marked `(approval)` in DESIGN.md until BUILD.md has
@@ -76,6 +77,16 @@ _AFTER = re.compile(r"\bafter:\s*((?:T\d+\s*,?\s*)+)")
 _DONE = re.compile(r"\bDone:\s*`([^`]+)`")
 _DECISION_PENDING = re.compile(r"^Decision: pending\s*$", re.M)
 _CI_FAILED = ("FAILURE", "ERROR", "CANCELLED", "TIMED_OUT", "ACTION_REQUIRED", "STARTUP_FAILURE")
+_SECURITY_NEED = re.compile(r"^- Security:[ \t]*(.*)$", re.M | re.I)
+
+
+def security_need(requirements: Path) -> str:
+    """The `- Security:` line of REQUIREMENTS.md's Non-functional needs: '' when empty, a placeholder or not applicable."""
+    if not requirements.is_file():
+        return ""
+    m = _SECURITY_NEED.search(requirements.read_text())
+    need = m.group(1).strip() if m else ""
+    return "" if not need or need.startswith("<") or need.lower().startswith("not applicable") else need
 
 
 class Task(NamedTuple):
@@ -698,6 +709,9 @@ class Run:
             raise Blocked(f"readiness: the security gate must be last in {where}, so it checks the final code")
         if not gates.get("testing"):
             raise Blocked(f"readiness: the testing gate in {where} has no command")
+        if not gates.get("security") and security_need(self.folder / "REQUIREMENTS.md"):
+            raise Blocked(f"readiness: REQUIREMENTS.md names a security need, but the security gate in {where} "
+                          "has no command; set one that runs the task's own check")
         for name, command in gates.items():
             if command:
                 code = self.command(str(command), self.code, f"at gate {name} on the base commit")
