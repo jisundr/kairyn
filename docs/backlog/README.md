@@ -4,7 +4,7 @@ Options, not commitments. Each file is one idea, named `<YYYYMMDDHHMMSS>-<slug>.
 
 ## Triage (2026-11-25, Jayson De los Reyes)
 
-Next: [Skill name clash](20261124224610-skill-names-clash.md). Parked ideas are reviewed by 2027-02-23. Closed ideas are in `CHANGELOG.md`. Inbox: `grep -lx 'status: inbox' docs/backlog/*.md`.
+Next: none. Parked ideas are reviewed by 2027-02-23. Closed ideas are in `CHANGELOG.md`. Inbox: `grep -lx 'status: inbox' docs/backlog/*.md`.
 
 | Idea | Appetite |
 |---|---|
@@ -20,7 +20,6 @@ Next: [Skill name clash](20261124224610-skill-names-clash.md). Parked ideas are 
 | [Loose content tests](20261124014415-lint-loose-content-tests.md) | small |
 | [Branch names in checks](20261124014415-grounded-branch-names.md) | small |
 | [AFK-run doc pitfalls](20261124014415-max-budget-soft-cap.md) | small |
-| [Skill name clash](20261124224610-skill-names-clash.md) | small |
 | [Approve retry and merge push](20261124224601-approve-retry.md) | small |
 | [Flag fix-round stage edits](20261124224601-flag-fix-round-stage-edits.md) | small |
 | [Split the design stage](20261124224354-split-design-stage.md) | small |

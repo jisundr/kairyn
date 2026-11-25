@@ -8,3 +8,4 @@
 - Retro emptied learnings.md: four rules moved to testing-and-evals.md and pull-request.md; ten ideas went to the backlog inbox. (2026-11-24-retro) (2026-11-24-retro)
 - A home-repo task can build its code in one child repo: list it under repos: in afk.yml; approve merges the child, then the home. (2026-11-24-multi-repo; closes multi-repo)
 - Retro emptied learnings.md: two rules moved to testing-and-evals.md and change-a-stage.md; three ideas went to the backlog inbox. (2026-11-25-retro)
+- The exit stage is now close, so a bare /exit no longer clashes; /kairyn:upgrade removes unedited files a release no longer ships. (2026-11-25-skill-names-clash; closes skill-names-clash)
