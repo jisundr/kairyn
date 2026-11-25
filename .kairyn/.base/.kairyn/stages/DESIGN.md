@@ -26,11 +26,8 @@ purpose: Choose an approach for approved requirements and plan its tasks and tes
 - [ ] Each acceptance criterion has a task and a test.
 
 ## State update
-Update `STATE.md` as in `_template.md`. Set `design` to `done`. All code in one `afk.yml` `repos:` entry: add `repo: <name>`. Then:
-- Until the user approves in chat: keep `Approval: pending`, set `status: blocked`, ask for approval. Never approve for the user.
-- A reply that neither approves nor names an option changes nothing.
+Update `STATE.md` as in `_template.md`. Set `design` to `done`. All code in one `afk.yml` `repos:` entry: add `repo: <name>`. Then follow `_approval.md`. Next stage: `stage: build`.
 - The user names another option: rewrite `DESIGN.md` for it and keep `Approval: pending`.
-- When the user approves: replace the line with `Approval: <git config user.name>, <timestamp>, "<the user's words>"`. Set `stage: build`, `status: in-progress`.
 
 ## Learnings
 Append repo learnings to `.kairyn/learnings.md`.

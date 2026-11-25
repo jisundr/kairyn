@@ -22,7 +22,7 @@
     },
     ".kairyn/stages/DESIGN.md": {
       "owner": "repo",
-      "sha256": "4a7404d9c912c21d3b0171822c8ebc45dd35a78752e01fc9b33727d631d2b05e"
+      "sha256": "65b2ba7b051d89d93b49b6679bc1c20f68f90007589fb9303df9a9229d3c8102"
     },
     ".kairyn/stages/GATES.md": {
       "owner": "repo",
@@ -38,7 +38,7 @@
     },
     ".kairyn/stages/REQUIREMENTS.md": {
       "owner": "repo",
-      "sha256": "3cf14b8608276d9c1157a4c219b2820769a26fd6bef0859ce545a93b1bdc83e4"
+      "sha256": "e7308c76f92930b9afb6740805432a87f7d7a512f34096deeb1a45d763c5199f"
     },
     ".kairyn/stages/RETRO.md": {
       "owner": "repo",
@@ -47,6 +47,10 @@
     ".kairyn/stages/REVIEW.md": {
       "owner": "repo",
       "sha256": "9ef975f2573371fa621a252064e250d2d72147dd7a8237fa03f09fdd34a81aea"
+    },
+    ".kairyn/stages/_approval.md": {
+      "owner": "repo",
+      "sha256": "8a2cdbfadfba5b1476e9131e163584341e0ad4c121a414cc1a7ad7e81647f0f0"
     },
     ".kairyn/stages/_template.md": {
       "owner": "repo",
@@ -93,5 +97,5 @@
       "sha256": "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
     }
   },
-  "version": "0.12.6"
+  "version": "0.12.7"
 }

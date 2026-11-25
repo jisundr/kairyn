@@ -6,7 +6,7 @@ import yaml
 
 from helpers import PLUGIN, ROOT, VERIFY, split_front_matter
 
-STAGES = sorted(p for p in (PLUGIN / "stages").glob("*.md") if p.name != "_template.md")
+STAGES = sorted(p for p in (PLUGIN / "stages").glob("*.md") if not p.name.startswith("_"))
 REQUIRED_SECTIONS = ["## Inputs", "## Steps", "## Output", "## Exit criteria", "## State update", "## Learnings"]
 
 

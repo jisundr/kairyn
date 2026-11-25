@@ -11,5 +11,5 @@ Closed ideas are in `CHANGELOG.md`. Inbox: `grep -lx 'status: inbox' docs/backlo
 | [Approval gates hand off](20261123004258-approval-handoff.md) | big |
 | [Grill in rounds](20261122105739-grill-rounds.md) | big |
 | [Backlog stage](20261122080759-backlog-stage.md) | big |
-| [Split the design stage](20261124224354-split-design-stage.md) | big; Next: `_approval.md` slice is small |
+| [Split the design stage](20261124224354-split-design-stage.md) | big |
 | [Ship the review gates](20261125053013-ship-review-gates.md) | big |

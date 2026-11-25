@@ -1,4 +1,4 @@
-# depends: plugin/skills/requirements/SKILL.md, plugin/stages/REQUIREMENTS.md, plugin/stages/_template.md, plugin/templates/STATE.md, plugin/templates/REQUIREMENTS.md, plugin/scripts/init.sh, plugin/harness/**/*
+# depends: plugin/skills/requirements/SKILL.md, plugin/stages/REQUIREMENTS.md, plugin/stages/_template.md, plugin/stages/_approval.md, plugin/templates/STATE.md, plugin/templates/REQUIREMENTS.md, plugin/scripts/init.sh, plugin/harness/**/*
 description: requirements stage
 prompts: ["{{scenario}}"]
 providers:
