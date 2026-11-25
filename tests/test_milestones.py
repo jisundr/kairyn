@@ -84,3 +84,130 @@ def test_watch_local_prints_new_line_and_stores_number(tmp_path):
     finally:
         proc.kill()
         proc.wait()
+
+
+# --- T2: hooks write milestones ----------------------------------------------------------------
+
+
+def hook(repo, payload, env=None, cwd=None):
+    """Run `milestones.py hook` the way hooks.json does: the hook JSON on stdin, --root the project."""
+    base = {k: v for k, v in __import__("os").environ.items() if k not in ("TMUX_PANE", "KAIRYN_MILESTONES")}
+    return subprocess.run([sys.executable, str(SCRIPT), "hook", "--root", str(repo)], input=json.dumps(payload),
+                          capture_output=True, text=True, env={**base, **(env or {})}, cwd=cwd or repo)
+
+
+def bash_event(command, code, event="PostToolUse"):
+    payload = {"hook_event_name": event, "tool_name": "Bash", "tool_input": {"command": command}}
+    if event == "PostToolUse":
+        payload["tool_response"] = {"stdout": "ok", "stderr": "", "exitCode": code}
+    else:
+        payload["error"] = f"Exit code {code}\nFAILED tests/test_x.py"
+    return payload
+
+
+def log_lines(repo):
+    log = repo / ".session" / "milestones.log"
+    return log.read_text().splitlines() if log.exists() else []
+
+
+def writer(tmp_path, extra=""):
+    repo = git_repo(tmp_path / "cerna-home")
+    settings(repo, "write:\n  log: .session/milestones.log\n" + extra)
+    return repo
+
+
+def test_post_tool_use_writes_label_and_exit_only_on_match(tmp_path):
+    repo = writer(tmp_path)
+    secret = "uv run pytest -k token=s3cr3t"
+    assert hook(repo, bash_event(secret, 1, "PostToolUseFailure")).returncode == 0
+    assert hook(repo, bash_event("ls -la", 0)).returncode == 0
+    lines = log_lines(repo)
+    assert len(lines) == 1, lines
+    m = LINE.match(lines[0])
+    assert m and m.group("text") == "tests exit 1", lines
+    assert "s3cr3t" not in lines[0] and "pytest" not in lines[0]
+    assert hook(repo, bash_event("git push -u origin main", 0)).returncode == 0
+    assert LINE.match(log_lines(repo)[-1]).group("text") == "push exit 0"
+
+
+def test_custom_patterns_replace_the_defaults(tmp_path):
+    repo = writer(tmp_path, "  patterns:\n    deploy: '^make deploy'\n")
+    hook(repo, bash_event("make deploy prod", 2, "PostToolUseFailure"))
+    hook(repo, bash_event("uv run pytest", 0))
+    assert [LINE.match(x).group("text") for x in log_lines(repo)] == ["deploy exit 2"]
+
+
+def test_stop_writes_first_line_cut_to_200(tmp_path):
+    repo = writer(tmp_path)
+    message = "A" * 250 + "\nSecond line.\nThird line."
+    assert hook(repo, {"hook_event_name": "Stop", "last_assistant_message": message}).returncode == 0
+    lines = log_lines(repo)
+    assert len(lines) == 1 and LINE.match(lines[0]).group("text") == "A" * 200
+
+
+def test_stop_reads_the_transcript_when_no_message_is_given(tmp_path):
+    repo = writer(tmp_path)
+    transcript = tmp_path / "t.jsonl"
+    rows = [{"type": "user", "message": {"role": "user", "content": "go"}},
+            {"type": "assistant", "message": {"role": "assistant", "content": [{"type": "text", "text": "Old."}]}},
+            {"type": "assistant", "message": {"role": "assistant", "content": [
+                {"type": "text", "text": "Pushed the branch.\nDetails follow."}]}},
+            {"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "name": "Bash"}]}}]
+    transcript.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    hook(repo, {"hook_event_name": "Stop", "transcript_path": str(transcript)})
+    assert [LINE.match(x).group("text") for x in log_lines(repo)] == ["Pushed the branch."]
+
+
+def test_run_tag_from_tmux_pane_or_repo_folder(tmp_path):
+    repo = writer(tmp_path)
+    tmux = tmp_path / "tmux"
+    tmux.write_text("#!/bin/sh\necho \"$@\" > \"$(dirname \"$0\")/tmux.args\"\necho 'server:2'\n")
+    tmux.chmod(0o755)
+    hook(repo, bash_event("npm test", 0))
+    hook(repo, bash_event("npm test", 0), env={"TMUX_PANE": "%7", "KAIRYN_TMUX": str(tmux)})
+    tags = [LINE.match(x).group("tag") for x in log_lines(repo)]
+    assert tags == ["cerna-home", "server:2 cerna-home"], tags
+    assert "%7" in (tmp_path / "tmux.args").read_text()
+
+
+def test_hook_writes_nothing_when_off_or_unset(tmp_path):
+    repo = writer(tmp_path)
+    assert hook(repo, bash_event("npm test", 1, "PostToolUseFailure"), env={"KAIRYN_MILESTONES": "off"}).returncode == 0
+    assert log_lines(repo) == []
+    bare = git_repo(tmp_path / "bare")
+    assert hook(bare, bash_event("npm test", 0)).returncode == 0
+    assert not (bare / ".session").exists()
+    assert hook(repo, {"hook_event_name": "Stop"}, cwd=repo).returncode == 0   # bad input never fails a turn
+    assert subprocess.run([sys.executable, str(SCRIPT), "hook", "--root", str(repo)], input="not json",
+                          capture_output=True, text=True).returncode == 0
+
+
+def test_default_patterns_match_common_commands():
+    import milestones
+    expected = {"uv run pytest": "tests", "npm test": "tests", "git push": "push", "gh pr comment 12 -b hi": "comment",
+                "ruff check .": "lint"}
+    for command, label in expected.items():
+        assert milestones.match(milestones.DEFAULT_PATTERNS, command) == label, command
+    assert milestones.match(milestones.DEFAULT_PATTERNS, "ls -la") is None
+
+
+def test_hooks_finish_within_one_second(tmp_path):
+    repo = writer(tmp_path)
+    (repo / ".session").mkdir()
+    (repo / ".session" / ".gitignore").write_text("*\n")
+    (repo / ".session" / "milestones.log").write_text("2026-11-25T00:00:00Z [x] old\n" * 10000)
+    for payload in (bash_event("uv run pytest", 0), {"hook_event_name": "Stop", "last_assistant_message": "Done."}):
+        start = time.monotonic()
+        assert hook(repo, payload).returncode == 0
+        assert time.monotonic() - start < 1.0
+    assert len(log_lines(repo)) == 10002
+
+
+def test_plugin_registers_the_milestone_hooks():
+    hooks = json.loads((PLUGIN / "hooks" / "hooks.json").read_text())["hooks"]
+    for event in ("PostToolUse", "PostToolUseFailure", "Stop"):
+        commands = [h["command"] for group in hooks[event] for h in group["hooks"]]
+        assert any("scripts/milestones.py\" hook" in c and "CLAUDE_PROJECT_DIR" in c for c in commands), event
+    for event in ("PostToolUse", "PostToolUseFailure"):
+        assert all(group.get("matcher") == "Bash" for group in hooks[event]
+                   if any("milestones.py" in h["command"] for h in group["hooks"]))

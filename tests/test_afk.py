@@ -679,3 +679,9 @@ def test_afk_update_mirrors_state_log_line(repo):
 def test_afk_writes_no_milestones_without_settings(repo):
     assert run(repo, "run", TASK).returncode == 0
     assert not (repo / ".session").exists()
+
+
+def test_afk_sessions_run_with_milestone_hooks_off(repo):
+    assert run(repo, "run", TASK).returncode == 0
+    seen = (repo.parent / "stub.log.env").read_text().splitlines()
+    assert seen and set(seen) == {"KAIRYN_MILESTONES=off"}, seen
