@@ -13,8 +13,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
-from helpers import PLUGIN, ROOT, make_good_repo, run_verify  # noqa: E402
-from runner import (RETRO_ENTRIES, make_retro_repo, run_retro, run_retro_approval, DESIGN_REQUEST, DESIGN_REQUIREMENTS, make_design_repo, run_design, run_design_approval, DESIGN_CHILD_REQUIREMENTS, make_design_child_repo, run_design_child, CLOSE_DECISION_TASK, CLOSE_PLAIN_TASK, make_close_repo, run_close, APPROVAL_WORDS, APPROVER, CONCEPT_DECISIONS, CONCEPT_TASK, CONCEPT_VALUE, GRILL_APP, GRILL_README, GRILL_REQUEST, MODEL, REQUEST, RESULTS, ROUTING_REQUEST,  # noqa: E402
+from helpers import PLUGIN, ROOT, make_good_repo, run_verify
+from runner import (RETRO_ENTRIES, make_retro_repo, run_retro, run_retro_approval, DESIGN_REQUEST, DESIGN_REQUIREMENTS, make_design_repo, run_design, run_design_approval, DESIGN_CHILD_REQUIREMENTS, make_design_child_repo, run_design_child, CLOSE_DECISION_TASK, CLOSE_PLAIN_TASK, make_close_repo, run_close, APPROVAL_WORDS, APPROVER, CONCEPT_DECISIONS, CONCEPT_TASK, CONCEPT_VALUE, GRILL_APP, GRILL_README, GRILL_REQUEST, MODEL, REQUEST, RESULTS, ROUTING_REQUEST,
                     claude, make_concept_repo, make_grill_repo, make_routing_repo, new_repo, run_grill, run_model_routing,
                     run_requirements, run_requirements_approval, run_requirements_with_concept, set_cost_dir, tree_hash)
 
@@ -252,7 +252,7 @@ def upgrade_conflict(work: Path, scenario: str, run_id: str) -> dict:
 
 
 # --- AFK stages: afk.py runs them; the asserts read its files and the session transcripts --------------
-from afk_fixtures import make_afk_repo, make_built_branch, run_afk  # noqa: E402
+from afk_fixtures import make_afk_repo, make_built_branch, run_afk
 
 PASSING_CHECK = "observability: textstats.py reads a --lines option and prints the number of lines from stdin.\n"
 FAILING_CHECK = "observability: Each function in textstats.py has a docstring.\n"
