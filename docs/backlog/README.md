@@ -13,4 +13,3 @@ Closed ideas are in `CHANGELOG.md`. Inbox: `grep -lx 'status: inbox' docs/backlo
 | [Backlog stage](20261122080759-backlog-stage.md) | big |
 | [Split the design stage](20261124224354-split-design-stage.md) | big |
 | [Ship the review gates](20261125053013-ship-review-gates.md) | big; slices 1-2 (`design`, `commits`, `sessions`) in afk.py |
-| [Backlog page](20261125113903-backlog-page.md) | small (proposed; owner to confirm); task 2026-11-25-backlog-page |
