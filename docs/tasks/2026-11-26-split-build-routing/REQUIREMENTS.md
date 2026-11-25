@@ -44,7 +44,7 @@ State only what a source states. Else: not applicable: <reason>.
 | A3 | assumption | The `MODELS` keys are `build-tests` and `build-code`, in place of `build`. | design |
 | K1 | risk | Haiku fails the close or retro eval gate. Then that skill stays on Sonnet, and the owner decides. | Jayson De los Reyes |
 | K2 | risk | Two sessions per slice read the context twice. The `build` eval cost shows the net saving. | design |
-| K3 | risk | `plugin/harness/.harness/workflows/afk-run.md` is at 800 of 800 tokens, and `.harness/workflows/afk-run.md` at 989 of 1000. R11 needs cuts, not a higher budget. | design |
+| K3 | risk | Both `afk-run.md` docs are at their budget (800/800, 989/1000). R11 needs cuts. | design |
 | K4 | risk | Sonnet fails to make a test green more often, and blocks more runs. The `build` eval shows it. | design |
 | K5 | dependency | The owner approves these requirements, then the design, before build. | Jayson De los Reyes |
 
@@ -63,4 +63,4 @@ State only what a source states. Else: not applicable: <reason>.
 ## Open questions and answers
 - None. The owner confirms A1 and A2 with the approval.
 
-Approval: pending
+Approval: Jayson De los Reyes, 2026-11-25T22:38:44Z, "approved as written, including A1 and A2"
