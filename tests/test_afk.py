@@ -781,3 +781,26 @@ def test_resume_with_red_test_runs_only_the_code_part(repo):
     assert build_parts(repo) == [("T1", "code", "sonnet"), ("T2", "tests", "opus"), ("T2", "code", "sonnet")]
     subjects = git(worktree(repo), "log", "--format=%s").splitlines()
     assert sum(s.startswith("test(T1)") for s in subjects) == 1
+
+
+def test_afk_roles_run_on_their_models(repo):
+    """R7, R8, A2: the fix round on Sonnet, the reviewer Opus, a gate check Sonnet, the review Opus."""
+    set_afk(repo, f"gates:\n  testing: {GOOD_GATE}\n  observability: true\n"
+                  "checks:\n  observability: Each new code path writes a log line.\n")
+    assert run(repo, "run", TASK, mode="review_fixable").returncode == 0
+
+    def models(test):
+        return {m for p, m in sessions(repo) if test(p)}
+    assert models(lambda p: "fix round" in p and "reviewer" not in p) == {"sonnet"}
+    assert models(lambda p: "reviewer" in p) == {"opus"}
+    assert models(lambda p: "gate check" in p) == {"sonnet"}
+    assert models(lambda p: "REVIEW.md" in p and "reviewer" not in p) == {"opus"}
+
+
+def test_each_afk_role_has_a_model():
+    """D5: a role with no MODELS entry would run on a silent default."""
+    import afk
+    roles = set(re.findall(r'self\.claude\(\s*"([\w-]+)"', AFK.read_text()))
+    assert roles and roles <= set(afk.MODELS), f"roles with no model: {roles - set(afk.MODELS)}"
+    assert afk.MODELS == {"build-tests": "opus", "build-code": "sonnet", "reviewer": "opus", "gate": "sonnet",
+                          "review": "opus"}
