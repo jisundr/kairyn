@@ -70,7 +70,7 @@
     },
     ".kairyn/templates/GATES.md": {
       "owner": "plugin",
-      "sha256": "2d086970f135575122dbb5f34869ae357a232df57aa70e84326b41c2a41e6f94"
+      "sha256": "1b4efb33a131f21cff75116cd224f6315fec8c2d616423b0d2746b1b00f15c74"
     },
     ".kairyn/templates/REQUIREMENTS.md": {
       "owner": "plugin",
@@ -97,5 +97,5 @@
       "sha256": "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
     }
   },
-  "version": "0.15.0"
+  "version": "0.16.0"
 }

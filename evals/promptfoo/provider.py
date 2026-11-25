@@ -62,6 +62,34 @@ def check_broken_doc(work: Path, scenario: str, run_id: str) -> dict:
     return {"reply": reply}
 
 
+BACKLOG_IDEA = """---
+title: Search is slow
+appetite: small batch
+date: 2026-11-25
+---
+
+# Search is slow
+
+**Problem (confirmed by Jo, 2026-11-25):** Search takes 4 s on a large repo.
+
+# Log
+
+- 2026-11-25T05:30:13Z [capture] Created.
+"""
+
+
+def backlog_page(work: Path, scenario: str, run_id: str) -> dict:
+    repo = make_good_repo(new_repo(work, "repo"))
+    (repo / "docs" / "backlog").mkdir(parents=True, exist_ok=True)
+    (repo / "docs" / "backlog" / "20261125053013-slow-search.md").write_text(BACKLOG_IDEA)
+    reply = claude("/kairyn:backlog", repo, plugin=True, model=MODEL)
+    _save(scenario, run_id, "reply.txt", reply)
+    page = repo / ".kairyn" / "backlog.html"
+    gitignore = repo / ".gitignore"
+    return {"reply": reply, "page_exists": page.exists() and "Search is slow" in page.read_text(),
+            "ignored": gitignore.exists() and ".kairyn/backlog.html" in gitignore.read_text().splitlines()}
+
+
 def requirements(work: Path, scenario: str, run_id: str) -> dict:
     repo = make_good_repo(new_repo(work, "repo"))
     run = run_requirements(repo)
@@ -335,7 +363,7 @@ def milestones_catchup(work: Path, scenario: str, run_id: str) -> dict:
     return out
 
 
-SCENARIOS = {f.__name__: f for f in (afk_build, afk_gates_pass, afk_gates_fail, afk_review, init_fresh, init_keeps_edits, init_keeps_claude_md, check_broken_doc, requirements,
+SCENARIOS = {f.__name__: f for f in (afk_build, afk_gates_pass, afk_gates_fail, afk_review, init_fresh, init_keeps_edits, init_keeps_claude_md, check_broken_doc, backlog_page, requirements,
                                      model_routing, grill, requirements_with_concept, requirements_approval,
                                      upgrade_conflict, close_decision, close_plain, design, design_approval, design_child_repo,
                                      retro, retro_approval, close_retro, milestones_catchup)}

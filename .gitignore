@@ -10,3 +10,4 @@ evals/results/
 # Claude Code local files
 .claude/settings.local.json
 .claude/worktrees/
+.kairyn/backlog.html

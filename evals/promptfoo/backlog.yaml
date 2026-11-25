@@ -1,0 +1,11 @@
+# depends: plugin/commands/backlog.md, plugin/scripts/backlog_html.py
+description: kairyn backlog
+prompts: ["{{scenario}}"]
+providers:
+  - id: file://provider.py
+    config: {timeout: 600000}
+tests:
+  - description: /kairyn:backlog builds the page, git-ignores it and names its path
+    vars: {scenario: backlog_page}
+    metadata: {min_pass_rate: {backlog_page_built: 0.9}}
+    assert: [{type: python, value: "file://asserts.py:backlog_page_built", metric: backlog_page_built}]

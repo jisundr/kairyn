@@ -44,6 +44,14 @@ def names_broken_doc(output, context):
     return _result([] if "running-stages" in json.loads(output)["reply"] else ["reply did not name running-stages.md"])
 
 
+def backlog_page_built(output, context):
+    d = json.loads(output)
+    problems = [] if ".kairyn/backlog.html" in d["reply"] else ["reply did not name .kairyn/backlog.html"]
+    problems += [] if d["page_exists"] else ["no page with the idea title at .kairyn/backlog.html"]
+    problems += [] if d["ignored"] else [".gitignore has no .kairyn/backlog.html line"]
+    return _result(problems)
+
+
 def _run(d: dict) -> dict:
     parse = lambda s: datetime.strptime(s, TS_FORMAT).replace(tzinfo=timezone.utc)
     return {"task": Path(d["task_path"]) if d["task_path"] else None, "start": parse(d["start"]), "end": parse(d["end"])}
