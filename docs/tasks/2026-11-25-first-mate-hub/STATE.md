@@ -2,7 +2,7 @@
 task: 2026-11-25-first-mate-hub
 title: A first-mate hub that supervises AFK runs
 stage: review
-status: done
+status: blocked
 backlog: docs/backlog/20261125003014-first-mate-hub.md
 stages:
   grill: done
@@ -12,7 +12,7 @@ stages:
   gates: done
   review: done
 created: 2026-11-25T01:02:34Z
-updated: 2026-11-25T03:38:07Z
+updated: 2026-11-25T03:38:15Z
 ---
 
 # Log
@@ -55,3 +55,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-25T03:34:07Z [review] Review started.
 2026-11-25T03:36:31Z [review] Cost $0.61. Waiting for the merge decision: /kairyn:review 2026-11-25-first-mate-hub approve or reject.
 2026-11-25T03:38:07Z [review] Approved by Jayson De los Reyes.
+2026-11-25T03:38:15Z [review] Blocked: gh pr merge failed: GraphQL: 6 of 6 required status checks are expected. (mergePullRequest)
