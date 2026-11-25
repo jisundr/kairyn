@@ -656,3 +656,26 @@ def test_slice8_diff_is_cut_when_long():
     import afk
     text = afk.clip_diff("x" * 100, limit=40, stat=" a.py | 2 +-")
     assert len(text) < 200 and "a.py" in text and "cut" in text
+
+
+# --- first-mate hub T1: afk.py mirrors STATE.md log lines to the milestone log ------------------
+
+
+def test_afk_update_mirrors_state_log_line(repo):
+    (repo / ".kairyn" / "milestones.yml").write_text("write:\n  log: .session/milestones.log\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "milestones on")
+    assert run(repo, "run", TASK).returncode == 0
+    log = (repo / ".session" / "milestones.log").read_text().splitlines()
+    state = task_file(repo, "STATE.md")
+    assert re.search(rf"^\S+Z \[{TASK}\] build: Build started\.$", log[0]), log
+    for line in log:
+        stamp, _, rest = line.partition(f" [{TASK}] ")
+        stage, _, text = rest.partition(": ")
+        assert f"{stamp} [{stage}] {text}" in state, line
+    assert len(log) == len(re.findall(r"^\S+Z \[(?:build|gates|review)\] ", state, re.M)), "one milestone per afk.py log line"
+
+
+def test_afk_writes_no_milestones_without_settings(repo):
+    assert run(repo, "run", TASK).returncode == 0
+    assert not (repo / ".session").exists()
