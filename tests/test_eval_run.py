@@ -127,6 +127,23 @@ def test_requirements_judge_sees_the_instruction_the_run_got():
     assert NO_QUESTIONS in asserts.RUBRIC.format(request="r", doc="d")
 
 
+def test_design_judge_sees_the_fixtures_afk_yml(tmp_path, monkeypatch):
+    """judge-sees-afk-yml: a design that states a fact from .kairyn/afk.yml has not invented it."""
+    import importlib.util
+    from helpers import ROOT
+    spec = importlib.util.spec_from_file_location("kairyn_asserts", ROOT / "evals" / "promptfoo" / "asserts.py")
+    asserts = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(asserts)
+    before = tmp_path / "repo-before"
+    (before / ".kairyn").mkdir(parents=True)
+    (before / ".kairyn" / "afk.yml").write_text("gates:\n  testing: pytest -q marker-7\n")
+    seen = []
+    monkeypatch.setattr(asserts, "_judge", lambda prompt, run_dir, criteria: seen.append(prompt) or {"pass": True})
+    output = {"doc": "# Design", "requirements": "R", "repo_before": str(before), "task_path": str(tmp_path / "t")}
+    asserts.design_quality(__import__("json").dumps(output), {})
+    assert "pytest -q marker-7" in seen[0]
+
+
 def _gate_line(passes, total, minimum):
     from run import gate
     return gate({("t", "m"): {"passes": passes, "total": total, "min": minimum, "reasons": []}})[0]

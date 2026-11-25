@@ -384,6 +384,10 @@ Besides kairyn setup files, the repo has these three files, and the design could
 ```
 {orders}
 ```
+`.kairyn/afk.yml`, the AFK run settings the design could read:
+```yaml
+{afk}
+```
 The approved REQUIREMENTS.md the design was told to read:
 {requirements}
 The designer was told: "{no_questions}" Recorded assumptions are allowed; facts stated as true must come from the inputs.
@@ -404,8 +408,10 @@ def design_quality(output, context):
     if not d["doc"]:
         return _result(["no DESIGN.md to grade"])
     from runner import DESIGN_ORDERS, GRILL_APP, GRILL_README
+    afk = Path(d["repo_before"]) / ".kairyn" / "afk.yml"
     prompt = DESIGN_RUBRIC.format(app=GRILL_APP, readme=GRILL_README, orders=DESIGN_ORDERS, no_questions=NO_QUESTIONS,
-                                  requirements=d["requirements"], doc=d["doc"])
+                                  afk=afk.read_text() if afk.is_file() else "(none)", requirements=d["requirements"],
+                                  doc=d["doc"])
     return _judge(prompt, Path(d["task_path"]).parent, ("no_invention", "sound"))
 
 

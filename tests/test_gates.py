@@ -191,6 +191,17 @@ def test_evals_pass_with_a_pass_at_the_current_hash(tmp_path):
     assert result.returncode == 0, result.stdout
 
 
+def test_evals_fail_when_a_fix_round_edits_stage_text_after_the_eval_pass(tmp_path):
+    """flag-fix-round-stage-edits: a fix round can change stage text that no eval ran on."""
+    repo = eval_repo(tmp_path)
+    record = repo / "evals" / "results" / "passed.json"
+    record.parent.mkdir(parents=True)
+    record.write_text(json.dumps({"init": deps_hash(repo, ["plugin/stages/*.md"])}))
+    commit(repo, "fix: shorter step", {"plugin/stages/A.md": "c\n"})
+    result = gate(repo, "evals")
+    assert result.returncode == 1 and "`init`" in result.stdout, result.stdout
+
+
 def test_evals_read_the_record_of_the_main_checkout_from_a_worktree(tmp_path):
     repo = eval_repo(tmp_path)
     wt = tmp_path / "wt"
