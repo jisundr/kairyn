@@ -55,6 +55,73 @@ def test_session_folder_gets_gitignore(tmp_path):
     assert ".session" not in status, status
 
 
+def test_store_replaces_watch_json_atomically(tmp_path, monkeypatch):
+    """store() writes a temp file in the same folder, then os.replace: a reader never sees watch.json empty.
+    CI run 45548893428 read it between write_text's truncate and its write (JSONDecodeError)."""
+    import milestones
+    state = tmp_path / "watch.json"
+    milestones.store(state, 1)
+    seen = []
+    real_replace = milestones.os.replace
+
+    def spy(src, dst):
+        seen.append((Path(src), Path(dst), json.loads(Path(dst).read_text())))   # the reader's view mid-write
+        real_replace(src, dst)
+
+    monkeypatch.setattr(milestones.os, "replace", spy)
+    milestones.store(state, 2, "2026-11-25T00:00:00Z")
+    assert len(seen) == 1, "store() must write through os.replace"
+    src, dst, during = seen[0]
+    assert dst == state and src.parent == state.parent and src != state
+    assert during == {"line": 1}
+    assert json.loads(state.read_text()) == {"line": 2, "unreachable": "2026-11-25T00:00:00Z"}
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["watch.json"], "no temp file left behind"
+
+
+def test_store_leaves_no_temp_file_when_the_write_fails(tmp_path, monkeypatch):
+    import milestones
+    state = tmp_path / "watch.json"
+    milestones.store(state, 1)
+
+    def boom(src, dst):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(milestones.os, "replace", boom)
+    try:
+        milestones.store(state, 2)
+    except OSError:
+        pass
+    else:
+        raise AssertionError("the error must reach the caller")
+    assert json.loads(state.read_text()) == {"line": 1}
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["watch.json"]
+
+
+def test_reader_never_sees_watch_json_empty_while_store_runs(tmp_path):
+    """A second process polls watch.json (the test above, catchup in a new session) while watch stores."""
+    import milestones
+    state = tmp_path / "watch.json"
+    milestones.store(state, 0)
+    bad, stop = [], threading.Event()
+
+    def reader():
+        while not stop.is_set():
+            try:
+                json.loads(state.read_text())
+            except ValueError as e:
+                bad.append(repr(e))
+
+    t = threading.Thread(target=reader, daemon=True)
+    t.start()
+    try:
+        for n in range(3000):
+            milestones.store(state, n)
+    finally:
+        stop.set()
+        t.join(timeout=5)
+    assert not bad, f"{len(bad)} reads saw a partial file, first: {bad[0]}"
+
+
 def test_watch_local_prints_new_line_and_stores_number(tmp_path):
     import milestones
     home = git_repo(tmp_path / "home")
