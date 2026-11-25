@@ -416,6 +416,19 @@ def grill_problems(run: dict, stopped: bool = True) -> list[str]:
     return problems
 
 
+def handoff_problems(reply: str, task: Path, next_stage: str) -> list[str]:
+    """After approval the stage ends by telling the user the exact next command and does not run it (ADR 0004):
+    a chained skill runs on the caller's model, so the user types `/kairyn:<next stage> <task folder>`."""
+    command = f"/kairyn:{next_stage}"
+    problems = [] if command in reply else [f"last message does not name {command}"]
+    if task.name not in reply:
+        problems.append(f"last message does not name the task folder {task.name}")
+    output = task / f"{next_stage.upper()}.md"
+    if output.exists():
+        problems.append(f"{output.name} written: the stage ran {next_stage} instead of handing off")
+    return problems
+
+
 def concept_use_problems(task: Path, decisions: tuple[str, ...], must_mention: str) -> list[str]:
     """requirements ran on a task that grill already shaped: same folder, decisions cited, decided value kept."""
     req = task / "REQUIREMENTS.md"

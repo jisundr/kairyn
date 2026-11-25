@@ -92,7 +92,7 @@ def grill(work: Path, scenario: str, run_id: str) -> dict:
     repo = make_grill_repo(make_good_repo(new_repo(work, "repo")))
     run = run_grill(repo)
     out = {"request": GRILL_REQUEST, "repo_files": {"report.py": GRILL_APP, "README.md": GRILL_README},
-           "turns": run["turns"], "task_path": None, "doc": "",
+           "turns": run["turns"], "task_path": None, "doc": "", "approver": APPROVER, "words": APPROVAL_WORDS,
            "start": run["start"].strftime(TS), "end": run["end"].strftime(TS)}
     run_dir = RESULTS / scenario / run_id
     run_dir.mkdir(parents=True, exist_ok=True)

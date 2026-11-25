@@ -1,7 +1,7 @@
 """Pure checks for the grill stage (evals/checks.py)."""
 from datetime import datetime, timedelta, timezone
 
-from checks import (TS_FORMAT, concept_use_problems, decision_labels, grill_problems, grill_reply_problems, section_items, state_fields)
+from checks import (TS_FORMAT, concept_use_problems, decision_labels, grill_problems, grill_reply_problems, handoff_problems, section_items, state_fields)
 
 TASK = "2026-11-22-report-cache"
 NOW = datetime.now(timezone.utc).replace(microsecond=0)
@@ -128,3 +128,22 @@ def test_concept_use(tmp_path):
     assert concept_use_problems(tmp_path, ("D1", "D2", "D3"), "1 second") == []
     assert concept_use_problems(tmp_path, ("D1", "D4"), "2 seconds") == ["D4 not cited", "decided value '2 seconds' missing"]
     assert concept_use_problems(tmp_path / "none", ("D1",), "x") == ["REQUIREMENTS.md missing in the grill task folder"]
+
+
+def test_handoff_names_the_command_and_folder(tmp_path):
+    task = tmp_path / TASK
+    task.mkdir()
+    reply = f"Concept approved. Next, type `/kairyn:requirements docs/tasks/{TASK}/`."
+    assert handoff_problems(reply, task, "requirements") == []
+    assert handoff_problems("Concept approved. Run requirements next.", task, "requirements") == [
+        "last message does not name /kairyn:requirements", f"last message does not name the task folder {TASK}"]
+
+
+def test_handoff_fails_when_the_stage_ran_the_next_one(tmp_path):
+    """A chained skill runs on the caller's model (ADR 0004), so the stage must not run the next stage itself."""
+    task = tmp_path / TASK
+    task.mkdir()
+    (task / "REQUIREMENTS.md").write_text("# Requirements\n")
+    reply = f"Type `/kairyn:requirements docs/tasks/{TASK}/`."
+    assert handoff_problems(reply, task, "requirements") == [
+        "REQUIREMENTS.md written: the stage ran requirements instead of handing off"]

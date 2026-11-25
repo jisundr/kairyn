@@ -227,8 +227,9 @@ if __name__ == "__main__":
 '''
 GRILL_README = ("# Order report\n\n`python report.py` prints the total per customer from `data/orders.csv`.\n"
                 "The CSV is exported once a night and has about 5 million rows. Python 3.12, no dependencies.\n")
-# Scripted user: accept twice, then stop. Each answer fits any question, so the run does not depend on wording.
-GRILL_ANSWERS = ["I accept your recommendation.", "I accept your recommendation.", "Stop the interview now."]
+# Scripted user: accept twice, stop, then approve the concept. Each answer fits any question, so the run does not
+# depend on wording. The stop is not approval: only "Approved." records the line and hands off to requirements.
+GRILL_ANSWERS = ["I accept your recommendation.", "I accept your recommendation.", "Stop the interview now.", "Approved."]
 
 
 def make_grill_repo(repo: Path) -> Path:
@@ -243,7 +244,8 @@ def task_dirs(repo: Path) -> list[Path]:
 
 
 def run_grill(repo: Path) -> dict:
-    """Four turns: /kairyn:grill, two accepted recommendations, a stop. Snapshots STATE.md and CONCEPT.md per turn."""
+    """Five turns: /kairyn:grill, two accepted recommendations, a stop, an approval. Snapshots STATE.md and CONCEPT.md."""
+    subprocess.run(["git", "config", "user.name", APPROVER], cwd=repo, check=True)
     turns = []
 
     def snapshot(i, reply):

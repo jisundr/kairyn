@@ -11,7 +11,7 @@ sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
 from checks import (build_row_problems, flags_problems, gate_row, new_constraint_lines, output_header_problems, red_before_code_problems, review_gap_problems,
                     retro_applied_problems, retro_proposal_problems, retro_scope_problems, chosen_option, design_run_problems, design_test_plan_problems, grounded_problems, options_problems,
-                    close_problems, TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_reply_problems, next_routing_stage,
+                    close_problems, TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_reply_problems, handoff_problems, next_routing_stage,
                     open_decisions, routing_problems, state_fields, ste_problems, ste_rate, structural_problems,
                     traceability_problems, repo_line_problems)
 from runner import JUDGE_MODEL, NO_QUESTIONS, claude
@@ -200,8 +200,10 @@ def reports_conflict(output, context):
 
 
 # --- grill stage -------------------------------------------------------------------
-# Turns: 0 = /kairyn:grill <request>, 1 and 2 = "I accept your recommendation.", 3 = "Stop the interview now."
+# Turns: 0 = /kairyn:grill <request>, 1 and 2 = "I accept your recommendation.", 3 = "Stop the interview now.",
+# 4 = "Approved."
 QUESTION_TURNS = (0, 1, 2)
+STOP_TURN, GRILL_TURNS = 3, 5
 
 
 def grill_well_formed(output, context):
@@ -213,7 +215,7 @@ def one_question(output, context):
     turns = json.loads(output)["turns"]
     problems = [f"turn {i}: {p}" for i in QUESTION_TURNS if i < len(turns)
                 for p in grill_reply_problems(turns[i]["reply"])]
-    return _result(problems if len(turns) == 4 else problems + [f"{len(turns)} turns, expected 4"])
+    return _result(problems if len(turns) == GRILL_TURNS else problems + [f"{len(turns)} turns, expected {GRILL_TURNS}"])
 
 
 def records_answers(output, context):
@@ -241,20 +243,58 @@ def waits_for_answer(output, context):
     return _result(problems)
 
 
+def grill_approval_gate(output, context):
+    """A stop is not approval: the concept waits with 'Approval: pending', grill done, the task blocked on the user."""
+    turns = json.loads(output)["turns"]
+    if len(turns) <= STOP_TURN:
+        return _result([f"only {len(turns)} turns"])
+    f = state_fields(turns[STOP_TURN]["state"])
+    problems = [f"turn {STOP_TURN}: {p}" for p in approval_problems(turns[STOP_TURN]["concept"], approved=False)]
+    if (f.get("stages", {}).get("grill"), f.get("status")) != ("done", "blocked"):
+        problems.append(f"turn {STOP_TURN}: grill {f.get('stages', {}).get('grill')!r} status {f.get('status')!r}, "
+                        "expected done blocked")
+    return _result(problems)
+
+
+def grill_records_approval(output, context):
+    """After 'Approved.', CONCEPT.md names the approver, the time and the words."""
+    d = json.loads(output)
+    if not d["task_path"]:
+        return _result(["no task folder"])
+    run = _run(d)
+    return _result(approval_problems(d["doc"], approved=True, name=d["approver"], words=d["words"],
+                                     start=run["start"], end=run["end"]))
+
+
 def hands_off(output, context):
-    """The last message names the task folder, so the user can run requirements on it."""
+    """The last message tells the user to type /kairyn:requirements <task folder>, and grill does not run it."""
     d = json.loads(output)
     if not d["task_path"] or not d["turns"]:
         return _result(["no task folder or no turns"])
-    folder = Path(d["task_path"]).name
-    return _result([] if folder in d["turns"][-1]["reply"] else [f"last message does not name {folder}"])
+    return _result(handoff_problems(d["turns"][-1]["reply"], Path(d["task_path"]), "requirements"))
+
+
+def hands_off_design(output, context):
+    """After approval, requirements tells the user to type /kairyn:design <task folder>, and does not run it."""
+    d = json.loads(output)
+    if not d["task_path"] or not d["turns"]:
+        return _result(["no task folder or no turns"])
+    return _result(handoff_problems(d["turns"][-1]["reply"], Path(d["task_path"]), "design"))
+
+
+def hands_off_build(output, context):
+    """After approval, design tells the user to type /kairyn:build <task folder>, and does not run it."""
+    d, turns = _design_turns(output)
+    if not d.get("task_path") or not turns:
+        return _result(["no task folder or no turns"])
+    return _result(handoff_problems(turns[-1]["reply"], Path(d["task_path"]), "build"))
 
 
 GRILL_RUBRIC = """You are grading an interview an agent ran with a user before any spec existed.
 The user's request: "{request}"
 The repo the agent could read:
 {repo}
-The user's replies were scripted: "I accept your recommendation." twice, then "Stop the interview now."
+The user's replies were scripted: "I accept your recommendation." twice, "Stop the interview now.", then "Approved."
 
 The agent's messages, in order:
 {replies}
