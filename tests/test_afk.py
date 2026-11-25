@@ -758,3 +758,13 @@ def test_build_runs_tests_part_on_opus_then_code_part_on_sonnet(repo):
                     if line.split(" ", 1)[1].startswith("test(T1)"))
     assert "`test(T1)`" in prompts[0] and "feat(T1)" not in prompts[0]
     assert "`feat(T1)`" in prompts[1] and test_sha in prompts[1]
+
+
+@pytest.mark.parametrize("mode,reason", [("no_test", r"no test\(T1\) commit"), ("no_red", r"red check passed")])
+def test_build_blocks_before_code_without_a_red_test(repo, mode, reason):
+    """R2, R3: no test commit, or a test that passes at it, blocks before the Sonnet code part."""
+    assert run(repo, "run", TASK, mode=mode).returncode == 0
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("build", "blocked")
+    assert re.search(rf"\[build\] Blocked: T1: {reason}", state)
+    assert build_parts(repo) == [("T1", "tests", "opus")], "no code part runs"
