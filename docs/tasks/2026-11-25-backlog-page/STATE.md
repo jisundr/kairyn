@@ -1,17 +1,17 @@
 ---
 task: 2026-11-25-backlog-page
 title: A visual index of the backlog
-stage: build
-status: blocked
+stage: review
+status: in-progress
 stages:
   grill: done
   requirements: done
   design: done
   build: done
   gates: pending
-  review: pending
+  review: done
 created: 2026-11-25T11:39:03Z
-updated: 2026-11-25T12:35:41Z
+updated: 2026-11-25T12:44:46Z
 ---
 
 # Log
@@ -28,3 +28,9 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-25T12:03:58Z [build] T1-T5 green by hand, test-first; uv run pytest 734 passed. Evals run 20261125T115929Z PASS: backlog, check, init, upgrade 10/10 each metric, cost $0.30. AC7 Manual left for the owner. Waiting for the pull request review.
 2026-11-25T12:27:20Z [build] Owner review of the page: R16 overflow found at 390 px (507 px wide). Owner picked UX proposals 1, 2, 3, 5, 6 (not 4; no Learning line, A6 kept). Added T6 to DESIGN.md. Build resumed.
 2026-11-25T12:35:41Z [build] T6 green test-first; uv run pytest 750 passed. Evals run 20261125T123152Z PASS: backlog, check, init 10/10 each metric, cost $0.24 (upgrade unchanged, skipped). AC7 Manual left for the owner. Waiting for the pull request review.
+2026-11-25T12:44:46Z [review] AC7 Manual check run by Jayson De los Reyes in a browser. The AFK gates did not run (hand build); CI and the eval runs stand in.
+2026-11-25T12:44:46Z [review] PR #48 approved by Jayson De los Reyes. Next: merge by the coordinator.
+
+Run AC7: Jayson De los Reyes, 2026-11-25T12:44:46Z, "page looked right in the browser after the readability changes"
+
+Approval: Jayson De los Reyes, 2026-11-25T12:44:46Z, "approved PR #48"
