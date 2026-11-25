@@ -770,6 +770,21 @@ def red_before_code_problems(events: list, code_file: str, test_word: str) -> li
     return [] if red else [f"no failing run of {test_word} before the first edit of {code_file}"]
 
 
+def split_build_problems(tests: list, code: list, code_file: str, test_word: str) -> list[str]:
+    """D3 of task 2026-11-26-split-build-routing: the tests part runs the test red and writes no code;
+    the code part writes the code."""
+    tests_calls, code_calls = _tool_calls(tests), _tool_calls(code)
+    problems = []
+    if any(_writes(name, inp, code_file) for name, inp, _, _ in tests_calls):
+        problems.append(f"the tests part wrote {code_file}")
+    if not any(name == "Bash" and test_word in str(inp.get("command", "")) and (err or _FAILED_RUN.search(text))
+               for name, inp, text, err in tests_calls):
+        problems.append(f"the tests part never ran {test_word} red")
+    if not any(_writes(name, inp, code_file) for name, inp, _, _ in code_calls):
+        problems.append(f"the code part never wrote {code_file}")
+    return problems
+
+
 def build_row_problems(build: str, tid: str = "T1") -> list[str]:
     row = re.search(rf"^\| {tid} \| (\w+) \| (\d+) \| (\w+) \| (\d+) \|", build, re.M)
     if not row:
