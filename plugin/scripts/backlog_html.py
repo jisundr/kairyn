@@ -191,9 +191,30 @@ def render_html(root: Path) -> str:
             .replace("%COUNT%", str(len(ideas))).replace("%DATA%", _script_json(ideas)))
 
 
+class NothingToBuild(Exception):
+    """The repo has no .kairyn/ or no idea files. The message is one line for the user."""
+
+
+def ignore_page(root: Path) -> None:
+    """Add PAGE_PATH to the repo's .gitignore once, creating the file if it is missing."""
+    gitignore = root / ".gitignore"
+    text = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
+    if PAGE_PATH in (line.strip() for line in text.splitlines()):
+        return
+    if text and not text.endswith("\n"):
+        text += "\n"
+    gitignore.write_text(text + PAGE_PATH + "\n", encoding="utf-8")
+
+
 def build(root: Path) -> Path:
+    """Write the page and git-ignore it. Raise NothingToBuild if there is nothing to build."""
+    if not (root / ".kairyn").is_dir():
+        raise NothingToBuild("FAIL: no .kairyn/ here. Run /kairyn:init first.")
+    if not any(IDEA_FILE.match(p.name) for p in (root / BACKLOG).glob("*.md")):
+        raise NothingToBuild(f"FAIL: no idea files in {BACKLOG}/ (named <YYYYMMDDHHMMSS>-<slug>.md).")
     page = root / PAGE_PATH
     page.write_text(render_html(root), encoding="utf-8")
+    ignore_page(root)
     return page
 
 
@@ -204,7 +225,12 @@ def main(argv: list[str]) -> int:
     elif argv:
         print("usage: backlog_html.py [--root DIR]", file=sys.stderr)
         return 2
-    print(build(root))
+    try:
+        page = build(root)
+    except NothingToBuild as e:
+        print(e)
+        return 1
+    print(page)
     return 0
 
 
