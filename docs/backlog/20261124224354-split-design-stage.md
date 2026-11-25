@@ -13,9 +13,9 @@ review_by: 2027-02-23
 
 **Evidence:** Task 2026-11-24-multi-repo, BUILD.md Review 1 and 2, and commit 8152acc that restored the eval-tested text. `DESIGN.md` 498/500, `REQUIREMENTS.md` 495/500, `_template.md` 487/500 tokens. Both stages repeat the same approval rules in "State update".
 
-**Next slice (small):** move the shared approval rules (pending, blocked, never approve for the user, the `Approval:` line format) into a new `plugin/stages/_approval.md`, read like `_template.md` (`init.sh` copies `stages/*`). Frees about 70 tokens in `DESIGN.md` and 50 in `REQUIREMENTS.md`. No new `STATE.md` stage, no `checks.structural_problems` change. Evals: design and requirements. approval-handoff can add grill's gate there.
+**Slice shipped (2026-11-25):** the shared approval rules moved to `plugin/stages/_approval.md` (0.12.7). Tokens: `DESIGN.md` 498 → 420, `REQUIREMENTS.md` 495 → 426, `_approval.md` 132, `_template.md` 487 (no change). No `STATE.md` stage and no `checks.structural_problems` change.
 
-**Notes:** Re-check the budget after the slice. A full split (plan stage and test-plan stage) only if `DESIGN.md` nears 500 again: that touches `STATE.md` stages, `checks.structural_problems` and the design eval.
+**Still open:** the full split (plan stage and test-plan stage). The slice did not make it unnecessary, only not urgent: do it when `DESIGN.md` nears 500 again. It touches `STATE.md` stages, `checks.structural_problems` and the design eval. approval-handoff can add grill's gate to `_approval.md`.
 
 # Log
 
@@ -24,3 +24,4 @@ review_by: 2027-02-23
 - 2026-11-24T23:07:13Z [appetite] Set to small batch. Decided by Jayson De los Reyes.
 - 2026-11-25T08:49:41Z [triage] Kept, problem confirmed. Next: the `_approval.md` slice only. Decided by Jayson De los Reyes.
 - 2026-11-25T08:49:41Z [appetite] Set to big batch (was small) for the full split; the slice is small. Decided by Jayson De los Reyes.
+- 2026-11-25T09:04:42Z [slice] The `_approval.md` slice shipped. The full split stays triaged, big. Done by Claude for Jayson De los Reyes.

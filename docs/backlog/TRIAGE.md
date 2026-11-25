@@ -6,9 +6,9 @@ The index of triaged ideas is [README.md](README.md). Next and Parked were decid
 
 ## Next
 
-The `_approval.md` slice of split-design-stage (small): the shared approval rules of `DESIGN.md` and `REQUIREMENTS.md` move to `plugin/stages/_approval.md`. A `plugin/` change, so the design and requirements evals first. The rest of split-design-stage, grill-rounds and approval-handoff are big and not Next (2026-11-25 triage). tldr-for-long-docs and instruction-file-checks were dropped.
+Empty. The rest of split-design-stage, grill-rounds and approval-handoff are big and not Next (2026-11-25 triage). tldr-for-long-docs and instruction-file-checks were dropped.
 
-The earlier batches shipped: atomic-state-md, the afk.py fixes in #31, the gates and lint rules in #30. ship-review-gates is big and needs shaping first.
+The earlier batches shipped: the `_approval.md` slice of split-design-stage, atomic-state-md, the afk.py fixes in #31, the gates and lint rules in #30. ship-review-gates is big and needs shaping first.
 
 ## Parked
 

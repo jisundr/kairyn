@@ -27,9 +27,7 @@ purpose: Turn a request into approved, testable requirements with acceptance cri
 - [ ] No open questions remain.
 
 ## State update
-Update `STATE.md` as in `_template.md`. Set `requirements` to `done`, then:
-- Until the user approves in chat: keep `Approval: pending`, set `status: blocked`, ask for approval. Other replies are not approval. Never approve for the user.
-- When the user approves: replace the line with `Approval: <git config user.name>, <timestamp>, "<the user's words>"`. Set `stage: design` and `status: in-progress`.
+Update `STATE.md` as in `_template.md`. Set `requirements` to `done`. Then follow `_approval.md`. Next stage: `stage: design`.
 
 ## Learnings
 Append what you learned about the repo to `.kairyn/learnings.md`.
