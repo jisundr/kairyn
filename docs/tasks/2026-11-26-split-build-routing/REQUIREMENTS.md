@@ -33,7 +33,7 @@ Out: a bot or solo switch, or a per-repo or per-run model (D1); a more technical
 State only what a source states. Else: not applicable: <reason>.
 - Accessibility: not applicable: no user interface.
 - Performance: not applicable: no source states a target.
-- Security: not applicable: no new input, secret or permission.
+- Security: not applicable: no new input or secret.
 - Observability: not applicable: no new log.
 
 ## Assumptions, risks and dependencies
