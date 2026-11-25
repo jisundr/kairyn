@@ -86,12 +86,12 @@
     },
     ".kairyn/templates/afk.yml": {
       "owner": "plugin",
-      "sha256": "e40d5f924a4fb007ce24545787fcfb2c4917d3bbf9a58bb01ab393cc2ab109f0"
+      "sha256": "1f22d371583727b444195fb066cb2fe22a9ccf5a0951b97071bc2d8906576a38"
     },
     "CLAUDE.md#kairyn": {
       "owner": "plugin",
       "sha256": "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
     }
   },
-  "version": "0.12.4"
+  "version": "0.12.5"
 }
