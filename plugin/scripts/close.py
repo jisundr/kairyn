@@ -12,7 +12,8 @@ approval line. close deletes:
   - docs/tasks/<task>/
   - docs/backlog files with `status: committed` that link the task
   - docs/backlog files with `status: dropped` that link no task folder that still exists
-and removes their rows from docs/backlog/README.md. Git history keeps every deleted file.
+and removes their rows from docs/backlog/README.md. Git history keeps every deleted file. In a repo
+with no git, close first copies each one to .kairyn/archive/ (tasks/<task>/, backlog/<file>).
 Its last line is `RETRO: learnings.md <used>/<budget>` when learnings.md is past half its
 budget (retro.py): the close stage then runs the retro stage.
 release never pushes: it prints the push command for the user.
@@ -119,11 +120,24 @@ def links_to(root: Path, targets: list[str]) -> list[tuple[str, str]]:
     hits = []
     for path in sorted(root.rglob("*.md")):
         rel = path.relative_to(root).as_posix()
-        if rel.startswith((".git/", "node_modules/")) or rel == CHANGELOG or not path.is_file():
+        if rel.startswith((".git/", "node_modules/", ".kairyn/archive/")) or rel == CHANGELOG or not path.is_file():
             continue
         text = path.read_text(errors="ignore")
         hits += [(rel, t) for t in targets if t in text]
     return hits
+
+
+def in_git(root: Path) -> bool:
+    return git(root, "rev-parse", "--is-inside-work-tree").stdout.strip() == "true"
+
+
+def keep(source: Path, target: Path, root: Path) -> None:
+    """No git history keeps a deleted file: copy it to the archive first."""
+    if target.exists():
+        shutil.rmtree(target) if target.is_dir() else target.unlink()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    (shutil.copytree if source.is_dir() else shutil.copy2)(source, target)
+    print(f"ARCHIVED {target.relative_to(root).as_posix()}{'/' if source.is_dir() else ''}: no git history keeps it")
 
 
 def cmd_close(root: Path, task: str, entry: str) -> int:
@@ -144,10 +158,16 @@ def cmd_close(root: Path, task: str, entry: str) -> int:
         if new != old:
             index.write_text(new)
             print("EDITED docs/backlog/README.md")
+    archive = None if in_git(root) else root / ".kairyn" / "archive"
     for path in gone:
+        if archive:
+            keep(path, archive / "backlog" / path.name, root)
         path.unlink()
         print(f"DELETED {path.relative_to(root).as_posix()}")
-    shutil.rmtree(root / "docs" / "tasks" / task)
+    folder = root / "docs" / "tasks" / task
+    if archive:
+        keep(folder, archive / "tasks" / task, root)
+    shutil.rmtree(folder)
     print(f"DELETED docs/tasks/{task}/")
     for rel, target in links_to(root, [f"tasks/{task}/"] + [p.name for p in gone]):
         print(f"LINK: {rel} still links {target}")

@@ -234,3 +234,26 @@ def test_check_refuses_a_review_task_still_pending(tmp_path):
     make_stage_task(tmp_path, "2026-01-12-loop", "review", "Decision: pending")
     r = run(tmp_path, "check", "2026-01-12-loop")
     assert r.returncode == 1 and "no approval line in REVIEW.md" in r.stdout, r.stdout
+
+
+def test_close_without_git_keeps_a_copy_of_what_it_deletes(tmp_path):
+    """Backlog idea 20261124021640: no git history keeps the folder, so close keeps a copy."""
+    root = tmp_path / "plain"
+    make_task(root)
+    b = root / "docs" / "backlog"
+    b.mkdir(parents=True)
+    (b / "1-linked.md").write_text(backlog("committed", f"Task [{TASK}](../tasks/{TASK}/REQUIREMENTS.md)."))
+    result = run(root, "close", TASK, "--entry", "Added dry runs")
+    assert result.returncode == 0, result.stdout
+    archive = root / ".kairyn" / "archive"
+    assert not (root / "docs" / "tasks" / TASK).exists()
+    assert (archive / "tasks" / TASK / "REQUIREMENTS.md").is_file()
+    assert (archive / "backlog" / "1-linked.md").is_file()
+    assert f"DELETED docs/tasks/{TASK}/" in result.stdout
+    assert f"ARCHIVED .kairyn/archive/tasks/{TASK}/" in result.stdout
+    assert "LINK:" not in result.stdout, "the archive does not count as a link to fix"
+
+
+def test_close_in_git_keeps_no_archive(repo):
+    assert run(repo, "close", TASK, "--entry", "Added dry runs").returncode == 0
+    assert not (repo / ".kairyn" / "archive").exists()
