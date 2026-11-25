@@ -36,6 +36,7 @@ and approve merges the child, then the home. A failed child merge blocks and lea
 A repo with no .kairyn/afk.yml gets one from the template, and the run stops so a person sets it.
 KAIRYN_GH overrides the gh binary (tests use a stub).
 KAIRYN_CLAUDE overrides the claude binary (tests use a stub).
+Milestones: each STATE.md log line also goes to the milestone log of .kairyn/milestones.yml (milestones.py).
 
 Standard library only: consumers run this with a plain python3 (3.9 on macOS).
 """
@@ -51,6 +52,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
+
+import milestones
 
 PLUGIN = Path(__file__).resolve().parent.parent
 AFK_STAGES = ("build", "gates", "review")
@@ -269,7 +272,8 @@ class Run:
         return m.group(1) if m else None
 
     def update(self, at: str, log: str, **fields: str) -> None:
-        """Set front matter fields (stage_status=... sets stages.<stage>), bump `updated`, append a log line."""
+        """Set front matter fields (stage_status=... sets stages.<stage>), bump `updated`, append a log line.
+        The log line also goes to the milestone log, tagged with the task slug, when one is set (R3)."""
         text = self.state()
         for key, value in fields.items():
             if key == "stage_status":
@@ -280,6 +284,7 @@ class Run:
         text = set_front(text, "updated", stamp)
         text = text.rstrip("\n") + f"\n{stamp} [{at}] {log}\n"
         (self.folder / "STATE.md").write_text(text)
+        milestones.write(self.root, self.task, f"{at}: {log}", stamp)
 
     def resolve_repo(self) -> None:
         """R1, R3: `repo: <name>` in STATE.md names the code repo in afk.yml `repos:`. No line: the home repo.
