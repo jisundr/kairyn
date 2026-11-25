@@ -48,4 +48,4 @@ Earlier findings:
 - F5: The fixtures come from one recorded run. The commit message tells how they were recorded, but no script records them again. If Claude Code changes the payload shape, no test or gate finds it.
 - F6: The feat commit `d4c5daf` also changes `tests/fixtures/hooks/post_tool_use_failure.json` (only the `description` text). A green commit must not change test files. This change has no effect on the result.
 
-Decision: pending
+Decision: Jayson De los Reyes, 2026-11-25T03:38:07Z, "approve, merge it"
