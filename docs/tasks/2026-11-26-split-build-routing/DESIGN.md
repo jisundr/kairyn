@@ -53,4 +53,4 @@ Eval plan, 10 runs each, as the selector picks them (`# depends:`). Costs: the l
 | AC9 `/kairyn:check` passes; the three docs name the parts and models | T7 | `/kairyn:check`; `test_afk_docs_name_build_parts` |
 | AC10 pytest, validate, version bump | T7 | `uv run pytest`, `claude plugin validate plugin`, `python3 scripts/check_version_bump.py origin/main` |
 
-Approval: pending
+Approval: Jayson De los Reyes, 2026-11-25T22:41:18Z, "approved DESIGN.md as written"
