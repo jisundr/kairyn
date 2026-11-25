@@ -23,6 +23,15 @@ After you approve `DESIGN.md`, `/kairyn:build <task>` runs `afk.py`. It works in
 4. Push and one pull request, if the repo has an `origin` remote and `gh`.
 5. Gates, then a `REVIEW.md` session. `REVIEW.md` goes on the pull request.
 
+## Code in a child repo
+The tasks stay in the home repo, the code goes to a child: list it under `repos:` in `afk.yml` with `path:` and `gates:`. Design writes `repo: <name>` in `STATE.md`.
+- Sessions, done commands and gates run in a `kairyn/<task>` checkout of the child repo.
+- Each repo gets a pull request. Approve merges the child, then the home.
+
+## Pitfalls
+- `--max-budget-usd` is a soft cap: a session stops after the turn that passes it.
+- A user's `PreToolUse` hook can rewrite Bash commands, so the reviewer's Bash allowlist stops matching.
+
 ## Where it stops
 Each stop sets `status: blocked` and logs why in `STATE.md`:
 - a failed check, a finding left after the fix round, or a limit;

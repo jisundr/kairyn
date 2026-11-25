@@ -13,8 +13,6 @@ Closed ideas are in `CHANGELOG.md`. Inbox: `grep -lx 'status: inbox' docs/backlo
 | [Grill in rounds](20261122105739-grill-rounds.md) | small |
 | [Backlog stage](20261122080759-backlog-stage.md) | big |
 | [Pointer and skill checks](20261122080759-instruction-file-checks.md) | small |
-| [AFK-run doc pitfalls](20261124014415-max-budget-soft-cap.md) | small |
 | [Split the design stage](20261124224354-split-design-stage.md) | small |
-| [Shipped afk-run child repos](20261124224354-shipped-afk-run-child-repos.md) | small |
 | [Logs as bullet lists](20261125014255-logs-as-bullet-lists.md) | small |
 | [Ship the review gates](20261125053013-ship-review-gates.md) | big |
