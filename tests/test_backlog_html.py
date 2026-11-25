@@ -84,3 +84,55 @@ def test_command_runs_the_script_and_reports_the_path():
     text = (PLUGIN / "commands" / "backlog.md").read_text()
     assert "${CLAUDE_PLUGIN_ROOT}/scripts/backlog_html.py --root ." in text
     assert "model: haiku" in text and "path" in text
+
+
+# ---------- T2: fields, detail view, markdown ----------
+
+def test_lists_each_idea_with_its_fields(tmp_path):
+    root = make_repo(tmp_path, {
+        "20261125053013-a.md": idea(title="Idea A", appetite="big batch", date="2026-11-25", problem="Problem A."),
+        "20261124053013-b.md": idea(title="Idea B", appetite="small batch", date="2026-11-24", problem="Problem `B`."),
+        "20261123053013-c.md": idea(title="Idea C", appetite="", date="2026-11-23", problem="See [A](20261125053013-a.md)."),
+    })
+    data = page_data(render_html(root))
+    rows = [(d["title"], d["appetite"], d["date"], d["problem"]) for d in data]
+    assert rows == [("Idea A", "big batch", "2026-11-25", "Problem A."),
+                    ("Idea B", "small batch", "2026-11-24", "Problem B."),
+                    ("Idea C", "", "2026-11-23", "See A.")]
+
+
+def test_detail_view_has_front_matter_text_and_log(tmp_path):
+    root = make_repo(tmp_path, {"20261125053013-ship-gates.md": idea(
+        extra="**Notes:** Needs evals.", log="- 2026-11-25T05:30:13Z [capture] Created.\n2026-11-25T05:38:06Z [triage] Kept.")})
+    d = page_data(render_html(root))[0]
+    assert (d["requester"], d["review_by"], d["file"]) == ("Jo", "", "20261125053013-ship-gates.md")
+    assert "<strong>Notes:</strong> Needs evals." in d["body_html"]
+    assert "# Log" not in d["body_html"] and "Created." not in d["body_html"]
+    assert d["log_html"].count("<li>") == 2
+
+
+def test_links_between_ideas_open_the_linked_idea(tmp_path):
+    root = make_repo(tmp_path, {"20261125053013-a.md": idea(extra="See [B](20261124053013-b.md)."),
+                                "20261124053013-b.md": idea(title="B")})
+    assert '<a href="#b">B</a>' in page_data(render_html(root))[0]["body_html"]
+
+
+def test_markdown_blocks_render():
+    from backlog_html import render_markdown
+    html = render_markdown("## Next\n\n- one\n- two\n\n1. a\n2. b\n\n> quoted\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n*it* `x<y`")
+    assert "<h4>Next</h4>" in html
+    assert "<ul><li>one</li><li>two</li></ul>" in html and "<ol><li>a</li><li>b</li></ol>" in html
+    assert "<blockquote><p>quoted</p></blockquote>" in html
+    assert "<th>A</th>" in html and "<td>2</td>" in html
+    assert "<em>it</em>" in html and "<code>x&lt;y</code>" in html
+
+
+def test_idea_text_cannot_run_script(tmp_path):
+    root = make_repo(tmp_path, {"20261125053013-x.md": idea(
+        extra="A <b>x</b> and [bad](javascript:alert(1)) and [ok](https://e.com).\n\n</script><script>alert(1)</script>")})
+    html = render_html(root)
+    d = page_data(html)[0]
+    assert "&lt;b&gt;x&lt;/b&gt;" in d["body_html"] and "<b>x</b>" not in d["body_html"]
+    assert "javascript:" not in d["body_html"] and '<a href="#">bad</a>' in d["body_html"]
+    assert '<a href="https://e.com">ok</a>' in d["body_html"]
+    assert html[html.index("<script>"):].count("</script>") == 1
