@@ -68,7 +68,7 @@ import milestones
 
 PLUGIN = Path(__file__).resolve().parent.parent
 AFK_STAGES = ("build", "gates", "review")
-MODELS = {"build": "opus", "reviewer": "opus", "gate": "sonnet", "review": "opus"}
+MODELS = {"build": "sonnet", "reviewer": "sonnet", "gate": "haiku", "review": "opus"}
 DEFAULT_ESCAPES = ["# noqa", "# type: ignore", "eslint-disable", "@ts-ignore", "@ts-expect-error",
                    r"pytest\.mark\.skip", r"\.skip\(", r"\bxit\("]
 DEFAULT_LIMITS = {"build_usd": 10, "gates_usd": 5, "review_usd": 3, "run_usd": 20, "stage_minutes": 60}

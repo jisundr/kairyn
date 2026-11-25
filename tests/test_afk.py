@@ -732,3 +732,10 @@ def test_afk_run_goes_on_when_milestones_cannot_be_written(repo):
         assert out.returncode == 0 and "Traceback" not in out.stdout + out.stderr, out.stderr
         assert "Build started." in task_file(repo, "STATE.md")
 
+
+
+def test_models_route_hands_on_sessions_cheaper():
+    """ADR 0019: Opus orchestrates and judges, so build and the reviewer run on Sonnet and gates on Haiku;
+    the final review stays on Opus."""
+    import afk
+    assert afk.MODELS == {"build": "sonnet", "reviewer": "sonnet", "gate": "haiku", "review": "opus"}

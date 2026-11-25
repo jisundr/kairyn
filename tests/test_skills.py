@@ -65,6 +65,17 @@ def test_design_skill_runs_on_opus():
     assert front(skill("design"))[0]["model"] == "opus"
 
 
+# ADR 0019: the orchestrating session (Opus) reviews requirements and judges reviewer findings,
+# so the hands-on stages run cheaper; design and the final review stay on Opus.
+SKILL_MODELS = {"requirements": "sonnet", "design": "opus", "grill": "sonnet", "model-routing": "sonnet",
+                "close": "haiku", "retro": "haiku", "build": "haiku", "review": "haiku"}
+
+
+@pytest.mark.parametrize("name,model", SKILL_MODELS.items())
+def test_skill_runs_on_its_routed_model(name, model):
+    assert front(skill(name))[0]["model"] == model
+
+
 def test_retro_is_optional_and_runs_its_script():
     """D1, D6: an optional stage like close; its size checks run in retro.py, so the skill may call python3."""
     stage, _ = front(PLUGIN / "stages" / "RETRO.md")

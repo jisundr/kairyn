@@ -2,7 +2,7 @@
 name: requirements
 description: Turn a request into approved, testable requirements (the kairyn requirements stage). Use when the user asks for requirements, a spec or acceptance criteria for a change, or to start a kairyn task.
 argument-hint: "<request> | <task folder>"
-model: opus
+model: sonnet
 allowed-tools: Bash(date:*), Bash(mkdir:*), Bash(git config:*), Read, Write, Edit, Glob, Grep
 ---
 
