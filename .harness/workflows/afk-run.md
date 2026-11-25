@@ -18,8 +18,8 @@ After you approve `DESIGN.md`, `/kairyn:build <task>` runs `afk.py`. It works in
 
 ## What the run does
 1. Readiness: `testing` has a command (`security` too, for a security need); set gates pass on the base, nothing uncommitted.
-2. Build: a fresh `claude -p` per slice `T<n>`, in `after:` order. Each slice needs a `test(T<n>)` commit where its done command fails, then a `feat(T<n>)` commit where it passes.
-3. A read-only reviewer reads the diff and the flags (edited tests, added escape hatches). Its findings get one fix round.
+2. Build, per slice `T<n>` in `after:` order: a tests part on Opus makes a `test(T<n>)` commit where the done command fails; then a code part on Sonnet makes a `feat(T<n>)` commit where it passes.
+3. A read-only reviewer (Opus) reads the diff and the flags (edited tests, escape hatches). Its findings get one fix round (Sonnet).
 4. Push and one pull request, given an `origin` remote and `gh`.
 5. Gates, then a `REVIEW.md` session. `REVIEW.md` goes on the pull request.
 

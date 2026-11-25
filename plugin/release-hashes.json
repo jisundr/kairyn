@@ -1255,6 +1255,7 @@
    "ba4b71ac74acca4b885f7aa7fcd5ec5de7f460943483a369121498f350ddeda9"
   ],
   ".harness/workflows/afk-run.md": [
+   "612405625b8fbcd6708bd92e79d6f0f1a4bb8d03c474204b419ef9e31b6e6f7e",
    "f18f9e7ae99f357616aa9241f7eb2dbc2ad82fa292f4d35bffe155b1d9783b4b"
   ],
   ".harness/workflows/keeping-docs-lean.md": [
@@ -1270,6 +1271,7 @@
    "5bd274fd066c35acf99a7feb9785fb2025405cd4e8db6946f2f2ae4d3b7d91bd"
   ],
   ".kairyn/stages/BUILD.md": [
+   "0cf08b9f62f3c6302fa5ae48f05803b5f1162e1e635069c11b8200fb23a68a2d",
    "61934a697505cb6e01c72455794e3f829e6bf0ed6c24aff32455928e9201405b"
   ],
   ".kairyn/stages/CLOSE.md": [

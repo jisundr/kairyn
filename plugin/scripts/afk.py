@@ -11,8 +11,9 @@ order, checks, git and STATE.md. The model only runs stage files, one `claude -p
 slice `T<n>` and per stage, each with a fresh context.
 
   - Worktree: <git common dir>/kairyn/worktrees/<task>, branch kairyn/<task>. STATE.md there is the truth.
-  - build: one session per T<n> of DESIGN.md, in `after:` order. Each T<n> needs a test(T<n>)
-    commit whose done command fails (red) and a feat(T<n>) commit where it exits 0 (green).
+  - build: two sessions per T<n> of DESIGN.md, in `after:` order. The tests part (MODELS: Opus) makes a
+    test(T<n>) commit whose done command fails (red); then the code part (Sonnet) makes a feat(T<n>) commit
+    where it exits 0 (green). A red test commit left by a blocked run is kept: the resume runs the code part.
     BUILD.md gets the SHAs and exit codes. Then the script lists flags (a later commit that edits a
     test file, an added line that matches `escape_hatches:`), and a read-only reviewer session reads
     the diff. Findings get one fix round. If a finding stays or a done command fails, the run blocks.
@@ -695,7 +696,7 @@ class Run:
         self.claude("build-code", f"Follow {self.at('.kairyn/stages/BUILD.md')} for {self.at(f'docs/tasks/{self.task}')}, "
                                   "fix round. "   # A2: the reviewer's findings are the decision
                                   "Fix these review findings, keep every test, and commit as `fix: <what>`:\n"
-                             + "\n".join(f"- {f}" for f in findings))
+                                  + "\n".join(f"- {f}" for f in findings))
         for t in graph:
             code = self.command(t.done, self.code, "after the fix round")
             if code:

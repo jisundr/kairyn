@@ -6,7 +6,7 @@ purpose: Build one slice T<n> of an approved DESIGN.md test-first, in two commit
 
 # Stage: build
 
-`afk.py` runs this stage once per `T<n>`, in a fresh session with no user. The prompt names the task, the `T<n>` and its done command.
+`afk.py` runs this stage twice per `T<n>`, each time in a fresh session with no user. The prompt names the task, the `T<n>`, its done command and the part. The tests part does steps 1-3 only. The code part does steps 4-6 only, from the `test(T<n>)` commit, and changes no test file.
 
 ## Inputs
 - The task's `REQUIREMENTS.md` and `DESIGN.md`: the `T<n>` line and the criteria it serves.
