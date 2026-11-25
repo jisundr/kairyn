@@ -109,6 +109,17 @@ def test_placeholders_globs_urls_and_line_refs_are_not_paths(tmp_path):
     assert grounded_problems(text, repo(tmp_path)) == []
 
 
+def test_branch_names_are_not_paths(tmp_path):
+    """A backticked branch name with a slash, such as `feat/x`, is not a file path."""
+    text = GOOD + "\nWork on `feat/dry-run`, then `kairyn/2026-11-25-dry-run` and `fix/cli-flag`.\n"
+    assert grounded_problems(text, repo(tmp_path)) == []
+
+
+def test_missing_file_under_a_branch_like_folder_is_still_named(tmp_path):
+    text = GOOD + "\nSee `src/gone` and `feat/notes.md`.\n"
+    assert grounded_problems(text, repo(tmp_path)) == ["names a missing file: src/gone", "names a missing file: feat/notes.md"]
+
+
 def test_option_labels_and_choice():
     assert option_labels(GOOD) == ["A", "B"]
     assert chosen_option(GOOD) == "A"
