@@ -283,3 +283,86 @@ def test_plugin_registers_the_catchup_hook():
     hooks = json.loads((PLUGIN / "hooks" / "hooks.json").read_text())["hooks"]
     commands = [h["command"] for group in hooks["SessionStart"] for h in group["hooks"]]
     assert any("scripts/milestones.py\" catchup" in c and "CLAUDE_PROJECT_DIR" in c for c in commands)
+
+
+# --- T4: watch over ssh ------------------------------------------------------------------------
+
+
+def ssh_stub(tmp_path, fails):
+    """An ssh that fails its first `fails` calls with 255, then runs its last argument locally."""
+    stub = tmp_path / "ssh"
+    stub.write_text("#!/bin/sh\n"
+                    "dir=$(dirname \"$0\")\n"
+                    "echo \"$@\" >> \"$dir/ssh.calls\"\n"
+                    "n=$(wc -l < \"$dir/ssh.calls\")\n"
+                    f"[ \"$n\" -le {fails} ] && {{ echo 'ssh: connect: refused' >&2; exit 255; }}\n"
+                    "for a; do last=$a; done\n"
+                    "exec sh -c \"$last\"\n")
+    stub.chmod(0o755)
+    return stub
+
+
+def host_mate(tmp_path, count, stored, fails):
+    home, mate = first_mate(tmp_path, count, stored)
+    settings(mate, f"watch:\n  host: dev-server\n  log: {home / '.session' / 'milestones.log'}\n")
+    env = {k: v for k, v in __import__("os").environ.items() if k != "KAIRYN_MILESTONES"}
+    return mate, {**env, "KAIRYN_SSH": str(ssh_stub(tmp_path, fails))}
+
+
+def test_retry_delays_double_from_15_seconds_to_5_minutes():
+    import milestones
+    delays = milestones.retry_delays(15)
+    assert [next(delays) for _ in range(8)] == [15, 30, 60, 120, 240, 300, 300, 300]
+
+
+def test_watch_host_unreachable_once_then_catches_up(tmp_path):
+    mate, env = host_mate(tmp_path, 5, 2, fails=3)
+    proc = subprocess.Popen([sys.executable, "-u", str(SCRIPT), "watch", "--root", str(mate), "--interval", "0.1",
+                             "--retry", "0.05"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env)
+    got = []
+    reader = threading.Thread(target=lambda: got.extend(proc.stdout.readline() for _ in range(4)), daemon=True)
+    try:
+        reader.start()
+        reader.join(timeout=30)
+        assert len(got) == 4, got
+        assert re.match(r"^server unreachable since \d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ", got[0]), got
+        assert printed_lines("".join(got[1:])) == ["line 3", "line 4", "line 5"], got
+        calls = (tmp_path / "ssh.calls").read_text().splitlines()
+        assert len(calls) >= 4 and all("dev-server" in c and "tail -n +3" in c for c in calls[:4]), calls
+        stored = json.loads((mate / ".session" / "watch.json").read_text())
+        assert stored["line"] == 5 and not stored.get("unreachable"), stored
+    finally:
+        proc.kill()
+        proc.wait()
+
+
+def test_watch_host_failure_is_stored_and_not_repeated(tmp_path):
+    mate, env = host_mate(tmp_path, 5, 2, fails=1000)
+    proc = subprocess.Popen([sys.executable, "-u", str(SCRIPT), "watch", "--root", str(mate), "--interval", "0.1",
+                             "--retry", "0.05"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env)
+    try:
+        deadline = time.monotonic() + 10
+        state = mate / ".session" / "watch.json"
+        while time.monotonic() < deadline and not json.loads(state.read_text()).get("unreachable"):
+            time.sleep(0.1)
+        time.sleep(0.5)
+    finally:
+        proc.kill()
+        out = proc.communicate()[0]
+    assert out.count("server unreachable since") == 1, out
+    stored = json.loads(state.read_text())
+    assert stored["line"] == 2 and re.match(r"^\d{4}-\d\d-\d\dT", stored["unreachable"]), stored
+    assert len((tmp_path / "ssh.calls").read_text().splitlines()) >= 3
+
+
+def test_catchup_reads_the_host_log(tmp_path):
+    mate, env = host_mate(tmp_path, 5, 2, fails=0)
+    result = subprocess.run([sys.executable, str(SCRIPT), "catchup", "--root", str(mate)], capture_output=True,
+                            text=True, env=env)
+    assert printed_lines(result.stdout) == ["line 3", "line 4", "line 5"] and "Monitor" in result.stdout
+    assert json.loads((mate / ".session" / "watch.json").read_text())["line"] == 5
+    down, env = host_mate(tmp_path / "down", 5, 2, fails=1000)
+    result = subprocess.run([sys.executable, str(SCRIPT), "catchup", "--root", str(down)], capture_output=True,
+                            text=True, env=env)
+    assert result.returncode == 0 and "server unreachable" in result.stdout and "Monitor" in result.stdout
+    assert json.loads((down / ".session" / "watch.json").read_text())["line"] == 2
