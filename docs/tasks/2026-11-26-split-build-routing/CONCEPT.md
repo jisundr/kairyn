@@ -1,7 +1,7 @@
 ---
 task: 2026-11-26-split-build-routing
 stage: grill
-summary: "Opus makes each critical decision; Sonnet writes build code to a red Opus test; close and retro go to Haiku. One routing, no switch."
+summary: "Opus makes each critical decision; Sonnet writes build code to a red Opus test; close and retro stay on Sonnet (K1). One routing, no switch."
 ---
 
 # Concept: Opus makes each critical decision, cheaper models carry it out
@@ -13,10 +13,11 @@ kairyn has one standard model routing. Each step that makes a critical decision 
 - D1: No bot or solo switch. One standard routing for every repo and run. (user)
 - D2: Each step that makes a critical decision stays on Opus. (user)
 - D3: Build splits per slice: Opus writes the failing-test commit `test(T<n>)`, which fixes the interface, data shapes and test cases. Sonnet writes the code that makes it green, `feat(T<n>)`. The existing red and green checks enforce the split. (user)
-- D4: Skills: requirements Opus, design Opus, grill Sonnet, model-routing Sonnet, close Haiku, retro Haiku. The build and review launchers and the commands stay on Haiku. (user)
+- D4: Skills: requirements Opus, design Opus, grill Sonnet, model-routing Sonnet, close Haiku, retro Haiku. The build and review launchers and the commands stay on Haiku. (user; close and retro changed by D8)
 - D5: `afk.py` roles: build-tests Opus, build-code Sonnet, reviewer Opus, gate Sonnet, review Opus. (user)
 - D6: The reason to record: the orchestrating bot reviews and approves the human-gated steps, so the steps that only carry decisions out get cheaper. Scope, design, the test commit, the review findings and the final review stay on Opus, because a mistake there costs the most. (user)
-- D7: Drop the first fixed-routing work where it conflicts: requirements stays on Opus, and the reviewer stays on Opus. Keep close and retro on Haiku. (user)
+- D7: Drop the first fixed-routing work where it conflicts: requirements stays on Opus, and the reviewer stays on Opus. Keep close and retro on Haiku (changed by D8). (user)
+- D8: After K1 (retro failed its eval on Haiku), close and retro stay on Sonnet. A retro that close starts runs on close's model (ADR 0008), so both stay. The build split stays. (user, 2026-11-26)
 
 ## Terms
 | Term | Meaning |

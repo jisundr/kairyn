@@ -17,7 +17,7 @@ review_by:
 - `plugin/scripts/afk.py` `MODELS`: build, reviewer and review on Opus, gate on Sonnet. One build session writes both commits of a slice.
 - Task 2026-11-25-first-mate-hub: the build session chose the hook data shapes and the error handling. The Opus reviewer and review found the gaps (REVIEW.md F2, F3).
 
-**Decided (2026-11-26, grill):** One standard routing, no bot or solo switch. Opus for each critical decision. Build splits per slice: Opus writes the `test(T<n>)` commit, Sonnet writes the `feat(T<n>)` commit. close and retro go to Haiku. Details: the task's `CONCEPT.md`.
+**Decided (2026-11-26, grill):** One standard routing, no bot or solo switch. Opus for each critical decision. Build splits per slice: Opus writes the `test(T<n>)` commit, Sonnet writes the `feat(T<n>)` commit. close and retro stay on Sonnet: retro failed on Haiku (K1). Details: the task's `CONCEPT.md`.
 
 **Notes:** Related to [Split the design stage](20261124224354-split-design-stage.md), not the same idea. That idea splits design for its token budget. This one moves the technical decisions of each slice into the Opus test commit. That idea stays open.
 

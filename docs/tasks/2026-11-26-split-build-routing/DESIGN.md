@@ -1,7 +1,7 @@
 ---
 task: 2026-11-26-split-build-routing
 stage: design
-summary: "afk.py runs build-tests (Opus) then build-code (Sonnet) per slice, each named by its prompt; red check between; close and retro on Haiku."
+summary: "afk.py runs build-tests (Opus) then build-code (Sonnet) per slice, each named by its prompt; red check between; close and retro on Sonnet."
 ---
 
 # Design: Opus makes each critical decision, cheaper models carry it out
@@ -22,7 +22,7 @@ Option A. `build()` in `plugin/scripts/afk.py` calls `self.claude` twice per sli
 - T3: Resume: a red `test(T<n>)` commit after the base and no green row starts only the code part. Files: `plugin/scripts/afk.py`, `tests/test_afk.py`. after: T1. Done: `uv run pytest tests/test_afk.py` exits 0.
 - T4: The fix round runs as `build-code`. A test reads the `--model` of the fix-round, reviewer, gate-check and review calls from `stub.log.args`. Files: `plugin/scripts/afk.py`, `tests/test_afk.py`. after: T1. Done: `uv run pytest tests/test_afk.py` exits 0.
 - T5: `plugin/stages/BUILD.md`: the tests part does steps 1-3, the code part steps 4-6 and changes no test file. The `afk_build_test_first` assert reads both sessions: the tests session ran the test red and wrote no `textstats.py`; the code session wrote it. Files: `plugin/stages/BUILD.md`, `evals/promptfoo/asserts.py`, `tests/test_afk.py`. after: T1. Done: `uv run pytest` exits 0.
-- T6: close and retro on Haiku, each skill model pinned. Done at `87766e6` (the pin test failed first). No new commit. Files: `plugin/skills/close/SKILL.md`, `plugin/skills/retro/SKILL.md`, `tests/test_skills.py`. Done: `uv run pytest tests/test_skills.py` exits 0.
+- T6: each skill model pinned. Haiku at `87766e6`; after K1, close and retro back on Sonnet (D8). Files: `plugin/skills/close/SKILL.md`, `plugin/skills/retro/SKILL.md`, `tests/test_skills.py`. Done: `uv run pytest tests/test_skills.py` exits 0.
 - T7: Docs and release: the `afk.py` docstring and both `afk-run.md` docs name the two parts and models, with cuts to stay in budget (K3). Run `release_hashes.py --write` and `/kairyn:upgrade` for this repo's `.kairyn/` (0.17.0). Files: `plugin/scripts/afk.py`, `.harness/workflows/afk-run.md`, `plugin/harness/.harness/workflows/afk-run.md`, `plugin/release-hashes.json`, `.kairyn/manifest.json`, `.kairyn/stages/BUILD.md`, `.kairyn/.base/` (new copies). after: T2, T3, T4, T5. Done: `uv run pytest` and `claude plugin validate plugin` exit 0.
 
 Eval plan, 10 runs each, as the selector picks them (`# depends:`). Costs: the last 10-run `summary.md` on disk (main checkout, 2026-11-23 and 2026-11-24).
@@ -49,7 +49,7 @@ Eval plan, 10 runs each, as the selector picks them (`# depends:`). Costs: the l
 | AC5 fix round Sonnet, reviewer Opus, gate Sonnet, review Opus | T4 | `test_afk_roles_run_on_their_models` |
 | AC6 BUILD.md names both parts; code part changes no test file | T5 | `test_build_stage_names_tests_and_code_parts` |
 | AC7 each skill model pinned | T6 | `test_skill_runs_on_its_routed_model` |
-| AC8 `build` at 0.9 or more per metric with cost; `close` and `retro` pass on Haiku | T5, T6 | Evals `build`, `close`, `retro` (plan above) |
+| AC8 `build` at 0.9 or more per metric with cost; `retro` passes | T5, T6 | Evals `build`, `retro` (plan above) |
 | AC9 `/kairyn:check` passes; the three docs name the parts and models | T7 | `/kairyn:check`; `test_afk_docs_name_build_parts` |
 | AC10 pytest, validate, version bump | T7 | `uv run pytest`, `claude plugin validate plugin`, `python3 scripts/check_version_bump.py origin/main` |
 

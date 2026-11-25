@@ -1,7 +1,7 @@
 ---
 task: 2026-11-26-split-build-routing
 stage: requirements
-summary: "afk.py builds each slice in two sessions, an Opus test and Sonnet code; close and retro run on Haiku; each critical decision stays on Opus."
+summary: "afk.py builds each slice in two sessions, an Opus test and Sonnet code; close and retro stay on Sonnet; each critical decision stays on Opus."
 ---
 
 # Requirements: Opus makes each critical decision, cheaper models carry it out
@@ -12,7 +12,7 @@ One Opus session writes both commits of each AFK build slice. The `test(T<n>)` c
 ## Scope
 In: two build sessions per slice in `afk.py`, build-tests on Opus and build-code on Sonnet (D3, D5)
 In: `MODELS` in `afk.py`: reviewer Opus, gate Sonnet, review Opus (D5)
-In: skill models: close and retro on Haiku; requirements, design, grill, model-routing, launchers and commands unchanged (D4, D7)
+In: skill models unchanged; close and retro stay on Sonnet (D4, D8)
 In: `BUILD.md` stage and the docs name the split; version bump and release hashes; at close, an ADR for D6 that amends ADR 0004 and 0008 (D3, request)
 Out: a bot or solo switch, or a per-repo or per-run model (D1); a more technical design stage (split-design-stage stays open)
 
@@ -26,7 +26,7 @@ Out: a bot or solo switch, or a per-repo or per-run model (D1); a more technical
 - R7: The fix-round session shall run on the build-code model. (A2)
 - R8: `afk.py` shall run the reviewer on Opus, each gate check on Sonnet and the review on Opus. (D5)
 - R9: `plugin/stages/BUILD.md` shall tell each session its part: build-tests writes and commits the test, build-code writes the code and changes no test file. (D3)
-- R10: The close and retro skills shall name `model: haiku`. The requirements and design skills shall keep `opus`, grill and model-routing `sonnet`, build and review `haiku`. (D4, D7)
+- R10: The requirements and design skills shall keep `opus`; grill, model-routing, close and retro `sonnet`; build and review `haiku`. (D4, D8)
 - R11: The `afk.py` docstring, `.harness/workflows/afk-run.md` and `plugin/harness/.harness/workflows/afk-run.md` shall name the two build sessions and their models. (D3)
 
 ## Non-functional needs
@@ -56,7 +56,7 @@ State only what a source states. Else: not applicable: <reason>.
 - [ ] With the stub `claude`, the fix round, reviewer, gate check and review sessions run with `--model sonnet`, `opus`, `sonnet` and `opus`. (R7, R8)
 - [ ] A test reads `plugin/stages/BUILD.md` and finds the build-tests part and the build-code part, with the rule that build-code changes no test file. (R9)
 - [ ] `tests/test_skills.py` pins the model of each skill as in R10. (R10)
-- [ ] The `build` eval (`afk_build`) passes each metric at 0.9 or more with the split, and its `summary.md` reports the cost. The `close` and `retro` evals pass their gates on Haiku. (R1, R4, R5, R10)
+- [ ] The `build` eval (`afk_build`) passes each metric at 0.9 or more with the split, and its `summary.md` reports the cost. The `retro` eval passes its gates. (R1, R4, R5, R10)
 - [ ] `/kairyn:check` passes, and the three docs of R11 name build-tests on Opus and build-code on Sonnet. (R11)
 - [ ] `uv run pytest`, `claude plugin validate plugin` and `python3 scripts/check_version_bump.py origin/main` exit 0. (R1-R11)
 

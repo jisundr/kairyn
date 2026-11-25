@@ -2,7 +2,7 @@
 task: 2026-11-26-split-build-routing
 title: Opus makes each critical decision, cheaper models carry it out
 stage: build
-status: blocked
+status: in-progress
 stages:
   grill: done
   requirements: done
@@ -11,7 +11,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-25T22:35:13Z
-updated: 2026-11-25T23:23:17Z
+updated: 2026-11-25T23:25:19Z
 ---
 
 # Log
@@ -26,3 +26,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-25T22:41:18Z [design] Approved by Jayson De los Reyes. Next stage: build.
 2026-11-25T22:41:18Z [build] Build started by hand from an Orca coordinator dispatch, slices T1-T7 test-first. Evals approved: build, review, gates, close, retro, check, init, upgrade at 10 runs. The owner approved skipping requirements and design: the selector picks them only because the shipped afk-run.md matches plugin/harness/**; their stage, skill and model do not change.
 2026-11-25T23:23:17Z [build] T1-T7 green test-first (T6 at 87766e6); uv run pytest 771 passed. Evals run 20261125T230159Z FAIL, cost $14.79: build, review, gates, close, check, init, upgrade PASS; retro on Haiku FAIL (retro_proposes 5/10, retro_applies 7/10). afk_build $7.45 (last all-Opus run $4.67). K1: waiting for the owner's decision on retro.
+2026-11-25T23:25:19Z [build] K1 decided by Jayson De los Reyes: close and retro back on Sonnet (option a2), the build split stays. close now matches main, so its Sonnet passes stand; retro re-runs because the shipped afk-run.md is in its depends.
