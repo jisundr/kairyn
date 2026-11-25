@@ -685,3 +685,15 @@ def test_afk_sessions_run_with_milestone_hooks_off(repo):
     assert run(repo, "run", TASK).returncode == 0
     seen = (repo.parent / "stub.log.env").read_text().splitlines()
     assert seen and set(seen) == {"KAIRYN_MILESTONES=off"}, seen
+
+
+def test_afk_run_goes_on_when_milestones_cannot_be_written(repo):
+    """F3: a bad milestones.yml or a log path with no write access never stops an AFK run."""
+    for text in ("write:\n  this line has no colon\n", "write:\n  log: /proc/no-such-dir/milestones.log\n"):
+        (repo / ".kairyn" / "milestones.yml").write_text(text)
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "bad milestones settings")
+        out = run(repo, "run", TASK)
+        assert out.returncode == 0 and "Traceback" not in out.stdout + out.stderr, out.stderr
+        assert "Build started." in task_file(repo, "STATE.md")
+

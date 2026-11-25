@@ -4,6 +4,7 @@ Writers (hooks, afk.py) append `<UTC timestamp> [<run tag>] <text>` lines to one
 runs `watch` through the Monitor tool: each stdout line is one chat message.
 """
 import json
+from pathlib import Path
 import re
 import subprocess
 import sys
@@ -96,13 +97,36 @@ def hook(repo, payload, env=None, cwd=None):
                           capture_output=True, text=True, env={**base, **(env or {})}, cwd=cwd or repo)
 
 
-def bash_event(command, code, event="PostToolUse"):
-    payload = {"hook_event_name": event, "tool_name": "Bash", "tool_input": {"command": command}}
-    if event == "PostToolUse":
-        payload["tool_response"] = {"stdout": "ok", "stderr": "", "exitCode": code}
-    else:
+HOOK_FIXTURES = Path(__file__).parent / "fixtures" / "hooks"   # real Claude Code payloads, ids and paths blanked
+
+
+def real_event(name):
+    return json.loads((HOOK_FIXTURES / f"{name}.json").read_text())
+
+
+def bash_event(command, code, event=None):
+    """A real Bash hook payload for `command`. Claude Code sends a success as PostToolUse with no exit field,
+    and a nonzero exit as PostToolUseFailure with `error: "Exit code N\n<output>"`."""
+    payload = real_event("post_tool_use" if code == 0 else "post_tool_use_failure")
+    payload["tool_input"]["command"] = command
+    if code:
         payload["error"] = f"Exit code {code}\nFAILED tests/test_x.py"
     return payload
+
+
+def test_real_hook_payloads_give_label_and_exit(tmp_path):
+    """F2: the recorded payloads, unchanged except for the command, give the right exit code and message."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / ".kairyn").mkdir()
+    (repo / ".kairyn" / "milestones.yml").write_text("write:\n  log: .session/milestones.log\n")
+    ok, failed = real_event("post_tool_use"), real_event("post_tool_use_failure")
+    assert "exitCode" not in ok["tool_response"] and failed["error"].startswith("Exit code 3")
+    ok["tool_input"]["command"] = failed["tool_input"]["command"] = "uv run pytest"
+    for payload in (ok, failed, real_event("stop")):
+        assert hook(repo, payload).returncode == 0
+    texts = [line.split("] ", 1)[1] for line in log_lines(repo)]
+    assert texts == ["tests exit 0", "tests exit 3", "done"], texts
 
 
 def log_lines(repo):
