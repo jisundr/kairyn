@@ -2,16 +2,16 @@
 task: 2026-11-25-backlog-page
 title: A visual index of the backlog
 stage: build
-status: in-progress
+status: blocked
 stages:
   grill: done
   requirements: done
   design: done
-  build: in-progress
+  build: done
   gates: pending
   review: pending
 created: 2026-11-25T11:39:03Z
-updated: 2026-11-25T11:48:00Z
+updated: 2026-11-25T12:03:58Z
 ---
 
 # Log
@@ -25,3 +25,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-25T11:45:59Z [design] Wrote DESIGN.md: option A, T1-T5, AC1-AC14, eval plan backlog, check, init ($0.25 guess). Waiting for user approval.
 2026-11-25T11:48:00Z [design] Approved by Jayson De los Reyes. Next stage: build.
 2026-11-25T11:48:00Z [build] Build started by hand from an Orca coordinator dispatch, slices T1-T5 test-first.
+2026-11-25T12:03:58Z [build] T1-T5 green by hand, test-first; uv run pytest 734 passed. Evals run 20261125T115929Z PASS: backlog, check, init, upgrade 10/10 each metric, cost $0.30. AC7 Manual left for the owner. Waiting for the pull request review.
