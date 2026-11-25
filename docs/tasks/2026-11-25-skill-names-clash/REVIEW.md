@@ -42,4 +42,4 @@ summary: "All 11 criteria have test evidence. One finding: upgrade deletes an ed
 - F1: `upgrade.py` deletes an edited, no-longer-shipped file on the second run when its `.base/` copy is missing. `_remove_unshipped` stores the local bytes as the base (`Record(old.data if old else local, ...)`). The next run sees local equal to base and prints `REMOVED`. The user did not delete the file, so this breaks R7 and A2. Reproduction: `old_install`, edit `EXIT.md`, delete its `.base/` copy, upgrade twice. The output is `CONFLICT` then `REMOVED`, and the file is gone. Fix: for a pending no-longer-shipped entry, remove only when the local file is missing. Or record it with `no_base=True` and never auto-remove it. Add this case as a test.
 - F2: K1 says the changed `close` eval and the `upgrade` eval run before merge. No `summary.md` from such a run is in the change, and `evals/results/` is not in this worktree. K3 also needs a new `close` pass record. Run `/run-evals close upgrade` before merge.
 
-Decision: pending
+Decision: Jayson De los Reyes, 2026-11-25T00:20:34Z, "Yes, approved."
