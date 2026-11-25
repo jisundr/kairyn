@@ -511,8 +511,14 @@ def design_test_plan_problems(design: str, requirements: str) -> list[str]:
     return problems
 
 
+def _looks_like_branch(path: str, repo: Path) -> bool:
+    """`feat/x`: no file extension, no trailing slash, and its first folder is not in the repo."""
+    return "." not in path.rsplit("/", 1)[-1] and not path.endswith("/") and not (repo / path.split("/")[0]).exists()
+
+
 def grounded_problems(text: str, repo: Path) -> list[str]:
-    """Each path in backticks exists in the repo, unless it carries `(new)` somewhere in the text."""
+    """Each path in backticks exists in the repo, unless it carries `(new)` somewhere in the text.
+    A branch name such as `feat/x` is not a path."""
     found = _PATH.findall(text)
     created = {path for path, new in found if new}
     problems = []
@@ -520,6 +526,8 @@ def grounded_problems(text: str, repo: Path) -> list[str]:
         if path in created or path.startswith("/") or "://" in path or any(c in path for c in "<>*{}$"):
             continue
         path = re.sub(r":\d+(-\d+)?$", "", path)
+        if _looks_like_branch(path, repo):
+            continue
         if not (repo / path).exists() and f"names a missing file: {path}" not in problems:
             problems.append(f"names a missing file: {path}")
     return problems
@@ -725,11 +733,17 @@ _FAILED_RUN = re.compile(r"\b(FAILED|FAIL|Error|Traceback|AssertionError)\b")
 
 
 def _writes(name: str, inp: dict, path: str) -> bool:
-    """A tool call that writes `path`: Write, Edit or MultiEdit, or a Bash redirect, tee, sed -i or heredoc."""
+    """A tool call that writes `path`: Write, Edit or MultiEdit, or a Bash redirect, tee, sed -i or heredoc,
+    or a Python script that opens `path` (or a name set to it) to write."""
     if name in ("Write", "Edit", "MultiEdit"):
         return str(inp.get("file_path", "")).endswith(path)
     cmd = str(inp.get("command", "")) if name == "Bash" else ""
-    return bool(re.search(rf"(>>?|\btee\b(\s+-a)?|\bsed\s+-i\S*(\s+'[^']*'|\s+\S+)?)\s*\S*{re.escape(path)}\b", cmd))
+    if re.search(rf"(>>?|\btee\b(\s+-a)?|\bsed\s+-i\S*(\s+'[^']*'|\s+\S+)?)\s*\S*{re.escape(path)}\b", cmd):
+        return True
+    lit = rf"(?:Path\()?['\"]{re.escape(path)}['\"]\)?"
+    names = [lit] + [re.escape(v) for v in re.findall(rf"\b(\w+)\s*=\s*{lit}", cmd)]
+    target = "(?:" + "|".join(names) + ")"
+    return bool(re.search(rf"open\(\s*{target}\s*,\s*['\"][wa]|\b{target}\.write_text\(", cmd))
 
 
 def red_before_code_problems(events: list, code_file: str, test_word: str) -> list[str]:

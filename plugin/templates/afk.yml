@@ -9,7 +9,8 @@ limits:
   stage_minutes: 60
 
 # Gates run in this order; security stays last. The exit code decides. An empty command is
-# "not set": never a pass. The testing gate needs a command before an AFK run can start.
+# "not set": never a pass. The testing gate needs a command before an AFK run can start; so does
+# security when REQUIREMENTS.md names a security need.
 gates:
   testing:
   contract:
