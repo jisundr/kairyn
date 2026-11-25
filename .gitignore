@@ -3,7 +3,6 @@ __pycache__/
 .venv/
 evals/results/
 .harness/budgets.html
-docs/backlog/backlog.html
 
 # OS
 .DS_Store

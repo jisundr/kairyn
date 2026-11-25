@@ -6,8 +6,6 @@ Options, not commitments. They follow the playbook `03 Playbooks/SDLC/00 Managin
 
 Closed ideas are in `CHANGELOG.md`. Inbox: `grep -lx 'status: inbox' docs/backlog/*.md`.
 
-Every idea on one page, with filters and search: `python3 scripts/backlog_html.py && open docs/backlog/backlog.html`. The page is git-ignored; rebuild it after the backlog changes.
-
 | Idea | Appetite |
 |---|---|
 | [Approval gates hand off](20261123004258-approval-handoff.md) | big; shipped in #46, delete at release |
@@ -15,3 +13,4 @@ Every idea on one page, with filters and search: `python3 scripts/backlog_html.p
 | [Backlog stage](20261122080759-backlog-stage.md) | big |
 | [Split the design stage](20261124224354-split-design-stage.md) | big |
 | [Ship the review gates](20261125053013-ship-review-gates.md) | big; slices 1-2 (`design`, `commits`, `sessions`) in afk.py |
+| [Backlog page](20261125113903-backlog-page.md) | small (proposed; owner to confirm); task 2026-11-25-backlog-page |
