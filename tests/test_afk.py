@@ -413,7 +413,7 @@ def test_slice3_limit_names_the_last_failed_command(repo):
 
 def test_slice3_stage_cost_is_logged(repo):
     assert run(repo, "run", TASK).returncode == 0
-    assert re.search(r"\[build\] All 2 tasks green\. Cost \$0\.75\. Next: gates\.", task_file(repo, "STATE.md"))
+    assert re.search(r"\[build\] All 2 tasks green\. Cost \$1\.25\. Next: gates\.", task_file(repo, "STATE.md"))
 
 
 def test_slice3_afk_yml_template_parses_with_defaults():
