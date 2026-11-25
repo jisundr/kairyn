@@ -211,3 +211,75 @@ def test_plugin_registers_the_milestone_hooks():
     for event in ("PostToolUse", "PostToolUseFailure"):
         assert all(group.get("matcher") == "Bash" for group in hooks[event]
                    if any("milestones.py" in h["command"] for h in group["hooks"]))
+
+
+# --- T3: restart catch-up ----------------------------------------------------------------------
+
+
+def first_mate(tmp_path, count, stored):
+    """A home log of `count` lines and a first mate repo whose watch.json holds `stored`."""
+    home = git_repo(tmp_path / "home")
+    log = home / ".session" / "milestones.log"
+    log.parent.mkdir(parents=True)
+    log.write_text("".join(f"2026-11-25T00:00:0{n}Z [home] line {n}\n" for n in range(1, count + 1)))
+    mate = git_repo(tmp_path / "mate")
+    settings(mate, f"watch:\n  log: {log}\n")
+    (mate / ".session").mkdir()
+    (mate / ".session" / ".gitignore").write_text("*\n")
+    (mate / ".session" / "watch.json").write_text(json.dumps({"line": stored}) + "\n")
+    return home, mate
+
+
+def catchup(repo, env=None):
+    base = {k: v for k, v in __import__("os").environ.items() if k != "KAIRYN_MILESTONES"}
+    return subprocess.run([sys.executable, str(SCRIPT), "catchup", "--root", str(repo)], capture_output=True,
+                          text=True, env={**base, **(env or {})})
+
+
+def printed_lines(out):
+    return [LINE.match(x).group("text") for x in out.splitlines() if LINE.match(x)]
+
+
+def test_catchup_prints_missed_lines_and_instruction(tmp_path):
+    _, mate = first_mate(tmp_path, 5, 2)
+    result = catchup(mate)
+    assert result.returncode == 0, result.stderr
+    assert printed_lines(result.stdout) == ["line 3", "line 4", "line 5"]
+    assert "Monitor" in result.stdout
+    assert re.search(r"milestones\.py\"? watch --root \"?" + re.escape(str(mate)), result.stdout), result.stdout
+    assert json.loads((mate / ".session" / "watch.json").read_text())["line"] == 5
+    again = catchup(mate)
+    assert printed_lines(again.stdout) == [] and "Monitor" in again.stdout
+
+
+def test_shorter_log_starts_from_line_one(tmp_path):
+    _, mate = first_mate(tmp_path, 3, 10)
+    assert printed_lines(catchup(mate).stdout) == ["line 1", "line 2", "line 3"]
+    _, mate = first_mate(tmp_path / "w", 3, 10)
+    proc = subprocess.Popen([sys.executable, "-u", str(SCRIPT), "watch", "--root", str(mate), "--interval", "0.2"],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    got = []
+    reader = threading.Thread(target=lambda: got.extend(proc.stdout.readline() for _ in range(3)), daemon=True)
+    try:
+        reader.start()
+        reader.join(timeout=30)
+        assert printed_lines("".join(got)) == ["line 1", "line 2", "line 3"]
+    finally:
+        proc.kill()
+        proc.wait()
+
+
+def test_catchup_is_silent_without_watch_settings_or_when_off(tmp_path):
+    bare = git_repo(tmp_path / "bare")
+    result = catchup(bare)
+    assert result.returncode == 0 and result.stdout == ""
+    assert not (bare / ".session").exists()
+    _, mate = first_mate(tmp_path, 5, 2)
+    off = catchup(mate, env={"KAIRYN_MILESTONES": "off"})
+    assert off.returncode == 0 and off.stdout == ""
+
+
+def test_plugin_registers_the_catchup_hook():
+    hooks = json.loads((PLUGIN / "hooks" / "hooks.json").read_text())["hooks"]
+    commands = [h["command"] for group in hooks["SessionStart"] for h in group["hooks"]]
+    assert any("scripts/milestones.py\" catchup" in c and "CLAUDE_PROJECT_DIR" in c for c in commands)
