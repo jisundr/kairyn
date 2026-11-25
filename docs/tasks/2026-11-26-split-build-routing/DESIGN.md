@@ -13,7 +13,7 @@ Option A. `build()` in `plugin/scripts/afk.py` calls `self.claude` twice per sli
 | Option | What | Cost | Risk |
 |---|---|---|---|
 | A (smallest thing) | Two fresh `claude -p` sessions per slice; afk.py checks between them | About 40 lines in afk.py, the stub learns the two parts | Context is read twice per slice (K2) |
-| B | As A, plus a slice note from build-tests to build-code | A file per slice, a template | The note can disagree with the test |
+| B | As A, plus a note from build-tests to build-code | A file per slice | It can disagree with the test |
 | C | Opus writes the test, then `claude --resume <id> --model sonnet` writes the code | Context read once | Not shown that a resume changes model |
 
 ## Tasks
@@ -29,7 +29,7 @@ Eval plan, 10 runs each, as the selector picks them (`# depends:`). Costs: the l
 
 | Eval | Why it runs | Scenarios | Last cost at 10 runs |
 |---|---|---|---|
-| `build` | `afk.py`, `BUILD.md`, `plugin/harness/**` | `afk_build` | $4.67 (all Opus; now Opus and Sonnet) |
+| `build` | `afk.py`, `BUILD.md`, `plugin/harness/**` | `afk_build` | $4.67 (all Opus) |
 | `review` | `afk.py`, `plugin/harness/**` | `afk_review` | $2.82 |
 | `gates` | `afk.py`, `plugin/harness/**` | `afk_gates_pass`, `afk_gates_fail` | $1.57 |
 | `close` | close and retro skills | `close_decision`, `close_plain`, `close_retro` | $4.73 (Sonnet; now Haiku) |
