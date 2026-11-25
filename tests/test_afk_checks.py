@@ -95,3 +95,11 @@ def test_red_before_code_counts_a_python_script_that_writes_the_file():
 def test_a_test_file_that_only_names_the_code_file_is_no_edit_of_it():
     events = [tool_use(1, "Bash", command=TEST_NAMES_CODE), tool_result(1, "FAILED (errors=1)")]
     assert red_before_code_problems(events, "textstats.py", "test_lines") == ["the session never edited textstats.py"]
+
+
+def test_a_python_script_that_edits_the_test_file_is_no_edit_of_the_code():
+    """Same run, results 1 and 9: the script writes test_lines.py, whose text names "textstats.py"."""
+    cmd = ("python3 - <<'EOF'\np='test_lines.py'\ns=open(p).read()\n"
+           "s=s.replace('a', '[sys.executable, os.path.join(HERE, \"textstats.py\")]')\nopen(p,'w').write(s)\nEOF")
+    assert red_before_code_problems([tool_use(1, "Bash", command=cmd), tool_result(1, "")], "textstats.py",
+                                    "test_lines") == ["the session never edited textstats.py"]

@@ -733,11 +733,17 @@ _FAILED_RUN = re.compile(r"\b(FAILED|FAIL|Error|Traceback|AssertionError)\b")
 
 
 def _writes(name: str, inp: dict, path: str) -> bool:
-    """A tool call that writes `path`: Write, Edit or MultiEdit, or a Bash redirect, tee, sed -i or heredoc."""
+    """A tool call that writes `path`: Write, Edit or MultiEdit, or a Bash redirect, tee, sed -i or heredoc,
+    or a Python script that opens `path` (or a name set to it) to write."""
     if name in ("Write", "Edit", "MultiEdit"):
         return str(inp.get("file_path", "")).endswith(path)
     cmd = str(inp.get("command", "")) if name == "Bash" else ""
-    return bool(re.search(rf"(>>?|\btee\b(\s+-a)?|\bsed\s+-i\S*(\s+'[^']*'|\s+\S+)?)\s*\S*{re.escape(path)}\b", cmd))
+    if re.search(rf"(>>?|\btee\b(\s+-a)?|\bsed\s+-i\S*(\s+'[^']*'|\s+\S+)?)\s*\S*{re.escape(path)}\b", cmd):
+        return True
+    lit = rf"(?:Path\()?['\"]{re.escape(path)}['\"]\)?"
+    names = [lit] + [re.escape(v) for v in re.findall(rf"\b(\w+)\s*=\s*{lit}", cmd)]
+    target = "(?:" + "|".join(names) + ")"
+    return bool(re.search(rf"open\(\s*{target}\s*,\s*['\"][wa]|\b{target}\.write_text\(", cmd))
 
 
 def red_before_code_problems(events: list, code_file: str, test_word: str) -> list[str]:
