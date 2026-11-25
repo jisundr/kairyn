@@ -68,7 +68,7 @@ import milestones
 
 PLUGIN = Path(__file__).resolve().parent.parent
 AFK_STAGES = ("build", "gates", "review")
-MODELS = {"build": "opus", "reviewer": "opus", "gate": "sonnet", "review": "opus"}
+MODELS = {"build-tests": "opus", "build-code": "sonnet", "reviewer": "opus", "gate": "sonnet", "review": "opus"}
 DEFAULT_ESCAPES = ["# noqa", "# type: ignore", "eslint-disable", "@ts-ignore", "@ts-expect-error",
                    r"pytest\.mark\.skip", r"\.skip\(", r"\bxit\("]
 DEFAULT_LIMITS = {"build_usd": 10, "gates_usd": 5, "review_usd": 3, "run_usd": 20, "stage_minutes": 60}
@@ -677,6 +677,13 @@ class Run:
         print(line)
         return 0
 
+    def find_commit(self, prefix: str):
+        """The newest commit after the base whose subject starts with prefix, or None."""
+        for line in git(self.code, "log", "--format=%h %s", f"{self.base()}..HEAD").splitlines():
+            if line.split(" ", 1)[1].startswith(prefix):
+                return line.split()[0]
+        return None
+
     def review_loop(self, graph: list, path: Path) -> None:
         """D3: a read-only reviewer, one fix round, then escalation."""
         flags = self.flags()
@@ -719,16 +726,18 @@ class Run:
             if t.approval and not self.approved(t.id):
                 raise Blocked(f"{t.id} is marked (approval). Read it in DESIGN.md, then run "
                               f"/kairyn:build {self.task} approve {t.id} \"<words>\"")
-            said = self.claude("build", f"Follow {self.at('.kairyn/stages/BUILD.md')} for "
-                                        f"{self.at(f'docs/tasks/{self.task}')}, task {t.id}. Done command: `{t.done}`.")
-            subjects = git(self.code, "log", "--format=%h %s", "-n", "50").splitlines()
-            test = next((s.split()[0] for s in subjects if s.split(" ", 1)[1].startswith(f"test({t.id})")), None)
-            feat = next((s.split()[0] for s in subjects if s.split(" ", 1)[1].startswith(f"feat({t.id})")), None)
-            if not test or not feat:
-                raise Blocked(f"{t.id}: no test({t.id}) and feat({t.id}) commits. Session said: {said[-300:]}")
+            stage_file = f"Follow {self.at('.kairyn/stages/BUILD.md')} for {self.at(f'docs/tasks/{self.task}')}, task {t.id}"
+            self.claude("build-tests", f"{stage_file}, tests part. Done command: `{t.done}`. "
+                                       f"Make only the `test({t.id})` commit.")
+            test = self.find_commit(f"test({t.id})")
             red = self.run_at(test, t.done, "at the red check")
             if red == 0:
                 raise Blocked(f"{t.id}: red check passed at {test}: the test did not fail before the code")
+            said = self.claude("build-code", f"{stage_file}, code part. Done command: `{t.done}`. "
+                                             f"The test is in commit {test}. Make only the `feat({t.id})` commit.")
+            feat = self.find_commit(f"feat({t.id})")
+            if not feat:
+                raise Blocked(f"{t.id}: no feat({t.id}) commit. Session said: {said[-300:]}")
             green = self.run_at(feat, t.done, "at the green check")
             if green:
                 raise Blocked(f"{t.id}: green check exited {green} at {feat}")
