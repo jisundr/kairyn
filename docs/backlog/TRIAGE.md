@@ -6,9 +6,7 @@ The index of triaged ideas is [README.md](README.md). Next and Parked were decid
 
 ## Next
 
-One small batch of afk.py fixes: afk-uncommitted-task-folder, afk-task-folder-check, afk-resume-blocked, build-needs-branch-free, afk-drops-task-lines, approve-retry, exit-without-git.
-
-After it, one small batch of gates and lint rules: gate-changes-outside-design, gate-eval-pass-for-plugin-changes, gate-fix-round-test-edits, gate-real-session-criteria, lint-noqa-in-evals, lint-tests-in-feat-commits.
+None. Both batches from this triage shipped: the afk.py fixes in #31, the gates and lint rules in #30.
 
 ## Parked
 
