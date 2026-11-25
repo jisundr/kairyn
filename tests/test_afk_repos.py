@@ -189,7 +189,7 @@ def test_t3_session_cwd(repo, tmp_path):
     assert all(f"--add-dir {wt}" in a for a in lines(repo, ".args"))
     prompts = base.calls(repo)
     builds = [p for p in prompts if re.search(r"\bT\d\b", p) and "BUILD.md" in p and "reviewer" not in p]
-    assert len(builds) == 2
+    assert len(builds) == 4   # a tests part and a code part per slice
     for p in builds + [p for p in prompts if "REVIEW.md" in p and "reviewer" not in p]:
         assert f"{wt}/.kairyn/stages/" in p and f"{wt}/docs/tasks/{TASK}" in p
 

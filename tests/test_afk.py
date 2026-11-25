@@ -134,15 +134,15 @@ def test_slice1_order_resume(repo):
     result = run(repo, "run", TASK)
     assert result.returncode == 0, result.stdout + result.stderr
     prompts = [p for p in calls(repo) if "reviewer" not in p]
-    assert [re.search(r"\bT\d\b", p).group(0) for p in prompts[:2]] == ["T1", "T2"]
-    assert all("BUILD.md" in p for p in prompts[:2]) and "REVIEW.md" in prompts[2] and len(prompts) == 3
+    assert [re.search(r"\bT\d\b", p).group(0) for p in prompts[:4]] == ["T1", "T1", "T2", "T2"]
+    assert all("BUILD.md" in p for p in prompts[:4]) and "REVIEW.md" in prompts[4] and len(prompts) == 5
     state = task_file(repo, "STATE.md")
     assert (front(state, "stage"), front(state, "status")) == ("review", "blocked")
     assert re.search(r"^  build: done$", state, re.M) and re.search(r"^  gates: done$", state, re.M)
     assert git(worktree(repo), "branch", "--show-current").strip() == f"kairyn/{TASK}"
     # A blocked task does not run again.
     again = run(repo, "run", TASK)
-    assert again.returncode == 0 and len(calls(repo)) == 4
+    assert again.returncode == 0 and len(calls(repo)) == 6
     assert "blocked" in again.stdout
 
 
@@ -224,8 +224,8 @@ def test_slice2_reviewer_runs_read_only_after_build(repo):
     prompts = calls(repo)
     order = ["T1" if "T1" in p and "BUILD.md" in p else "T2" if "T2" in p and "BUILD.md" in p else
              "reviewer" if "reviewer" in p else "review" for p in prompts]
-    assert order == ["T1", "T2", "reviewer", "review"]
-    args = (repo.parent / "stub.log.args").read_text().splitlines()[2]
+    assert order == ["T1", "T1", "T2", "T2", "reviewer", "review"]
+    args = (repo.parent / "stub.log.args").read_text().splitlines()[4]
     assert "--disallowedTools" in args and "Edit" in args and "Write" in args
     assert "bypassPermissions" not in args
     assert "Findings: none" in task_file(repo, "BUILD.md")
@@ -385,7 +385,7 @@ def test_slice3_limits_stage_cost(repo):
     state = task_file(repo, "STATE.md")
     assert (front(state, "stage"), front(state, "status")) == ("build", "blocked")
     assert re.search(r"Blocked: limit build_usd \$10 reached: spent \$12\.00 in build, \$12\.00 in this run\. "
-                     r"Last failed command: `python3 check_t2.py` exit 1 at the red check", state)
+                     r"Last failed command: `python3 check_t1.py` exit 1 at the red check", state)
 
 
 def test_slice3_limits_run_cost(repo):
@@ -732,3 +732,29 @@ def test_afk_run_goes_on_when_milestones_cannot_be_written(repo):
         assert out.returncode == 0 and "Traceback" not in out.stdout + out.stderr, out.stderr
         assert "Build started." in task_file(repo, "STATE.md")
 
+
+
+# --- task 2026-11-26-split-build-routing ----------------------------------------------------
+
+
+def sessions(repo):
+    """(prompt, --model) of each stub call, in order."""
+    return [(p, re.search(r"--model (\S+)", a).group(1)) for p, a in zip(calls(repo), args_log(repo))]
+
+
+def build_parts(repo):
+    """(T<n>, part, model) of each build session; fix rounds left out."""
+    return [(re.search(r"\bT\d+\b", p).group(0), "tests" if "tests part" in p else "code" if "code part" in p else "?", m)
+            for p, m in sessions(repo) if "BUILD.md" in p and "fix round" not in p]
+
+
+def test_build_runs_tests_part_on_opus_then_code_part_on_sonnet(repo):
+    """R1, R4, D3, D5: Opus writes the test commit, Sonnet the code; each prompt names its one commit."""
+    assert run(repo, "run", TASK).returncode == 0
+    assert build_parts(repo) == [("T1", "tests", "opus"), ("T1", "code", "sonnet"),
+                                 ("T2", "tests", "opus"), ("T2", "code", "sonnet")]
+    prompts = [p for p, _ in sessions(repo) if "BUILD.md" in p]
+    test_sha = next(line.split()[0] for line in git(worktree(repo), "log", "--format=%h %s").splitlines()
+                    if line.split(" ", 1)[1].startswith("test(T1)"))
+    assert "`test(T1)`" in prompts[0] and "feat(T1)" not in prompts[0]
+    assert "`feat(T1)`" in prompts[1] and test_sha in prompts[1]
