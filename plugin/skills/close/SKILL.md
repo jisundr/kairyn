@@ -2,7 +2,7 @@
 name: close
 description: Close a done kairyn task. It writes ADRs for load-bearing decisions, a changelog entry and learnings, then deletes the task folder and its closed backlog files. Use when a task change has merged.
 argument-hint: "<task folder>"
-model: haiku
+model: sonnet
 allowed-tools: Bash(python3:*), Bash(date:*), Bash(mkdir:*), Read, Write, Edit, Glob, Grep
 ---
 
