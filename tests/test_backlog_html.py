@@ -136,3 +136,76 @@ def test_idea_text_cannot_run_script(tmp_path):
     assert "javascript:" not in d["body_html"] and '<a href="#">bad</a>' in d["body_html"]
     assert '<a href="https://e.com">ok</a>' in d["body_html"]
     assert html[html.index("<script>"):].count("</script>") == 1
+
+
+# ---------- T3: the page's controls, notes, themes; no status, no network ----------
+
+TRIAGE = """# Triage
+
+Intro text.
+
+## Next
+
+ship-gates first.
+
+## Parked
+
+Reviewed by 2027-02-23: other.
+
+## Later
+
+Not shown.
+"""
+STATUSES = ["committed", "shaped", "shaping", "triaged", "inbox", "parked", "dropped"]
+
+
+def test_page_loads_nothing_from_the_network(tmp_path):
+    root = make_repo(tmp_path, {"20261125053013-a.md": idea()}, triage=TRIAGE)
+    html = render_html(root).lower()
+    for marker in ("<link", "src=", "@import", "url(", "fonts.googleapis", "http://", "https://"):
+        assert marker not in html, marker
+
+
+def test_page_shows_no_status(tmp_path):
+    ideas = {f"2026112505301{n}-s{n}.md": idea(title=f"Idea {n}", status=s) for n, s in enumerate(STATUSES)}
+    html = render_html(make_repo(tmp_path, ideas)).lower()
+    for word in STATUSES + ["status"]:
+        assert word not in html, word
+
+
+def test_triage_notes_keep_next_and_parked_only(tmp_path):
+    html = render_html(make_repo(tmp_path, {"20261125053013-a.md": idea()}, triage=TRIAGE))
+    details = re.search(r"<details.*?</details>", html, re.S).group(0)
+    assert "ship-gates first." in details and "Reviewed by 2027-02-23: other." in details
+    assert "<details open" not in html
+    assert "Intro text" not in html and "Not shown." not in html
+
+
+def test_no_triage_file_means_no_notes(tmp_path):
+    assert "<details" not in render_html(make_repo(tmp_path, {"20261125053013-a.md": idea()}))
+
+
+def test_page_has_search_and_an_appetite_filter(tmp_path):
+    root = make_repo(tmp_path, {"20261125053013-a.md": idea(appetite="big batch"),
+                                "20261124053013-b.md": idea(appetite="small batch"),
+                                "20261123053013-c.md": idea(appetite="")})
+    html = render_html(root)
+    assert re.search(r'<input id="q" type="search"', html)
+    options = re.findall(r'<option value="([^"]*)">([^<]*)</option>', html)
+    assert options == [("", "Any appetite"), ("big batch", "Big batch"), ("small batch", "Small batch"), ("none", "Not set")]
+
+
+def test_page_has_no_edit_controls(tmp_path):
+    html = render_html(make_repo(tmp_path, {"20261125053013-a.md": idea()}, triage=TRIAGE))
+    assert len(re.findall(r"<input\b", html)) == 1 and len(re.findall(r"<select\b", html)) == 1
+    assert set(re.findall(r'<button class="(\w+)"', html)) == {"row", "close"}
+    assert len(re.findall(r"<button\b", html)) == 2
+    for marker in ("<textarea", "<form", "contenteditable", "localstorage", "fetch("):
+        assert marker not in html.lower(), marker
+
+
+def test_page_follows_the_system_theme_and_fits_a_phone(tmp_path):
+    html = render_html(make_repo(tmp_path, {"20261125053013-a.md": idea()}))
+    assert "@media (prefers-color-scheme: dark)" in html
+    assert 'name="viewport" content="width=device-width' in html
+    assert "@media (max-width:560px)" in html
