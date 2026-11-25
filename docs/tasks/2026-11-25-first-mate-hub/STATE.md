@@ -2,7 +2,7 @@
 task: 2026-11-25-first-mate-hub
 title: A first-mate hub that supervises AFK runs
 stage: review
-status: in-progress
+status: blocked
 backlog: docs/backlog/20261125003014-first-mate-hub.md
 stages:
   grill: done
@@ -10,9 +10,9 @@ stages:
   design: done
   build: done
   gates: done
-  review: pending
+  review: in-progress
 created: 2026-11-25T01:02:34Z
-updated: 2026-11-25T02:33:10Z
+updated: 2026-11-25T02:35:42Z
 ---
 
 # Log
@@ -47,3 +47,5 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-25T02:31:35Z [build] All 5 tasks green. Cost $1.70. Next: gates.
 2026-11-25T02:31:43Z [build] Pushed kairyn/2026-11-25-first-mate-hub. Pull request: https://github.com/jisundr/kairyn/pull/27
 2026-11-25T02:33:10Z [gates] 2 pass, 4 not set: accessibility, performance, observability, security. Cost $0.00. Next: review.
+2026-11-25T02:33:13Z [review] Review started.
+2026-11-25T02:35:42Z [review] Cost $0.70. Waiting for the merge decision: /kairyn:review 2026-11-25-first-mate-hub approve or reject.

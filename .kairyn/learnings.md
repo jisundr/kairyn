@@ -13,3 +13,8 @@ Stages append here.
 - 2026-11-25 [grill] In a captured Claude pane, dim text in the input box is a suggestion, not a user message; check `capture-pane -e` for ESC[2m before you quote it. (2026-11-25-first-mate-hub)
 - 2026-11-25 [requirements] afk.py writes every STATE.md log line through one method, `update()`: a feature that mirrors run progress hooks in there. (2026-11-25-first-mate-hub)
 - 2026-11-25 [design] Claude Code's Monitor tool sends each stdout line of a command as a chat message (30 min max, then re-arm): use it for watchers that must report more than once. (2026-11-25-first-mate-hub)
+- 2026-11-25T02:35:13Z [review] Ban a merge of a criterion that needs a real session with no recorded run, with a gate, because AC13 (0 "status?" asks) stays unproven after merge. (2026-11-25-first-mate-hub)
+- 2026-11-25T02:35:13Z [review] Ban hook tests that build their own Claude Code event JSON with no captured real payload as a fixture, with a gate, because the exit code fields in milestones.py are a guess. (2026-11-25-first-mate-hub)
+- 2026-11-25T02:35:13Z [review] Ban an unguarded call to an optional side feature in afk.py update() with a lint rule, because a bad milestones.yml stops the AFK run. (2026-11-25-first-mate-hub)
+- 2026-11-25T02:35:13Z [review] Ban hook events and files outside DESIGN.md with a gate, because PostToolUseFailure and 5 files went in unrecorded. (2026-11-25-first-mate-hub)
+- 2026-11-25T02:35:13Z [review] Ban test edits in a fix round with no new red run, with a gate, because the red commits no longer prove tests/test_milestones.py. (2026-11-25-first-mate-hub)
