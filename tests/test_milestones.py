@@ -551,3 +551,25 @@ def test_reports_missed_passes_only_when_the_reply_names_each_missed_milestone()
     evidence = {"missed": ["tests exit 0", "push exit 0"]}
     assert asserts.reports_missed(json.dumps({**evidence, "reply": "Missed: tests exit 0, push exit 0."}), {})["pass"]
     assert not asserts.reports_missed(json.dumps({**evidence, "reply": "Missed: tests exit 0."}), {})["pass"]
+
+
+# Real replies from run 20261125T055654Z: each reports both milestones, none has the text "tests exit 0".
+REAL_REPLIES = [
+    "- **09:10 UTC**: tests passed (exit 0)\n- **09:11 UTC**: push succeeded (exit 0)\n",
+    "| 09:10 | tests | exit 0 (passed) |\n| 09:11 | push | exit 0 (succeeded) |\n",
+    "| 09:10 | Tests | ✅ passed |\n| 09:11 | Push | ✅ succeeded |\n",
+    "| 2026-01-05 09:10 | Tests ran | ✅ passed (exit 0) |\n| 2026-01-05 09:11 | Push | ✅ succeeded (exit 0) |\n",
+    "- **09:11 UTC, Jan 5 2026:** the push succeeded (exit 0).\n- **09:10 UTC, Jan 5 2026:** the tests passed (exit 0).\n",
+]
+
+
+def test_reports_missed_takes_the_step_and_its_result_on_one_line():
+    asserts = _asserts()
+    evidence = {"missed": ["tests exit 0", "push exit 0"]}
+    check = lambda reply: asserts.reports_missed(json.dumps({**evidence, "reply": reply}), {})
+    for reply in REAL_REPLIES:
+        assert check(reply)["pass"], (reply, check(reply)["reason"])
+    no_push = "- **09:10 UTC**: tests passed (exit 0)\n"
+    assert not check(no_push)["pass"] and "push exit 0" in check(no_push)["reason"]
+    assert not check("| 09:10 | tests | passed |\n| 09:11 | push | failed (exit 1) |\n")["pass"]
+    assert not check("Tests and a push ran.\nBoth passed.\n")["pass"], "step and result must share one line"
