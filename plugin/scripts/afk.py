@@ -37,6 +37,7 @@ A repo with no .kairyn/afk.yml gets one from the template, and the run stops so 
 KAIRYN_GH overrides the gh binary (tests use a stub).
 KAIRYN_CLAUDE overrides the claude binary (tests use a stub).
 Milestones: each STATE.md log line also goes to the milestone log of .kairyn/milestones.yml (milestones.py).
+Its claude sessions run with KAIRYN_MILESTONES=off, so their hooks write no milestones.
 
 Standard library only: consumers run this with a plain python3 (3.9 on macOS).
 """
@@ -357,7 +358,9 @@ class Run:
         if self.code != self.wt:   # R7: the session works on the child code and reads the home task files
             cmd += ["--add-dir", str(self.wt)]
         try:
-            result = subprocess.run(cmd, cwd=self.code, capture_output=True, text=True, timeout=self.seconds_left())
+            # afk.py writes its own milestones; the session's hooks would write from the worktree
+            result = subprocess.run(cmd, cwd=self.code, capture_output=True, text=True, timeout=self.seconds_left(),
+                                    env={**os.environ, "KAIRYN_MILESTONES": "off"})
         except subprocess.TimeoutExpired:
             raise Blocked(f"limit stage_minutes {limits['stage_minutes']} reached in {self.stage_name}. "
                           f"Last failed command: {self.last_failed}")

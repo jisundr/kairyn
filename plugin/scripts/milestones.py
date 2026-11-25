@@ -2,16 +2,23 @@
 """Milestone messages for the first mate: one log that writers append to and a watcher streams.
 
     python3 milestones.py write --tag <run tag> <text>   # append one line (afk.py imports write())
+    python3 milestones.py hook                           # PostToolUse, PostToolUseFailure, Stop: hook JSON on stdin
     python3 milestones.py watch [--interval <s>]         # print each new log line; run it with Monitor
 
 All take --root (default: the current directory). Settings: .kairyn/milestones.yml, optional:
     write:
       log: .session/milestones.log      # writer repo: where lines go. No log: write nothing.
+      patterns:                         # optional: <label>: <regex on the Bash command>; replaces the defaults
+        tests: '\bpytest\b'
     watch:
       log: ~/Projects/home/.session/milestones.log   # first mate repo: the log to read
 A line is `<UTC timestamp> [<run tag>] <text>`, the text cut to 200 characters. A new `.session/`
 folder gets a `.gitignore` that ignores all its files. `watch` stores the number of the last line it
 printed in `.session/watch.json` of its repo; with no stored number it starts at the log's end.
+`hook` writes the label and the exit code of a Bash command that matches a pattern (never the command text) and
+the first line of the last assistant message at Stop. Its run tag is `<tmux session>:<window> <repo folder>`,
+or the repo folder outside tmux. KAIRYN_MILESTONES=off (afk.py sessions) makes it write nothing.
+KAIRYN_TMUX overrides the tmux binary (tests use a stub). A hook never fails the turn: errors exit 0.
 
 Standard library only: consumers run this with a plain python3 (3.9 on macOS).
 """
@@ -20,6 +27,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
+import subprocess
 import sys
 import time
 from datetime import datetime, timezone
@@ -28,6 +37,12 @@ from pathlib import Path
 SETTINGS = Path(".kairyn") / "milestones.yml"
 SESSION = ".session"
 MAX_TEXT = 200
+DEFAULT_PATTERNS = {
+    "tests": r"\b(pytest|(npm|pnpm|yarn|bun)( run)? test|go test|cargo test|jest|vitest|rspec|phpunit)\b",
+    "lint": r"\b(ruff|eslint|flake8|pylint|mypy|golangci-lint|(npm|pnpm|yarn|bun) run lint)\b",
+    "push": r"\bgit push\b",
+    "comment": r"\b(gh pr (comment|review)|gh api \S*/comments|glab mr note)\b",
+}
 
 
 def _value(raw: str) -> str:
@@ -99,6 +114,93 @@ def _read_lines(log: Path) -> list:
     return log.read_text().splitlines() if log.is_file() else []
 
 
+def match(patterns: dict, command: str):
+    """The label of the first pattern that matches the command, or None."""
+    for label, pattern in patterns.items():
+        if re.search(pattern, command):
+            return label
+    return None
+
+
+def run_tag(root: Path) -> str:
+    """`<tmux session>:<window> <repo folder>` in tmux, else the repo folder (R5)."""
+    pane = os.environ.get("TMUX_PANE")
+    if pane:
+        try:
+            out = subprocess.run([os.environ.get("KAIRYN_TMUX", "tmux"), "display-message", "-p", "-t", pane,
+                                  "#S:#I"], capture_output=True, text=True, timeout=0.8)
+            where = out.stdout.strip()
+            if out.returncode == 0 and where:
+                return f"{where} {root.name}"
+        except (OSError, subprocess.SubprocessError):
+            pass
+    return root.name
+
+
+def return_code(event: dict) -> int:
+    response = event.get("tool_response")
+    if isinstance(response, dict):
+        for key in ("exitCode", "returnCode", "code"):
+            if isinstance(response.get(key), int):
+                return response[key]
+    found = re.search(r"[Ee]xit code (\d+)", str(event.get("error") or ""))
+    if found:
+        return int(found.group(1))
+    return 1 if event.get("hook_event_name") == "PostToolUseFailure" else 0
+
+
+def _text(content) -> str:
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return "\n".join(part.get("text", "") for part in content
+                         if isinstance(part, dict) and part.get("type") == "text").strip()
+    return ""
+
+
+def last_message(transcript: str) -> str:
+    """The text of the last assistant message with text, read from the end of a transcript JSONL."""
+    path = Path(transcript)
+    if not path.is_file():
+        return ""
+    with path.open("rb") as f:
+        f.seek(max(0, path.stat().st_size - 2_000_000))
+        rows = f.read().decode("utf-8", "replace").splitlines()
+    for row in reversed(rows):
+        try:
+            data = json.loads(row)
+        except ValueError:
+            continue
+        message = data.get("message") if isinstance(data, dict) else None
+        if data.get("type") == "assistant" and isinstance(message, dict):
+            text = _text(message.get("content"))
+            if text:
+                return text
+    return ""
+
+
+def hook(root: Path, raw: str) -> None:
+    """Write the milestone for one hook event, if any (R1, R2)."""
+    if os.environ.get("KAIRYN_MILESTONES", "").lower() == "off":
+        return
+    conf = settings(root).get("write")
+    if not isinstance(conf, dict) or not conf.get("log"):
+        return
+    event = json.loads(raw)
+    name = event.get("hook_event_name")
+    if name in ("PostToolUse", "PostToolUseFailure"):
+        command = (event.get("tool_input") or {}).get("command") or ""
+        patterns = conf.get("patterns")
+        label = match(patterns if isinstance(patterns, dict) and patterns else DEFAULT_PATTERNS, command)
+        text = f"{label} exit {return_code(event)}" if label else ""
+    elif name == "Stop":
+        text = event.get("last_assistant_message") or last_message(event.get("transcript_path") or "")
+    else:
+        return
+    if text.strip():
+        write(root, run_tag(root), text)
+
+
 def watch(root: Path, interval: float) -> int:
     conf = settings(root).get("watch")
     raw = conf.get("log") if isinstance(conf, dict) else None
@@ -130,12 +232,19 @@ def main(argv=None) -> int:
     w.add_argument("text")
     v = sub.add_parser("watch")
     v.add_argument("--interval", type=float, default=5.0)
-    for p in (w, v):
+    h = sub.add_parser("hook")
+    for p in (w, v, h):
         p.add_argument("--root", default=".")
     args = parser.parse_args(argv)
     root = Path(args.root).resolve()
     if args.command == "write":
         write(root, args.tag, args.text)
+        return 0
+    if args.command == "hook":
+        try:
+            hook(root, sys.stdin.read())
+        except Exception as err:   # a milestone must never fail the user's turn
+            print(f"milestones: {err}", file=sys.stderr)
         return 0
     return watch(root, args.interval)
 
