@@ -306,6 +306,38 @@ def test_slice3_readiness_needs_a_testing_command(repo):
     assert re.search(r"\[build\] Blocked: readiness: .*testing", state) and calls(repo) == []
 
 
+def set_security_need(repo, need):
+    task = repo / "docs" / "tasks" / TASK / "REQUIREMENTS.md"
+    task.write_text(f"# Requirements: Feature\n\n## Non-functional needs\n- Performance:\n- Security: {need}\n"
+                    "- Observability:\n\n## Acceptance criteria\n- [ ] AC1\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "requirements")
+
+
+@pytest.mark.parametrize("security", ["", "\n  security:"])
+def test_slice3_readiness_needs_a_security_gate_for_a_security_need(repo, security):
+    """A task whose requirements name a security need cannot pass every gate with security not set."""
+    set_security_need(repo, "The token never reaches a log line. (request)")
+    set_afk(repo, f"gates:\n  testing: {GOOD_GATE}\n  contract: true{security}\n")
+    assert run(repo, "run", TASK).returncode == 0
+    state = task_file(repo, "STATE.md")
+    assert front(state, "status") == "blocked"
+    assert re.search(r"\[build\] Blocked: readiness: REQUIREMENTS.md names a security need, "
+                     r"but the security gate in .kairyn/afk.yml has no command", state)
+    assert calls(repo) == []
+
+
+@pytest.mark.parametrize("need,security", [("not applicable: no input crosses a trust boundary", ""),
+                                           ("", ""), ("<need>", ""),
+                                           ("The token never reaches a log line. (request)", "\n  security: true")])
+def test_slice3_readiness_passes_without_a_security_need_or_with_a_gate(repo, need, security):
+    set_security_need(repo, need)
+    set_afk(repo, f"gates:\n  testing: {GOOD_GATE}\n  contract: true{security}\n")
+    assert run(repo, "run", TASK).returncode == 0
+    assert "Blocked: readiness" not in task_file(repo, "STATE.md")
+    assert calls(repo)
+
+
 def test_slice3_readiness_needs_gates_green_on_the_base(repo):
     set_afk(repo, "gates:\n  testing: python3 -c 'raise SystemExit(4)'\n")
     assert run(repo, "run", TASK).returncode == 0
