@@ -101,11 +101,16 @@ def test_commits_gate_counts_a_file_from_a_test_commit_as_a_test(repo):
     assert "fix edits the test file `check_t1.py` in the fix round" in last
 
 
+def test_commits_gate_allows_a_fix_commit_that_only_adds_test_lines(repo):
+    branch(repo, PAIR + [("fix: finding", {"tests/test_app.py": "def test_x(): pass\ndef test_y(): pass\n"})])
+    run(repo, "run", TASK)
+    assert front(task_file(repo, "STATE.md"), "stage") == "review", task_file(repo, "STATE.md")
+
+
 def test_commits_gate_allows_a_red_test_commit_in_the_fix_round(repo):
     """A fix-round test edit is fine in a test(...) commit where the testing gate fails."""
-    commits = PAIR + [("test(review): stricter", {"tests/test_app.py": "def test_x(): assert 0\n",
-                                                  "check_t1.py": "import sys; sys.exit(1)\n"}),
-                      ("fix: pass it", {"check_t1.py": "pass\n"})]
+    commits = PAIR + [("test(review): stricter", {"check_t1.py": "import app\nassert app.x == 2\n"}),
+                      ("fix: pass it", {"app.py": "x = 2\n"})]
     (repo / ".kairyn" / "afk.yml").write_text("gates:\n  testing: python3 check_t1.py\n")
     (repo / "check_t1.py").write_text("pass\n")
     git(repo, "add", "-A")

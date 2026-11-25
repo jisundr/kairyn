@@ -23,10 +23,12 @@ After you approve `DESIGN.md`, `/kairyn:build <task>` runs `afk.py`. It works in
 4. Push and one pull request, given an `origin` remote and `gh`.
 5. Gates, then a `REVIEW.md` session. `REVIEW.md` goes on the pull request.
 
-## This repo's review gates
-`scripts/gates.py` adds four gates to this repo's `.kairyn/afk.yml`. Each reads the code commits after the merge base with `main`:
-- `design`: each changed file and each new hook event is named in `DESIGN.md`. A backticked `dir/` covers its files.
-- `commits`: a `feat` commit changes no test or fixture. A fix-round commit that changes a test line is a `test(...)` commit, and `uv run pytest` fails there.
+## Review gates
+Before `gates:`, afk.py checks the code commits after the base:
+- `design`: `DESIGN.md` names each changed file (a backticked path, `dir/` or glob) and each new hook event.
+- `commits`: a `feat` commit changes no test or fixture. A later test edit is a `test(...)` commit where `testing` fails.
+
+`scripts/gates.py` adds two to this repo's `.kairyn/afk.yml`:
 - `evals`: after a `plugin/` change, also in a fix round, each eval that depends on a changed file has a pass at the current hash. Run `/run-evals`, then resume.
 - `sessions`: each `Manual` row of the test plan has a line `Run AC<n>: <who>, <time>, "<what it showed>"` in `BUILD.md`.
 
