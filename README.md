@@ -15,7 +15,7 @@ An agentic SDLC that grows with your repo.
 
 `/kairyn:init` sets up `.kairyn/` (stages, templates, learnings, a manifest), `docs/tasks/`, and a `.harness/` of short workflow docs with size budgets. It adds a marked block to your `CLAUDE.md` (created if needed) that points Claude to those docs. Nothing you already have is overwritten.
 
-`/kairyn:check` verifies doc headers and size budgets; `/kairyn:check write` also refreshes the indexes.
+`/kairyn:check` verifies doc headers and size budgets (`write` also refreshes the indexes). `/kairyn:backlog` writes `.kairyn/backlog.html`, a page of every idea in `docs/backlog/`.
 
 `/kairyn:upgrade` brings those files up to a newer plugin and keeps your edits. A session-start hook tells you when to run it.
 
@@ -28,7 +28,7 @@ After you approve a design, `/kairyn:build` builds, gates and reviews it with no
 ├── .claude-plugin/marketplace.json   # marketplace entry pointing to ./plugin
 ├── plugin/                           # the kairyn plugin
 │   ├── .claude-plugin/plugin.json
-│   ├── commands/                     # /kairyn:init, /kairyn:check, /kairyn:upgrade, /kairyn:release
+│   ├── commands/                     # /kairyn:init, check, backlog, upgrade, release
 │   ├── skills/                       # one per stage: /kairyn:<stage>, e.g. /kairyn:design, /kairyn:retro
 │   ├── hooks/hooks.json              # SessionStart: warn when the repo's kairyn files are older
 │   ├── scripts/                      # afk.py (the AFK run), init, verify, upgrade, checkers
@@ -57,13 +57,13 @@ When the change merges, `/kairyn:close` leaves an ADR (if a decision was load-be
 
 ## Tests and evals
 
-**Tests** are fast, free and give the same result every time:
+**Tests** are fast and free:
 
 ```bash
 uv run pytest
 ```
 
-**Evals** run real `claude` sessions N times and check a pass rate, so they are slow and cost tokens. Each one runs only when the plugin files it exercises changed since it last passed:
+**Evals** run real `claude` sessions N times and check a pass rate, so they cost tokens. Each runs only when the plugin files it exercises changed:
 
 ```bash
 uv run python evals/run.py              # only evals whose dependencies changed

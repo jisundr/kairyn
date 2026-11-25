@@ -220,7 +220,7 @@ def test_relative_links_resolve_from_the_page_in_kairyn(tmp_path):
     assert '<a href="../docs/backlog/TRIAGE.md#next">T</a>' in body
 
 
-# ---------- T4: .gitignore and the error exits ----------
+# ---------- T4: .gitignore, and nothing to build ----------
 
 @pytest.mark.parametrize("before", [None, "node_modules/\n", "node_modules/", "node_modules/\n.kairyn/backlog.html\n"])
 def test_gitignore_gets_one_line(tmp_path, before):
