@@ -79,14 +79,18 @@ def _remove_unshipped(repo: Path, manifest: dict, shipped: set, records: dict, r
     for path in sorted(set(manifest["files"]) - shipped):
         old, local = records.get(path), current_bytes(repo, path)
         released = local is not None and any(sha256(local) in files.get(path, []) for files in releases.values())
-        if local is None or released or (old is not None and local == old.data):
+        # A record with no real base (its .base/ copy was lost) holds the user's own bytes:
+        # matching them proves nothing, so only the user's delete removes the file (F1).
+        has_base = old is not None and not old.no_base
+        if local is None or released or (has_base and local == old.data):
             if local is not None:
                 (repo / path).unlink()
             (repo / BASE / path).unlink(missing_ok=True)
             records.pop(path, None)
             lines.append(("REMOVED", path))
         else:
-            records[path] = Record(old.data if old else local, manifest["files"][path]["owner"], True)
+            records[path] = Record(old.data if has_base else local, manifest["files"][path]["owner"], True,
+                                   no_base=not has_base)
             lines.append(("CONFLICT", path))
     return lines
 
