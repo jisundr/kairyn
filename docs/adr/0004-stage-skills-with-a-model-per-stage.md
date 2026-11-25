@@ -3,7 +3,7 @@
 Date: 2026-11-23
 
 ## Status
-Accepted
+Accepted. Amended by [ADR 19](0019-opus-decides-cheaper-models-carry-out.md): the model of each skill and `afk.py` role.
 
 ## Context
 Task 2026-11-22-stage-skills. Every stage and every eval ran on the session model, and no run recorded its cost. About $400 was already spent. Two options were possible: a subagent per stage, or a skill per stage. The agents playbook says a model per stage is not a reason for a subagent.
