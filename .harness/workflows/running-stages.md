@@ -18,7 +18,7 @@ Each skill names a cheaper model in its `model:` front matter. The model applies
 A stage:
 1. reads `STATE.md` and earlier stage outputs (see `task-lifecycle.md`)
 2. writes its output to `docs/tasks/<date>-<slug>/<STAGE>.md`
-3. updates `STATE.md` and appends to `.kairyn/learnings.md`
+3. updates `STATE.md` and appends to `.kairyn/learnings.md` (this repo's `.gitattributes` merges it by `union`, so parallel task branches do not conflict on a local merge or rebase)
 
 An optional stage (`optional: true` in its front matter) is not in the default stage list. Run it on a task only when it fits: `GRILL.md` before `requirements` when a request is vague, `MODEL-ROUTING.md` after it to cut model cost, `CLOSE.md` (`/kairyn:close`) after a task merges, `RETRO.md` (`/kairyn:retro`) when `learnings.md` is past half its budget. It adds itself to the task's `stages`.
 

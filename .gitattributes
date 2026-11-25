@@ -1,0 +1,2 @@
+# Stages append to learnings.md: parallel task branches keep both sides on a local merge or rebase.
+.kairyn/learnings.md merge=union

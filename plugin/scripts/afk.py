@@ -48,11 +48,13 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import json
 import os
 import re
 import shutil
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
@@ -73,6 +75,7 @@ _TASK_START = re.compile(r"^- T\d+\b.*$", re.M)
 _AFTER = re.compile(r"\bafter:\s*((?:T\d+\s*,?\s*)+)")
 _DONE = re.compile(r"\bDone:\s*`([^`]+)`")
 _DECISION_PENDING = re.compile(r"^Decision: pending\s*$", re.M)
+_CI_FAILED = ("FAILURE", "ERROR", "CANCELLED", "TIMED_OUT", "ACTION_REQUIRED", "STARTUP_FAILURE")
 
 
 class Task(NamedTuple):
@@ -725,6 +728,35 @@ class Run:
                                 capture_output=True, text=True)
         return result.returncode == 0 and result.stdout.strip() == "MERGED"
 
+    def wait_for_ci(self, gh: str, root: Path, wt: Path, prefix: str) -> None:
+        """Before a merge: every check on the pushed head has passed. GitHub takes a moment to see a new head
+        and start its checks, so the old head's checks never count. No check within the grace: no CI."""
+        sha = git(wt, "rev-parse", "HEAD")
+        poll, grace, limit = (float(os.environ.get(f"KAIRYN_CI_{k}", d)) for k, d in
+                              (("POLL", "15"), ("GRACE", "60"), ("TIMEOUT", "1800")))
+        start = time.monotonic()
+        while True:
+            result = subprocess.run([gh, "pr", "view", self.branch, "--json", "headRefOid,statusCheckRollup"],
+                                    cwd=root, capture_output=True, text=True)
+            waited = time.monotonic() - start
+            try:
+                data = json.loads(result.stdout) if result.returncode == 0 else {}
+            except ValueError:
+                data = {}
+            if data.get("headRefOid") == sha:
+                checks = data.get("statusCheckRollup") or []
+                failed = [c.get("name") or c.get("context") or "?" for c in checks if
+                          (c.get("state") or c.get("conclusion") or "").upper() in _CI_FAILED]
+                if failed:
+                    raise Blocked(f"{prefix}CI failed on {sha[:7]}: {', '.join(failed)}")
+                pending = [c for c in checks if (c.get("state") or "").upper() in ("PENDING", "EXPECTED") or
+                           ("state" not in c and (c.get("status") or "").upper() != "COMPLETED")]
+                if (checks and not pending) or (not checks and waited >= grace):
+                    return
+            if waited >= limit:
+                raise Blocked(f"{prefix}CI did not finish on {sha[:7]} in {limit / 60:g} minutes")
+            time.sleep(poll)
+
     def push(self, wt: Path, prefix: str = "") -> None:
         result = subprocess.run(["git", "-C", str(wt), "push", "-q", "-u", "origin", self.branch],
                                 capture_output=True, text=True)
@@ -873,6 +905,7 @@ class Run:
                     self.commit(f"kairyn({self.task}): merge")
                 self.push(wt, prefix)
                 if merge:
+                    self.wait_for_ci(gh, root, wt, prefix)
                     result = subprocess.run([gh, "pr", "merge", self.branch, "--merge"], cwd=root,
                                             capture_output=True, text=True)
                     if result.returncode:

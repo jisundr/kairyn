@@ -7,17 +7,17 @@ load: on-demand
 
 # AFK run
 
-After you approve `DESIGN.md`, `/kairyn:build <task>` runs `afk.py`. It works in a git worktree on the branch `kairyn/<task>` with no user turns. The script decides each step by exit codes, not by what the agent says.
+After you approve `DESIGN.md`, `/kairyn:build <task>` runs `afk.py`. It works in a worktree on `kairyn/<task>` with no user turns. Exit codes decide each step, not what the agent says.
 
 ## Set up `.kairyn/afk.yml` first
 - `gates:` in order, security last. Exit 0 passes. An empty command is `not set`: never a pass. The `testing` gate needs a command.
 - `checks:` an optional AI check per gate, for what no command can judge. It runs after its gate command passes.
-- `limits:` cost caps per stage and per run, and minutes per stage.
+- `limits:` cost caps per stage and run, and minutes per stage.
 - `approval:` glob patterns for high-risk paths, such as `**/migrations/**`.
 - `escape_hatches:` regex patterns for added lines that turn off a check, such as `# noqa`.
 
 ## What the run does
-1. Readiness: the `testing` gate has a command, set gates pass on the base commit, no uncommitted code.
+1. Readiness: the `testing` gate has a command, set gates pass on the base, no uncommitted code.
 2. Build: one fresh `claude -p` per slice `T<n>`, in `after:` order. Each slice needs a `test(T<n>)` commit where its done command fails, then a `feat(T<n>)` commit where it passes.
 3. A read-only reviewer reads the diff and the flags: an edited test file, an added escape hatch. Its findings get one fix round.
 4. Push and one pull request, if the repo has an `origin` remote and `gh`.
@@ -27,7 +27,7 @@ After you approve `DESIGN.md`, `/kairyn:build <task>` runs `afk.py`. It works in
 `scripts/gates.py` adds four gates to this repo's `.kairyn/afk.yml`. Each reads the code commits after the merge base with `main`:
 - `design`: each changed file and each new hook event is named in `DESIGN.md`. A backticked `dir/` covers its files.
 - `commits`: a `feat` commit changes no test or fixture. A fix-round commit that changes a test line is a `test(...)` commit, and `uv run pytest` fails there.
-- `evals`: after a `plugin/` change, each eval that depends on a changed file has a pass at the current hash. Run `/run-evals`, then resume.
+- `evals`: after a `plugin/` change, also in a fix round, each eval that depends on a changed file has a pass at the current hash. Run `/run-evals`, then resume.
 - `sessions`: each `Manual` row of the test plan has a line `Run AC<n>: <who>, <time>, "<what it showed>"` in `BUILD.md`.
 
 ## Where it stops
@@ -36,11 +36,11 @@ Each stop sets `status: blocked` and logs why in `STATE.md`:
 - a slice marked `(approval)`, or a changed path that matches `approval:` with no approval;
 - the merge decision, the one planned stop.
 
-Fix the cause on `kairyn/<task>`, then run `/kairyn:build <task>` again: it resumes at `stage:`, but not at a pending merge decision. An uncommitted task folder is copied and committed to `kairyn/<task>`. Keep the main checkout off that branch, or the run prints `BLOCKED:`.
+Fix the cause on `kairyn/<task>`, then run `/kairyn:build <task>` again: it resumes at `stage:`, but not at a pending merge decision. An uncommitted task folder is committed to `kairyn/<task>`. Keep the main checkout off that branch, or the run prints `BLOCKED:`.
 
 ## Approve
 - A slice: `/kairyn:build <task> approve T<n> "<words>"`.
-- The merge: read the diff and `REVIEW.md`, then `/kairyn:review <task> approve "<words>"` or `reject "<reason>"`. Approve merges the pull request with a merge commit. After a failed merge, approve again retries it.
+- The merge: read the diff and `REVIEW.md`, then `/kairyn:review <task> approve "<words>"` or `reject "<reason>"`. Approve pushes, waits for each check on the new head to pass, then merges with a merge commit. A failed check blocks. Approve again retries a failed merge.
 
 ## Code in a child repo
 A home repo holds the tasks; a child repo holds the code. List each child under `repos:` in `.kairyn/afk.yml`, with `path:` and its own `gates:`. Design writes `repo: <name>` in the task's `STATE.md`.
