@@ -598,7 +598,7 @@ _PASSED = re.compile(r"exit 0\b|\b(passed|succeeded|success|ok|green)\b|\u2705",
 def _reports(line: str, milestone: str) -> bool:
     """One reply line names the milestone's step (`tests` in `tests exit 0`) and its result: the exit code,
     or for exit 0 a word such as passed. Replies put both in a sentence, a list item or a table row."""
-    step, code = re.match(r"(\S+) exit (\d+)", milestone).groups()
+    step, _, code = milestone.split()   # "tests exit 0"
     if not re.search(rf"\b{re.escape(step)}\b", line, re.I):
         return False
     return bool(re.search(rf"exit {code}\b", line) or (code == "0" and _PASSED.search(line) and "fail" not in line.lower()))
