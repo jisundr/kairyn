@@ -42,3 +42,7 @@ On `CONFLICT` the local file stays and the merge goes to `<file>.kairyn-new`. Th
 1. Bump `version` in `plugin/.claude-plugin/plugin.json`. CI (`version-bump`, `scripts/check_version_bump.py`) fails a pull request into `main` that changes `plugin/` without a newer version.
 2. Run `uv run python scripts/release_hashes.py --write`. A test fails until the hashes are current.
 3. Tests: `tests/test_upgrade.py` (fixture `tests/fixtures/consumer-v0.1.0/`), `test_kairyn_files.py`, `test_version_check.py`. Eval: `upgrade`.
+
+- AFK gates do not run CI's `version-bump`: bump the version and run `release_hashes.py --write` before review.
+- Upgrade tests that cover a removed shipped file install from a plugin copy that still ships it.
+- This repo installs its own plugin: a new shipped harness doc lands in `.harness/workflows/` and needs index rows in `CLAUDE.md` and `.harness/README.md`. Plan the cuts in design.
