@@ -288,3 +288,141 @@ def test_backlog_eval_runs_the_command_and_depends_on_its_files():
 def test_readme_names_the_command():
     from helpers import ROOT
     assert "/kairyn:backlog" in (ROOT / "README.md").read_text()
+
+
+# ---------- T6: readability (owner's pick, 2026-11-25) ----------
+
+LONG_APPETITE = "small batch (proposed by the steward; owner to confirm)"
+
+
+def test_problem_line_is_the_first_sentence(tmp_path):
+    root = make_repo(tmp_path, {
+        "20261125053013-a.md": idea(title="A", problem="Version 1.2 is out. Then more text follows here."),
+        "20261124053013-b.md": idea(title="B", problem="No full stop at all"),
+    })
+    assert [d["problem"] for d in page_data(render_html(root))] == ["Version 1.2 is out.", "No full stop at all"]
+
+
+@pytest.mark.parametrize("value, label", [
+    ("big batch", "Big batch"), (LONG_APPETITE, "Small batch …"), ("", ""),
+])
+def test_appetite_gets_a_short_label_and_keeps_the_full_text(tmp_path, value, label):
+    root = make_repo(tmp_path, {"20261125053013-a.md": idea(appetite=value)})
+    d = page_data(render_html(root))[0]
+    assert (d["appetite"], d["appetite_label"]) == (value, label)
+
+
+@pytest.mark.parametrize("value, label", [("2026-11-25", "Nov 25"), ("2026-01-03", "Jan 3"), ("", "—"), ("soon", "soon")])
+def test_dates_show_as_month_and_day(tmp_path, value, label):
+    root = make_repo(tmp_path, {"20261125053013-a.md": idea(date=value)})
+    assert page_data(render_html(root))[0]["date_label"] == label
+
+
+def test_detail_view_leads_with_the_problem(tmp_path):
+    root = make_repo(tmp_path, {"20261125053013-a.md": idea(problem="The `gates` are repo-only.", extra="**Notes:** n.")})
+    d = page_data(render_html(root))[0]
+    assert d["problem_html"].startswith("<strong>Problem (confirmed by Jo, 2026-11-25):</strong> The <code>gates</code>")
+    assert "Problem (confirmed" not in d["body_html"]
+    assert "<strong>Raw request:</strong>" in d["body_html"] and "<strong>Notes:</strong> n." in d["body_html"]
+
+
+def test_no_problem_means_no_lead(tmp_path):
+    text = idea().replace("**Problem (confirmed by Jo, 2026-11-25):** The gates are repo-only.\nSecond line of the problem.\n", "**Learning:** x\n")
+    d = page_data(render_html(make_repo(tmp_path, {"20261125053013-a.md": text})))[0]
+    assert d["problem"] == "" and d["problem_html"] == ""
+    assert "<strong>Learning:</strong> x" in d["body_html"]
+
+
+def test_log_is_a_timeline_of_time_tag_and_text(tmp_path):
+    log = ("- 2026-11-25T05:30:13Z [capture] Created <b>now</b>.\n"
+           "2026-11-25T10:18:25Z [slice] Slice 2: `afk.py`\n  runs it.\n"
+           "A line with no time.")
+    d = page_data(render_html(make_repo(tmp_path, {"20261125053013-a.md": idea(log=log)})))[0]
+    items = re.findall(r"<li>(.*?)</li>", d["log_html"])
+    assert d["log_html"].startswith('<ol class="tl">') and len(items) == 3
+    assert '<time datetime="2026-11-25T05:30:13Z">Nov 25 05:30</time>' in items[0]
+    assert '<span class="tag">capture</span> Created &lt;b&gt;now&lt;/b&gt;.' in items[0]
+    assert '<span class="tag">slice</span> Slice 2: <code>afk.py</code> runs it.' in items[1]
+    assert "<time></time>" in items[2] and "A line with no time." in items[2]
+
+
+def test_page_has_search_feedback_and_a_compact_list(tmp_path):
+    html = render_html(make_repo(tmp_path, {"20261125053013-a.md": idea()}))
+    assert 'id="count"' in html and "<mark>" in html and 'e.key==="/"' in html
+    assert "No problem statement" in html
+    assert 'class="list"' in html and "text-overflow:ellipsis" in html
+
+
+# ---------- T6: measured in a real browser ----------
+
+def _chrome():
+    import os
+    import shutil
+    for name in (os.environ.get("CHROME", ""), "google-chrome", "google-chrome-stable", "chromium", "chromium-browser"):
+        if name and shutil.which(name):
+            return shutil.which(name)
+    mac = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    return mac if Path(mac).exists() else None
+
+
+def in_browser(tmp_path, page: str, width: int, js: str) -> dict:
+    """Load page in a width-px iframe (headless windows have a minimum width), run js with d and w, return its JSON."""
+    import html as html_mod
+    chrome = _chrome()
+    if not chrome:
+        pytest.skip("no Chrome or Chromium on this machine")
+    outer = (f'<!doctype html><body><iframe id="f" style="width:{width}px;height:900px;border:0" '
+             f'srcdoc="{html_mod.escape(page, quote=True)}"></iframe><script>f.onload=()=>setTimeout(()=>{{'
+             f'const d=f.contentDocument,w=f.contentWindow;const o=document.createElement("output");o.id="r";'
+             f'o.textContent=JSON.stringify((()=>{{{js}}})());document.body.append(o)}},100)</script></body>')
+    probe = tmp_path / "probe.html"
+    probe.write_text(outer)
+    r = subprocess.run([chrome, "--headless=new", "--disable-gpu", "--no-sandbox", "--window-size=1400,1000",
+                        "--virtual-time-budget=3000", "--dump-dom", probe.as_uri()],
+                       capture_output=True, text=True, timeout=60)
+    m = re.search(r'<output id="r">(.*?)</output>', r.stdout, re.S)
+    assert m, r.stderr[-500:]
+    return json.loads(html_mod.unescape(m.group(1)))
+
+
+def browser_repo(tmp_path):
+    return make_repo(tmp_path / "repo", {
+        "20261125053013-a.md": idea(title="An idea with a fairly long title that wraps on a phone", appetite=LONG_APPETITE,
+                                    problem="A long problem sentence " + "that goes on and on " * 12 + "."),
+        "20261124053013-b.md": idea(title="Second", appetite="big batch", extra="Unbroken: " + "x" * 120),
+        "20261123053013-c.md": idea(title="Third", appetite="").replace("**Problem (confirmed by Jo, 2026-11-25):**", "**Learning:**"),
+    })
+
+
+@pytest.mark.parametrize("width", [360, 390])
+def test_phone_width_has_no_sideways_scroll(tmp_path, width):
+    page = render_html(browser_repo(tmp_path))
+    js = ("const list=d.documentElement.scrollWidth;w.openPane('a');const a=d.getElementById('pane').scrollWidth;"
+          "w.openPane('b');return {list, a, b:d.getElementById('pane').scrollWidth, iw:w.innerWidth}")
+    got = in_browser(tmp_path, page, width, js)
+    assert got["iw"] == width
+    assert got["list"] <= width and got["a"] <= width and got["b"] <= width, got
+
+
+def test_desktop_rows_are_one_line_summaries_with_aligned_dates(tmp_path):
+    page = render_html(browser_repo(tmp_path))
+    js = ("const s=[...d.querySelectorAll('.row .s')].map(e=>e.getBoundingClientRect().height);"
+          "const lh=parseFloat(w.getComputedStyle(d.querySelector('.row .s')).lineHeight);"
+          "const x=[...d.querySelectorAll('.row .date')].map(e=>Math.round(e.getBoundingClientRect().right));"
+          "const tip=d.querySelector('.row .app').title;"
+          "const none=d.querySelectorAll('.row')[2].querySelector('.s').textContent;"
+          "return {s, lh, x, tip, none, sw:d.documentElement.scrollWidth}")
+    got = in_browser(tmp_path, page, 1280, js)
+    assert all(h <= got["lh"] * 1.2 for h in got["s"]), got
+    assert len(set(got["x"])) == 1, got
+    assert got["tip"] == LONG_APPETITE and got["none"] == "No problem statement" and got["sw"] <= 1280
+
+
+def test_search_shows_a_count_and_highlights_matches(tmp_path):
+    page = render_html(browser_repo(tmp_path))
+    js = ("d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'/'}));const focused=d.activeElement.id;"
+          "const q=d.getElementById('q');q.value='second';q.dispatchEvent(new w.Event('input'));"
+          "return {focused, count:d.getElementById('count').textContent, rows:d.querySelectorAll('.row').length,"
+          "mark:d.querySelector('.row mark')&&d.querySelector('.row mark').textContent}")
+    got = in_browser(tmp_path, page, 1280, js)
+    assert got == {"focused": "q", "count": "1 of 3", "rows": 1, "mark": "Second"}, got
