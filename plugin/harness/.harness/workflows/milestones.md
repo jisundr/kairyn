@@ -1,7 +1,7 @@
 ---
 title: Milestones
 summary: "How runs write milestone lines to one log, and how a first mate session streams them with Monitor. Setup in .kairyn/milestones.yml."
-read_when: "setting up or changing .kairyn/milestones.yml, or when milestone messages stop"
+read_when: "setting up milestones.yml"
 load: on-demand
 ---
 

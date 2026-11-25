@@ -394,8 +394,7 @@ def test_catchup_reads_the_host_log(tmp_path):
 
 # --- T5: docs and eval ----------------------------------------------------------------------------------
 
-MILESTONE_DOCS = ("plugin/harness/.harness/workflows/milestones.md",)
-DEV_DOC = ".harness/workflows/afk-run.md"   # this repo folds its milestones notes into afk-run.md: CLAUDE.md has no room for a row
+MILESTONE_DOCS = ("plugin/harness/.harness/workflows/milestones.md", ".harness/workflows/milestones.md")   # this repo installs the shipped doc
 
 
 def _asserts():
@@ -415,8 +414,6 @@ def test_milestone_docs_have_valid_headers():
         assert path.is_file(), rel
         assert doc_problems(path, read_meta(path)) == [], rel
         assert "milestones.yml" in path.read_text(), rel
-    assert "## Milestones" in (ROOT / DEV_DOC).read_text()
-    assert not (ROOT / ".harness" / "workflows" / "milestones.md").exists()
 
 
 def test_shipped_milestone_doc_is_installed_and_indexed():

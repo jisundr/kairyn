@@ -1,6 +1,6 @@
 ---
 title: AFK run
-summary: "How /kairyn:build runs build, gates and review with no user turns, where it stops, how to resume, approve and merge, and how milestones.py reports progress."
+summary: "How /kairyn:build runs build, gates and review with no user turns, where it stops, and how to resume, approve and merge."
 read_when: "running /kairyn:build or /kairyn:review, or editing afk.yml"
 load: on-demand
 ---
@@ -42,12 +42,3 @@ A home repo holds the tasks; a child repo holds the code. List each child under 
 - Each repo gets its own push and pull request. `REVIEW.md` goes on the child pull request.
 - Approve merges the child first, then the home. If the child has no remote or its merge fails, the run blocks and the home stays unmerged. A retry skips a child that is already merged.
 - One child repo per task. A task with no `repo:` line runs in the home repo, as before.
-
-## Milestones
-`plugin/scripts/milestones.py` reports run progress. User setup: `plugin/harness/.harness/workflows/milestones.md`.
-- `write`: `update()` appends each `STATE.md` log line, tagged with the task slug.
-- `hook`: PostToolUse, PostToolUseFailure and Stop write a matched command label and exit code, or the first message line.
-- `catchup` (SessionStart) prints missed lines; `watch` streams new lines through Monitor and keeps its place in `.session/watch.json`.
-- No `.kairyn/milestones.yml`: nothing is written. Standard library only, Python 3.9. A hook exits 0 on any error and ends in under 1 second.
-- `afk.py` sets `KAIRYN_MILESTONES=off` for its `claude -p` sessions. `KAIRYN_SSH` and `KAIRYN_TMUX` replace the binaries in tests.
-- Tests: `tests/test_milestones.py`. Eval: `evals/promptfoo/milestones.yaml`; run it when `milestones.py` or `hooks.json` changes.
