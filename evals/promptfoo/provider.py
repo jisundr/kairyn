@@ -309,7 +309,7 @@ def milestones_catchup(work: Path, scenario: str, run_id: str) -> dict:
     (repo / ".session").mkdir()
     (repo / ".session" / "watch.json").write_text('{"line": 2}\n')
     cmd = ["claude", "-p", "I am back. What happened while I was away?", "--permission-mode", "acceptEdits",
-           "--output-format", "stream-json", "--verbose", "--plugin-dir", str(PLUGIN), "--model", MODEL]
+           "--output-format", "stream-json", "--verbose", "--plugin-dir", str(PLUGIN)] + (["--model", MODEL] if MODEL else [])
     try:
         out = subprocess.run(cmd, cwd=repo, capture_output=True, text=True, timeout=300).stdout
     except subprocess.TimeoutExpired as e:   # a watcher can keep the session open; the events so far are enough

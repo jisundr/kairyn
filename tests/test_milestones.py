@@ -55,6 +55,73 @@ def test_session_folder_gets_gitignore(tmp_path):
     assert ".session" not in status, status
 
 
+def test_store_replaces_watch_json_atomically(tmp_path, monkeypatch):
+    """store() writes a temp file in the same folder, then os.replace: a reader never sees watch.json empty.
+    CI run 45548893428 read it between write_text's truncate and its write (JSONDecodeError)."""
+    import milestones
+    state = tmp_path / "watch.json"
+    milestones.store(state, 1)
+    seen = []
+    real_replace = milestones.os.replace
+
+    def spy(src, dst):
+        seen.append((Path(src), Path(dst), json.loads(Path(dst).read_text())))   # the reader's view mid-write
+        real_replace(src, dst)
+
+    monkeypatch.setattr(milestones.os, "replace", spy)
+    milestones.store(state, 2, "2026-11-25T00:00:00Z")
+    assert len(seen) == 1, "store() must write through os.replace"
+    src, dst, during = seen[0]
+    assert dst == state and src.parent == state.parent and src != state
+    assert during == {"line": 1}
+    assert json.loads(state.read_text()) == {"line": 2, "unreachable": "2026-11-25T00:00:00Z"}
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["watch.json"], "no temp file left behind"
+
+
+def test_store_leaves_no_temp_file_when_the_write_fails(tmp_path, monkeypatch):
+    import milestones
+    state = tmp_path / "watch.json"
+    milestones.store(state, 1)
+
+    def boom(src, dst):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(milestones.os, "replace", boom)
+    try:
+        milestones.store(state, 2)
+    except OSError:
+        pass
+    else:
+        raise AssertionError("the error must reach the caller")
+    assert json.loads(state.read_text()) == {"line": 1}
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["watch.json"]
+
+
+def test_reader_never_sees_watch_json_empty_while_store_runs(tmp_path):
+    """A second process polls watch.json (the test above, catchup in a new session) while watch stores."""
+    import milestones
+    state = tmp_path / "watch.json"
+    milestones.store(state, 0)
+    bad, stop = [], threading.Event()
+
+    def reader():
+        while not stop.is_set():
+            try:
+                json.loads(state.read_text())
+            except ValueError as e:
+                bad.append(repr(e))
+
+    t = threading.Thread(target=reader, daemon=True)
+    t.start()
+    try:
+        for n in range(3000):
+            milestones.store(state, n)
+    finally:
+        stop.set()
+        t.join(timeout=5)
+    assert not bad, f"{len(bad)} reads saw a partial file, first: {bad[0]}"
+
+
 def test_watch_local_prints_new_line_and_stores_number(tmp_path):
     import milestones
     home = git_repo(tmp_path / "home")
@@ -353,7 +420,11 @@ def test_watch_host_unreachable_once_then_catches_up(tmp_path):
         assert printed_lines("".join(got[1:])) == ["line 3", "line 4", "line 5"], got
         calls = (tmp_path / "ssh.calls").read_text().splitlines()
         assert len(calls) >= 4 and all("dev-server" in c and "tail -n +3" in c for c in calls[:4]), calls
-        stored = json.loads((mate / ".session" / "watch.json").read_text())
+        state = mate / ".session" / "watch.json"   # watch prints the lines, then stores the number
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline and json.loads(state.read_text()).get("line") != 5:
+            time.sleep(0.05)
+        stored = json.loads(state.read_text())
         assert stored["line"] == 5 and not stored.get("unreachable"), stored
     finally:
         proc.kill()
@@ -442,6 +513,28 @@ def test_milestones_eval_names_its_dependencies_scenario_and_asserts():
             assert check["metric"] in test["metadata"]["min_pass_rate"]
 
 
+def test_milestones_eval_runs_claude_with_no_model_set(tmp_path, monkeypatch):
+    """With KAIRYN_MODEL unset, MODEL is None: run 20261125T055503Z failed 10/10 with a TypeError on `--model None`."""
+    import importlib.util
+    from helpers import ROOT
+    spec = importlib.util.spec_from_file_location("kairyn_provider", ROOT / "evals" / "promptfoo" / "provider.py")
+    provider = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(provider)
+    calls = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(provider, "MODEL", None)
+    monkeypatch.setattr(provider, "RESULTS", tmp_path / "results")
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    provider.milestones_catchup(tmp_path / "work", "milestones_catchup", "run-test")
+    claude_calls = [c for c in calls if c[0] == "claude"]
+    assert claude_calls and all(isinstance(a, str) for a in claude_calls[0]), claude_calls
+    assert "--model" not in claude_calls[0]
+
+
 def test_starts_monitor_passes_only_for_a_monitor_on_milestones_watch():
     asserts = _asserts()
     watch = {"name": "Monitor", "input": {"command": 'python3 "/p/scripts/milestones.py" watch --root "/r"'}}
@@ -458,3 +551,25 @@ def test_reports_missed_passes_only_when_the_reply_names_each_missed_milestone()
     evidence = {"missed": ["tests exit 0", "push exit 0"]}
     assert asserts.reports_missed(json.dumps({**evidence, "reply": "Missed: tests exit 0, push exit 0."}), {})["pass"]
     assert not asserts.reports_missed(json.dumps({**evidence, "reply": "Missed: tests exit 0."}), {})["pass"]
+
+
+# Real replies from run 20261125T055654Z: each reports both milestones, none has the text "tests exit 0".
+REAL_REPLIES = [
+    "- **09:10 UTC**: tests passed (exit 0)\n- **09:11 UTC**: push succeeded (exit 0)\n",
+    "| 09:10 | tests | exit 0 (passed) |\n| 09:11 | push | exit 0 (succeeded) |\n",
+    "| 09:10 | Tests | ✅ passed |\n| 09:11 | Push | ✅ succeeded |\n",
+    "| 2026-01-05 09:10 | Tests ran | ✅ passed (exit 0) |\n| 2026-01-05 09:11 | Push | ✅ succeeded (exit 0) |\n",
+    "- **09:11 UTC, Jan 5 2026:** the push succeeded (exit 0).\n- **09:10 UTC, Jan 5 2026:** the tests passed (exit 0).\n",
+]
+
+
+def test_reports_missed_takes_the_step_and_its_result_on_one_line():
+    asserts = _asserts()
+    evidence = {"missed": ["tests exit 0", "push exit 0"]}
+    check = lambda reply: asserts.reports_missed(json.dumps({**evidence, "reply": reply}), {})
+    for reply in REAL_REPLIES:
+        assert check(reply)["pass"], (reply, check(reply)["reason"])
+    no_push = "- **09:10 UTC**: tests passed (exit 0)\n"
+    assert not check(no_push)["pass"] and "push exit 0" in check(no_push)["reason"]
+    assert not check("| 09:10 | tests | passed |\n| 09:11 | push | failed (exit 1) |\n")["pass"]
+    assert not check("Tests and a push ran.\nBoth passed.\n")["pass"], "step and result must share one line"
