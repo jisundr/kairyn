@@ -195,3 +195,11 @@ def test_close_stage_tags_its_lines_close():
 def test_close_eval_replaces_the_exit_eval():
     assert (ROOT / "evals" / "promptfoo" / "close.yaml").is_file()
     assert not (ROOT / "evals" / "promptfoo" / "exit.yaml").exists()  # old-name
+
+
+def test_no_noqa_in_promptfoo_evals():
+    """No new escape hatch in evals/promptfoo/: no linter runs there, and feat(T3) of skill-names-clash added
+    two that no reviewer justified."""
+    files = sorted(p for p in (ROOT / "evals" / "promptfoo").rglob("*") if p.suffix in (".py", ".yaml"))
+    hits = [f"{p.name}:{i}" for p in files for i, line in enumerate(p.read_text().splitlines(), 1) if "noqa" in line]
+    assert hits == [], f"remove `# noqa` from {hits}"

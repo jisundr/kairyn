@@ -11,3 +11,4 @@
 - The exit stage is now close, so a bare /exit no longer clashes; /kairyn:upgrade removes unedited files a release no longer ships. (2026-11-25-skill-names-clash; closes skill-names-clash)
 - Milestones: hooks and afk.py write tagged progress lines to one log; a first-mate session streams them with Monitor. Opt in with .kairyn/milestones.yml. (2026-11-25-first-mate-hub)
 - Retro emptied learnings.md: four rules moved to upgrade.md and testing-and-evals.md; seven ideas went to the backlog inbox. (2026-11-25-retro-2)
+- This repo's AFK runs get four review gates (scripts/gates.py: design, commits, evals, sessions), and a test bans `# noqa` in evals/promptfoo/. (gates-and-lint-rules)
