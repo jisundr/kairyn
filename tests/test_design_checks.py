@@ -244,3 +244,11 @@ def test_t6_docs_name_the_repos_map():
     assert "repo: <name>" in (root / "plugin" / "stages" / "DESIGN.md").read_text()
     assert "repos:" in (root / "plugin" / "templates" / "afk.yml").read_text()
     assert "repos:" in (root / ".harness" / "workflows" / "afk-run.md").read_text()
+
+
+def test_shipped_afk_run_names_child_repos_and_pitfalls():
+    """shipped-afk-run-child-repos, max-budget-soft-cap: consumers read the repos: map and two pitfalls."""
+    root = Path(__file__).resolve().parent.parent
+    text = (root / "plugin" / "harness" / ".harness" / "workflows" / "afk-run.md").read_text()
+    for words in ("repos:", "checkout of the child repo", "--max-budget-usd", "PreToolUse"):
+        assert words in text, words
