@@ -38,10 +38,11 @@ import re
 import shlex
 import subprocess
 import sys
-import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+
+import atomic_write
 
 SETTINGS = Path(".kairyn") / "milestones.yml"
 SESSION = ".session"
@@ -271,16 +272,9 @@ def stored_since(state: Path) -> str:
 
 
 def store(state: Path, line: int, since: str = "") -> None:
-    """Write a temp file in the same folder, then os.replace it: a reader never sees watch.json empty."""
+    """Write through atomic_write: a reader never sees watch.json empty."""
     data = {"line": line, **({"unreachable": since} if since else {})}
-    fd, tmp = tempfile.mkstemp(dir=state.parent, prefix=f".{state.name}.", suffix=".tmp")
-    try:
-        with os.fdopen(fd, "w") as f:
-            f.write(json.dumps(data) + "\n")
-        os.replace(tmp, state)
-    except BaseException:
-        Path(tmp).unlink(missing_ok=True)
-        raise
+    atomic_write.write_text(state, json.dumps(data) + "\n")
 
 
 def catchup(root: Path) -> None:

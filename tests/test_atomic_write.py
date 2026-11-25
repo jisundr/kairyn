@@ -118,3 +118,13 @@ def test_reader_never_sees_state_md_empty_while_afk_updates_it(tmp_path):
 
 def test_helper_ships_in_plugin_scripts():
     assert (PLUGIN / "scripts" / "atomic_write.py").is_file()
+
+
+def test_write_text_keeps_the_file_mode(tmp_path):
+    """mkstemp makes the temp file 0600; STATE.md keeps the mode it had."""
+    import atomic_write
+    path = tmp_path / "STATE.md"
+    path.write_text("old\n")
+    path.chmod(0o644)
+    atomic_write.write_text(path, "new\n")
+    assert path.stat().st_mode & 0o777 == 0o644
