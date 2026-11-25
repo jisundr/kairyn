@@ -225,7 +225,7 @@ def escape_patterns(config: dict) -> list:
 
 
 _GREEN_PAIR = re.compile(r"(test|feat)\(T\d+\)")
-REVIEW_GATES = ("design", "commits")
+REVIEW_GATES = ("design", "commits", "sessions")
 DESIGN_ALLOW = (".kairyn/learnings.md",)
 
 
@@ -234,6 +234,18 @@ def is_test(path: str) -> bool:
     parts = path.split("/")
     return bool({"tests", "test", "fixtures", "__tests__"} & set(parts[:-1])) or parts[-1].startswith("test_") or \
         bool(re.search(r"(_test|\.test|\.spec)\.", parts[-1]))
+
+
+def manual_criteria(design: str) -> dict:
+    """{AC<n>: row} for each test plan row whose Test column starts with `Manual`: a person runs it."""
+    return {m.group(1): m.group(0).strip() for m in
+            re.finditer(r"^\|\s*(AC\d+)\b[^|]*\|[^|]*\|\s*Manual\b.*$", design, re.M | re.I)}
+
+
+def has_run_line(text: str, ac: str) -> bool:
+    """A `Run AC<n>: <who>, <YYYY-MM-DDTHH:MM:SSZ>, "<what it showed>"` line: all three parts."""
+    return bool(re.search(rf'^Run {ac}: [^,\n]*\S[^,\n]*, \d{{4}}-\d\d-\d\dT\d\d:\d\d(:\d\d)?Z, "[^"\n]*\S[^"\n]*"\s*$',
+                          text, re.M))
 
 
 def design_names(text: str, path: str) -> bool:
@@ -508,6 +520,18 @@ class Run:
                 if not re.search(rf"\b{re.escape(event)}\b", text):
                     problems.append(f"hook event `{event}` added to `{path}`, but DESIGN.md does not name it")
         return problems
+
+    def gate_sessions(self) -> list:
+        """Review gate: each Manual row of the DESIGN.md test plan has a full `Run AC<n>:` line in a task file
+        other than DESIGN.md. A person runs the check and writes the line."""
+        design = (self.folder / "DESIGN.md").read_text() if (self.folder / "DESIGN.md").is_file() else ""
+        runs = "\n".join(p.read_text() for p in sorted(self.folder.glob("*.md")) if p.name != "DESIGN.md")
+        missing = {ac: row for ac, row in manual_criteria(design).items() if not has_run_line(runs, ac)}
+        if not missing:
+            return []
+        return [f"{ac} needs a person to run `{row}`" for ac, row in missing.items()] + [
+            f'run each, add `Run AC<n>: <who>, <time>, "<what it showed>"` (time from `date -u +%Y-%m-%dT%H:%M:%SZ`) to '
+            f'docs/tasks/{self.task}/BUILD.md on kairyn/{self.task}, commit, then run /kairyn:build {self.task}']
 
     def gate_commits(self) -> list:
         """Review gate: a feat commit changes no test or fixture. A later commit that changes a test line is a

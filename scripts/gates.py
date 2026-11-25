@@ -1,15 +1,13 @@
 """Review gates for this repo's AFK runs. `.kairyn/afk.yml` `gates:` runs each one as a command.
-afk.py runs the design and commits review gates itself; these two are for this repo only.
+afk.py runs the design, commits and sessions review gates itself; this one is for this repo only.
 
   evals     after a plugin/ change, each eval that depends on a changed file has a pass at the current hash
-  sessions  each `Manual` row of the DESIGN.md test plan has a `Run AC<n>: ...` line in a task file
 
 Each gate reads the commits on the branch kairyn/<task> after its merge base with main. With no code
 commits (readiness runs gates on the base commit) every gate passes. Exit 0 passes; exit 1 lists each problem.
 """
 import argparse
 import fnmatch
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -35,10 +33,6 @@ class Run:
                         if not subject.startswith("kairyn(")]
         self.changed = [p for p in git("diff", "--name-only", f"{base}..HEAD").splitlines() if not p.startswith(own)]
 
-    def design(self) -> str:
-        path = self.folder / "DESIGN.md"
-        return path.read_text() if path.is_file() else ""
-
 
 def check_evals(run: Run, args) -> list:
     plugin = [p for p in run.changed if p.startswith("plugin/")]
@@ -57,14 +51,7 @@ def check_evals(run: Run, args) -> list:
     return problems
 
 
-def check_sessions(run: Run, args) -> list:
-    manual = [m.group(1) for m in re.finditer(r"^\|\s*(AC\d+)\b[^|]*\|[^|]*\|\s*Manual\b", run.design(), re.M | re.I)]
-    runs = "\n".join(p.read_text() for p in sorted(run.folder.glob("*.md")) if p.name != "DESIGN.md")
-    return [f"{ac} needs a real session, but no task file has a `Run {ac}: <who>, <time>, \"<what it showed>\"` line"
-            for ac in manual if not re.search(rf"^Run {ac}: \S", runs, re.M)]
-
-
-CHECKS = {"evals": check_evals, "sessions": check_sessions}
+CHECKS = {"evals": check_evals}
 
 
 def main(argv=None) -> int:
