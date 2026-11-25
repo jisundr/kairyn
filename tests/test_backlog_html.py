@@ -255,3 +255,36 @@ def test_no_kairyn_folder_writes_nothing(tmp_path):
     assert r.returncode == 1 and len((r.stdout + r.stderr).strip().splitlines()) == 1
     assert "/kairyn:init" in r.stdout + r.stderr
     assert not (root / ".kairyn").exists() and not (root / ".gitignore").exists()
+
+
+# ---------- T5: the eval and the docs ----------
+
+def _asserts():
+    import importlib.util
+    from helpers import ROOT
+    spec = importlib.util.spec_from_file_location("kairyn_asserts", ROOT / "evals" / "promptfoo" / "asserts.py")
+    asserts = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(asserts)
+    return asserts
+
+
+@pytest.mark.parametrize("evidence, ok", [
+    ({"reply": "Built: .kairyn/backlog.html", "page_exists": True, "ignored": True}, True),
+    ({"reply": "Done.", "page_exists": True, "ignored": True}, False),
+    ({"reply": ".kairyn/backlog.html", "page_exists": False, "ignored": True}, False),
+    ({"reply": ".kairyn/backlog.html", "page_exists": True, "ignored": False}, False),
+])
+def test_backlog_eval_assert(evidence, ok):
+    assert _asserts().backlog_page_built(json.dumps(evidence), {})["pass"] is ok
+
+
+def test_backlog_eval_runs_the_command_and_depends_on_its_files():
+    from helpers import ROOT
+    config = (ROOT / "evals" / "promptfoo" / "backlog.yaml").read_text()
+    assert config.startswith("# depends: plugin/commands/backlog.md, plugin/scripts/backlog_html.py")
+    assert "scenario: backlog_page" in config and "asserts.py:backlog_page_built" in config
+
+
+def test_readme_names_the_command():
+    from helpers import ROOT
+    assert "/kairyn:backlog" in (ROOT / "README.md").read_text()
