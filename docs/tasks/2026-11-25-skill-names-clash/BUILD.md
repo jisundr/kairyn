@@ -27,3 +27,4 @@ summary: "Red and green evidence for each T<n>, written by afk.py."
 
 ## Review
 - Review 1: These files changed but no task in DESIGN.md lists them: `plugin/harness/.harness/workflows/running-stages.md`, `.harness/workflows/running-stages.md` and `plugin/skills/retro/SKILL.md`. Each edit only renames exit to close, which R5 covers ("shipped harness docs", "retro texts"). T2 lists `plugin/scripts/retro.py` instead, and that file did not change. The fix is to update the design's file lists, not the code.; `tests/test_dev_harness.py` gets a new test, `test_this_repo_kairyn_is_upgraded_to_the_plugin_version`, but no task's files and no test-plan row in DESIGN.md list it. It checks A5 (this repo was upgraded to 0.11.0 and has `CLOSE.md` and no `EXIT.md`), so it has a purpose, but the design does not record it.
+- Review 2, after the fix round: Findings: none
