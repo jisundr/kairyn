@@ -804,3 +804,10 @@ def test_each_afk_role_has_a_model():
     assert roles and roles <= set(afk.MODELS), f"roles with no model: {roles - set(afk.MODELS)}"
     assert afk.MODELS == {"build-tests": "opus", "build-code": "sonnet", "reviewer": "opus", "gate": "sonnet",
                           "review": "opus"}
+
+
+def test_build_stage_names_tests_and_code_parts():
+    """R9: each session reads which steps are its own; the code part changes no test file."""
+    text = (PLUGIN / "stages" / "BUILD.md").read_text()
+    assert re.search(r"tests part.*steps 1-3", text, re.I) and re.search(r"code part.*steps 4-6", text, re.I)
+    assert re.search(r"code part.*changes? no test file", text, re.I | re.S)
