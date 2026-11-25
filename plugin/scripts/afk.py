@@ -434,7 +434,7 @@ class Run:
         budget = min(limits.get(f"{self.stage_name}_usd", limits["run_usd"]) - self.stage_cost,
                      limits["run_usd"] - self.run_cost)
         binary = os.environ.get("KAIRYN_CLAUDE", "claude")
-        cmd = [binary, "-p", prompt, "--model", MODELS.get(stage, "sonnet"), "--output-format", "json",
+        cmd = [binary, "-p", prompt, "--model", MODELS[stage], "--output-format", "json",
                "--max-budget-usd", f"{budget:.2f}"]
         cmd += READ_ONLY if read_only else ["--permission-mode", "bypassPermissions"]
         if self.code != self.wt:   # R7: the session works on the child code and reads the home task files
@@ -692,9 +692,9 @@ class Run:
         self.commit(f"kairyn({self.task}): review 1")
         if not findings:
             return
-        self.claude("build", f"Follow {self.at('.kairyn/stages/BUILD.md')} for {self.at(f'docs/tasks/{self.task}')}, "
-                             "fix round. "
-                             "Fix these review findings, keep every test, and commit as `fix: <what>`:\n"
+        self.claude("build-code", f"Follow {self.at('.kairyn/stages/BUILD.md')} for {self.at(f'docs/tasks/{self.task}')}, "
+                                  "fix round. "   # A2: the reviewer's findings are the decision
+                                  "Fix these review findings, keep every test, and commit as `fix: <what>`:\n"
                              + "\n".join(f"- {f}" for f in findings))
         for t in graph:
             code = self.command(t.done, self.code, "after the fix round")
