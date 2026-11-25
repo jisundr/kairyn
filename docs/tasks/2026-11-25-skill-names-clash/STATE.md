@@ -11,7 +11,7 @@ stages:
   gates: done
   review: in-progress
 created: 2026-11-24T23:13:12Z
-updated: 2026-11-25T00:10:58Z
+updated: 2026-11-25T00:16:10Z
 ---
 
 # Log
@@ -41,3 +41,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-25T00:04:28Z [review] Review started.
 2026-11-25T00:07:01Z [review] Cost $0.70. Waiting for the merge decision: /kairyn:review 2026-11-25-skill-names-clash approve or reject.
 2026-11-25T00:10:58Z [review] Fixed F1 by hand (decided by Jayson De los Reyes): test 10ab834 failed, fix 2b188a6 passes; uv run pytest 593 passed. Next: evals close and upgrade.
+2026-11-25T00:16:10Z [review] F2: evals run 20261125T001106Z PASS: close and upgrade 10/10 each metric (gate 9), cost $6.17. Waiting for the merge decision.
