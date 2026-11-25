@@ -25,3 +25,4 @@ Closed ideas are in `CHANGELOG.md`. Inbox: `grep -lx 'status: inbox' docs/backlo
 | [Judge sees afk.yml](20261124224354-judge-sees-afk-yml.md) | small |
 | [Logs as bullet lists](20261125014255-logs-as-bullet-lists.md) | small |
 | [Ship the review gates](20261125053013-ship-review-gates.md) | big |
+| [Atomic STATE.md write](20261125061915-atomic-state-md.md) | small |
