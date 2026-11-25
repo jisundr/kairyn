@@ -6,7 +6,7 @@ The index of triaged ideas is [README.md](README.md). Next and Parked were decid
 
 ## Next
 
-Empty. The rest of split-design-stage, grill-rounds and approval-handoff are big and not Next (2026-11-25 triage). tldr-for-long-docs and instruction-file-checks were dropped.
+approval-handoff (big; spike answered; owner, 2026-11-25): shipped in PRNUM. The rest of split-design-stage and grill-rounds are big and not Next (2026-11-25 triage). tldr-for-long-docs and instruction-file-checks were dropped.
 
 The earlier batches shipped: the `_approval.md` slice of split-design-stage, atomic-state-md, the afk.py fixes in #31, the gates and lint rules in #30. ship-review-gates is big: its first slice (`design` and `commits` built into afk.py) is in #45; `evals` and `sessions` are left.
 

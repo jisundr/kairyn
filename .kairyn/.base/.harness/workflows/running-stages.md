@@ -22,9 +22,9 @@ A stage:
 
 An optional stage (`optional: true` in its front matter) is not in the default stage list. Run it on a task only when it fits: `GRILL.md` before `requirements` when a request is vague, `MODEL-ROUTING.md` after it to cut model cost, `CLOSE.md` (`/kairyn:close`) after a task merges, `RETRO.md` (`/kairyn:retro`) when `learnings.md` is past half its budget. It adds itself to the task's `stages`.
 
-## Approve requirements and design
+## Approve a concept, requirements or design
 
-`requirements` and `design` end with `status: blocked` and `Approval: pending` in their output. Read it, then approve in chat. Claude writes `Approval: <your git name>, <timestamp>, "<your words>"` and moves the task on: requirements to `design`, design to `build`. A reply that does not approve changes nothing. To design another way, name an option from `DESIGN.md`: Claude rewrites it. The sections are in `.kairyn/templates/`.
+`grill`, `requirements` and `design` end with `status: blocked` and `Approval: pending` in their output. Read it, then approve in chat. Claude writes `Approval: <your git name>, <timestamp>, "<your words>"`, moves the task on and names the next command for you to type: `/kairyn:requirements`, `/kairyn:design` or `/kairyn:build` with the task folder. Claude does not run it: a skill Claude starts runs on the session model, not on its own. A reply that does not approve changes nothing. To design another way, name an option from `DESIGN.md`: Claude rewrites it. The sections are in `.kairyn/templates/`.
 
 ## The AFK run: build, gates, review
 
