@@ -10,7 +10,7 @@
   "tool_name": "Bash",
   "tool_input": {
     "command": "sh -c \"echo bad; exit 3\"",
-    "description": "Echo bad then exit with status 3"
+    "description": "Echo bad, then fail with status 3"
   },
   "tool_use_id": "toolu_00000000000000000000000",
   "error": "Exit code 3\nbad",

@@ -285,7 +285,10 @@ class Run:
         text = set_front(text, "updated", stamp)
         text = text.rstrip("\n") + f"\n{stamp} [{at}] {log}\n"
         (self.folder / "STATE.md").write_text(text)
-        milestones.write(self.root, self.task, f"{at}: {log}", stamp)
+        try:   # F3: milestones only report progress; a bad milestones.yml or log path never stops a run
+            milestones.write(self.root, self.task, f"{at}: {log}", stamp)
+        except (OSError, ValueError) as e:
+            print(f"WARN: milestone not written: {e}", file=sys.stderr)
 
     def resolve_repo(self) -> None:
         """R1, R3: `repo: <name>` in STATE.md names the code repo in afk.yml `repos:`. No line: the home repo.
