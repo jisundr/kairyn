@@ -196,3 +196,17 @@ def test_eval_modules_name_nothing_pytest_collects():
     found = {p.name: collectable_names(p.read_text()) for p in sorted(evals.rglob("*.py"))
              if "results" not in p.parts}
     assert not {k: v for k, v in found.items() if v}, found
+
+
+def test_design_eval_flags_a_needless_manual_row():
+    """ship-review-gates slice 2: design marks a row Manual only when a person must run it."""
+    import importlib.util
+    import json
+    from helpers import ROOT
+    spec = importlib.util.spec_from_file_location("kairyn_asserts", ROOT / "evals" / "promptfoo" / "asserts.py")
+    asserts = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(asserts)
+    plan = "| Criterion | Task | Test |\n|---|---|---|\n| AC1 total | T1 | `test_total` |\n"
+    assert asserts.design_no_needless_manual(json.dumps({"doc": plan}), {})["pass"]
+    manual = plan + "| AC2 no match | T1 | manual: run it |\n"
+    assert not asserts.design_no_needless_manual(json.dumps({"doc": manual}), {})["pass"]

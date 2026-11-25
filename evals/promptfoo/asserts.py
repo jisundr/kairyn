@@ -391,6 +391,15 @@ def design_traceable(output, context):
     return _result(design_test_plan_problems(d["doc"], d["requirements"]) if d["doc"] else ["no DESIGN.md"])
 
 
+def design_no_needless_manual(output, context):
+    """Each criterion of the design fixture is a CLI output a test can check: no test plan row is `Manual`."""
+    d = json.loads(output)
+    if not d["doc"]:
+        return _result(["no DESIGN.md"])
+    rows = re.findall(r"^\|\s*AC\d+\b[^|]*\|[^|]*\|\s*Manual\b.*$", d["doc"], re.M | re.I)
+    return _result([f"a test a script can run is marked Manual: {r[:160]}" for r in rows])
+
+
 def design_options(output, context):
     d = json.loads(output)
     return _result(options_problems(d["doc"]) if d["doc"] else ["no DESIGN.md"])

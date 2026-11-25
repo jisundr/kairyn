@@ -6,7 +6,7 @@ summary: "One row per gate, written by afk.py: the review gates, then .kairyn/af
 
 # Gates
 
-`design` and `commits` are built in. The exit code decides, then the gate's AI check if `checks:` has one. `not set` means no command: never a pass.
+`design`, `commits` and `sessions` are built in. The exit code decides, then the gate's AI check if `checks:` has one. `not set` means no command: never a pass.
 
 | Gate | Result | Exit | Check |
 |---|---|---|---|

@@ -13,9 +13,8 @@ limits:
 gates:
   testing: uv run pytest
   contract: claude plugin validate plugin
-  # This repo's review gates (scripts/gates.py). afk.py runs design and commits itself.
+  # This repo's review gate (scripts/gates.py). afk.py runs design, commits and sessions itself.
   evals: python3 scripts/gates.py evals
-  sessions: python3 scripts/gates.py sessions
   accessibility:
   performance:
   observability:

@@ -12,4 +12,4 @@ Closed ideas are in `CHANGELOG.md`. Inbox: `grep -lx 'status: inbox' docs/backlo
 | [Grill in rounds](20261122105739-grill-rounds.md) | big |
 | [Backlog stage](20261122080759-backlog-stage.md) | big |
 | [Split the design stage](20261124224354-split-design-stage.md) | big |
-| [Ship the review gates](20261125053013-ship-review-gates.md) | big; slice 1 (`design`, `commits`) in afk.py |
+| [Ship the review gates](20261125053013-ship-review-gates.md) | big; slices 1-2 (`design`, `commits`, `sessions`) in afk.py |

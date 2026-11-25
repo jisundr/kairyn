@@ -7,26 +7,27 @@ load: on-demand
 
 # AFK run
 
-After you approve `DESIGN.md`, `/kairyn:build <task>` runs `afk.py`. It works in a worktree on `kairyn/<task>` with no user turns. Exit codes decide each step, not what the agent says.
+After you approve `DESIGN.md`, `/kairyn:build <task>` runs `afk.py` in a worktree on `kairyn/<task>`, with no user turns. Exit codes decide each step, not what the agent says.
 
 ## Set up `.kairyn/afk.yml` first
 - `gates:` in order, security last. Exit 0 passes. An empty command is `not set`: never a pass. The `testing` gate needs a command.
-- `checks:` an optional AI check per gate, for what no command can judge. It runs after its gate command passes.
-- `limits:` cost caps per stage and run, and minutes per stage.
+- `checks:` an optional AI check per gate, for what no command can judge, run after its gate command passes.
+- `limits:` cost caps per stage and run, minutes per stage.
 - `approval:` glob patterns for high-risk paths, such as `**/migrations/**`.
-- `escape_hatches:` regex patterns for added lines that turn off a check, such as `# noqa`.
+- `escape_hatches:` regexes for added lines that turn off a check, such as `# noqa`.
 
 ## What the run does
 1. Readiness: `testing` has a command, set gates pass on the base, nothing uncommitted.
-2. Build: a fresh `claude -p` per slice `T<n>`, in `after:` order. Each needs a `test(T<n>)` commit where its done command fails, then a `feat(T<n>)` commit where it passes.
-3. A read-only reviewer reads the diff and flags (edited tests, added escape hatches). Its findings get one fix round.
-4. Push and a pull request, given an `origin` remote and `gh`.
+2. Build: a fresh `claude -p` per slice `T<n>`, in `after:` order. Each needs a `test(T<n>)` commit where its done command fails, then a `feat(T<n>)` where it passes.
+3. A read-only reviewer reads the diff and flags (edited tests, escape hatches). Findings get one fix round.
+4. Push and a pull request, given `origin` and `gh`.
 5. Review gates, gates, then a `REVIEW.md` session that goes on the pull request.
 
 ## Review gates
 Before `gates:`, afk.py checks the commits after the base:
-- `design`: `DESIGN.md` names each changed file (a backticked path, `dir/` or glob) and new `hooks.json` event. Not the task folder or `.kairyn/learnings.md`.
+- `design`: `DESIGN.md` names each changed file (a backticked path, `dir/` or glob) and new `hooks.json` event, except task files and learnings.
 - `commits`: no `feat` commit changes a test or fixture. A later test edit is a red `test(...)` commit.
+- `sessions`: you run each `Manual` test plan row and add `Run AC<n>: <who>, <time>, "<what it showed>"`.
 
 ## Code in a child repo
 Tasks stay in the home repo, code goes to a child: list it under `repos:` with `path:` and `gates:`. Design writes `repo: <name>` in `STATE.md`.
@@ -35,7 +36,7 @@ Tasks stay in the home repo, code goes to a child: list it under `repos:` with `
 
 ## Pitfalls
 - `--max-budget-usd` is a soft cap: a session stops after the turn that passes it.
-- A user's `PreToolUse` hook can rewrite Bash commands; then the reviewer's Bash allowlist stops matching.
+- A user's `PreToolUse` hook that rewrites Bash commands breaks the reviewer's Bash allowlist.
 
 ## Where it stops
 Each stop sets `status: blocked` and logs why in `STATE.md`:
@@ -43,7 +44,7 @@ Each stop sets `status: blocked` and logs why in `STATE.md`:
 - a slice marked `(approval)`, or a changed path that matches `approval:` with no approval;
 - the merge decision, the one planned stop.
 
-Fix the cause on `kairyn/<task>`, then run `/kairyn:build <task>` again: it resumes at `stage:`, but not at a pending merge decision. An uncommitted task folder is committed to `kairyn/<task>`. Keep the main checkout off that branch, or the run prints `BLOCKED:`.
+Fix the cause on `kairyn/<task>`, then run `/kairyn:build <task>` again: it resumes at `stage:`, not at a pending merge decision. It commits an uncommitted task folder. Keep the main checkout off that branch, or it prints `BLOCKED:`.
 
 ## Approve
 - A slice: `/kairyn:build <task> approve T<n> "<words>"`.

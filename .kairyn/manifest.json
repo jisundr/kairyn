@@ -22,7 +22,7 @@
     },
     ".kairyn/stages/DESIGN.md": {
       "owner": "repo",
-      "sha256": "65b2ba7b051d89d93b49b6679bc1c20f68f90007589fb9303df9a9229d3c8102"
+      "sha256": "b3a7d043213201a7733d2e12959e82227d83768e3c54dea564fc6c2eca021dc7"
     },
     ".kairyn/stages/GATES.md": {
       "owner": "repo",
@@ -97,5 +97,5 @@
       "sha256": "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
     }
   },
-  "version": "0.14.0"
+  "version": "0.15.0"
 }

@@ -1,4 +1,4 @@
-"""afk.py review gates `design` and `commits` (backlog idea ship-review-gates, first slice).
+"""afk.py review gates `design`, `commits` and `sessions` (backlog idea ship-review-gates, slices 1 and 2).
 
 Each test builds kairyn/<task> by hand with STATE.md at `stage: gates`, then runs afk.py against
 tests/stubs/claude. The gates stage runs the review gates first, then the afk.yml `gates:`.
@@ -6,6 +6,8 @@ tests/stubs/claude. The gates stage runs the review gates first, then the afk.ym
 import importlib
 import re
 import sys
+
+import pytest
 
 import test_afk as base
 from helpers import PLUGIN
@@ -18,12 +20,13 @@ repo = base.repo   # the repo fixture of test_afk.py
 NAMED = "- T1: Files: `app.py`, `tests/test_app.py`, `tests/fixtures/` . Done: `python3 check_t1.py` exits 0.\n"
 
 
-def branch(repo, commits, design=NAMED):
-    """kairyn/<task> with DESIGN.md naming `design`, the commits (message, {path: text}) and STATE.md at gates."""
+def branch(repo, commits, design=NAMED, plan="", build="# Build\n"):
+    """kairyn/<task> with DESIGN.md naming `design` (plus a test `plan`), the commits (message, {path: text}),
+    BUILD.md text `build` and STATE.md at gates."""
     folder = repo / "docs" / "tasks" / TASK
     git(repo, "checkout", "-q", "-b", f"kairyn/{TASK}")
     text = (folder / "DESIGN.md").read_text()
-    (folder / "DESIGN.md").write_text(re.sub(r"## Tasks\n(- T.*\n)+", "## Tasks\n" + design, text))
+    (folder / "DESIGN.md").write_text(re.sub(r"## Tasks\n(- T.*\n)+", "## Tasks\n" + design, text) + plan)
     git(repo, "commit", "-qam", f"kairyn({TASK}): design")
     for message, files in commits:
         for name, body in files.items():
@@ -35,7 +38,7 @@ def branch(repo, commits, design=NAMED):
     state = (folder / "STATE.md").read_text().replace("stage: build", "stage: gates").replace(
         "  build: pending", "  build: done")
     (folder / "STATE.md").write_text(state)
-    (folder / "BUILD.md").write_text("# Build\n")
+    (folder / "BUILD.md").write_text(build)
     git(repo, "add", "-A")
     git(repo, "commit", "-q", "-m", f"kairyn({TASK}): build")
     git(repo, "checkout", "-q", "main")
@@ -56,7 +59,7 @@ def test_review_gates_pass_and_come_first(repo):
     state = task_file(repo, "STATE.md")
     assert front(state, "stage") == "review", state
     names = list(rows(repo))
-    assert names[:3] == ["design", "commits", "testing"], names
+    assert names[:4] == ["design", "commits", "sessions", "testing"], names
     assert "| pass |" in rows(repo)["design"] and "| pass |" in rows(repo)["commits"]
 
 
@@ -131,3 +134,65 @@ def test_commits_gate_blocks_a_fix_round_test_commit_that_is_not_red(repo):
 def test_is_test_knows_test_and_fixture_paths():
     assert afk.is_test("tests/fixtures/a.json") and afk.is_test("src/app.spec.ts") and afk.is_test("test_x.py")
     assert not afk.is_test("app.py") and not afk.is_test("docs/testing.md")
+
+
+# --- sessions: each Manual row of the test plan has a `Run AC<n>:` line in a task file (slice 2) ----------
+PLAN = """
+## Test plan
+| Criterion | Task | Test |
+|---|---|---|
+| AC1 the app adds | T1 | `tests/test_app.py` |
+| AC2 the page shows the sum | T1 | Manual: open the page |
+"""
+
+
+def test_sessions_gate_blocks_a_manual_row_with_no_run_line(repo):
+    branch(repo, PAIR, plan=PLAN)
+    run(repo, "run", TASK)
+    state = task_file(repo, "STATE.md")
+    assert front(state, "status") == "blocked"
+    last = state.splitlines()[-1]
+    assert "gate sessions failed: AC2 needs a person to run" in last and "AC1" not in last, last
+    assert "| fail |" in rows(repo)["sessions"] and "testing" not in rows(repo)
+
+
+def test_sessions_gate_block_says_what_to_run_how_to_record_it_and_how_to_resume(repo):
+    branch(repo, PAIR, plan=PLAN)
+    out = run(repo, "run", TASK).stdout
+    assert "| AC2 the page shows the sum | T1 | Manual: open the page |" in out, out
+    assert 'Run AC<n>: <who>, <time>, "<what it showed>"' in out
+    assert f"/kairyn:build {TASK}" in out and f"docs/tasks/{TASK}/BUILD.md" in out
+
+
+GOOD_RUN = 'Run AC2: Ana Cruz, 2026-01-05T10:00:00Z, "the page shows 3"'
+
+
+def test_sessions_gate_passes_with_a_run_line(repo):
+    branch(repo, PAIR, plan=PLAN, build=f"# Build\n\n{GOOD_RUN}\n")
+    assert run(repo, "run", TASK).returncode == 0
+    assert front(task_file(repo, "STATE.md"), "stage") == "review"
+    assert "| pass |" in rows(repo)["sessions"]
+
+
+@pytest.mark.parametrize("line", [
+    'Run AC2: 2026-01-05T10:00:00Z, "the page shows 3"',          # no who
+    'Run AC2: Ana Cruz, yesterday, "the page shows 3"',           # no time
+    "Run AC2: Ana Cruz, 2026-01-05T10:00:00Z, the page shows 3",  # not quoted
+    'Run AC2: Ana Cruz, 2026-01-05T10:00:00Z, ""',                # empty
+])
+def test_has_run_line_needs_who_time_and_quoted_text(line):
+    assert not afk.has_run_line(line, "AC2")
+    assert afk.has_run_line(GOOD_RUN, "AC2") and not afk.has_run_line(GOOD_RUN, "AC1")
+
+
+def test_sessions_gate_reads_any_task_file_but_design(repo):
+    """A Run line in DESIGN.md does not count; one in another task file does."""
+    branch(repo, PAIR, plan=PLAN + f"\n{GOOD_RUN}\n")
+    run(repo, "run", TASK)
+    assert "gate sessions failed" in task_file(repo, "STATE.md")
+
+
+def test_manual_criteria_reads_the_test_plan():
+    text = PLAN + "| AC3 x | T2 | manual check |\n| AC4 y | T2 | not Manual |\n"
+    assert afk.manual_criteria(text) == {"AC2": "| AC2 the page shows the sum | T1 | Manual: open the page |",
+                                         "AC3": "| AC3 x | T2 | manual check |"}

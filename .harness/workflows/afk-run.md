@@ -27,10 +27,9 @@ After you approve `DESIGN.md`, `/kairyn:build <task>` runs `afk.py`. It works in
 Before `gates:`, afk.py checks the code commits after the base:
 - `design`: `DESIGN.md` names each changed file (a backticked path, `dir/` or glob) and each new hook event.
 - `commits`: a `feat` commit changes no test or fixture. A later test edit is a `test(...)` commit where `testing` fails.
+- `sessions`: a person runs each `Manual` test plan row and adds `Run AC<n>: <who>, <time>, "<what it showed>"` to a task file but `DESIGN.md`.
 
-`scripts/gates.py` adds two to this repo's `.kairyn/afk.yml`:
-- `evals`: after a `plugin/` change, also in a fix round, each eval that depends on a changed file has a pass at the current hash. Run `/run-evals`, then resume.
-- `sessions`: each `Manual` row of the test plan has a line `Run AC<n>: <who>, <time>, "<what it showed>"` in `BUILD.md`.
+`scripts/gates.py` adds `evals` to this repo's `.kairyn/afk.yml`: after a `plugin/` change, also in a fix round, each eval that depends on a changed file has a pass at the current hash. Run `/run-evals`, then resume.
 
 ## Where it stops
 Each stop sets `status: blocked` and logs why in `STATE.md`:

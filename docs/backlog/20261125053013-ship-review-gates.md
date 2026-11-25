@@ -15,11 +15,13 @@ review_by: 2027-02-23
 
 **Evidence:**
 - Closed ideas (deleted in #33; see git history and the CHANGELOG line for #30): gate-changes-outside-design and gate-fix-round-test-edits named `plugin/scripts/afk.py` as the place (retro L12, L13); gate-eval-pass-for-plugin-changes named `.kairyn/afk.yml` (L5).
-- `scripts/gates.py`: checks `design`, `commits`, `evals` and `sessions`. Its `evals` check reads this repo's `evals/results/passed.json`, so a shipped version needs a consumer-side source of eval passes.
+- `scripts/gates.py`: its `evals` check reads this repo's `evals/results/passed.json`.
 
-**Left after slice 1:** `evals` needs a consumer-side source of eval passes; `sessions` needs the build stage to write `Run AC<n>:` lines (a `plugin/stages/` change). Both stay in `scripts/gates.py`.
+**Decided (2026-11-25, slice 2 grill):** A person runs `Manual` checks; design marks the rows. The gate wants `Run AC<n>: <who>, <time>, "<what it showed>"`, all three parts, in a task file but `DESIGN.md`. A block prints the rows, the line format and the resume command. `evals` stays in `scripts/gates.py` until consumer repos record eval passes.
 
-**Notes:** Shaped as built-in gates in afk.py. Was: built-in gates in afk.py, or ship gates.py under `plugin/scripts/` with the `afk.yml` template; and a consumer-side source of eval passes. A `plugin/` change needs evals first.
+**Left after slice 2:** `evals`.
+
+**Notes:** Shaped as built-in gates in afk.py. A `plugin/` change needs evals first.
 
 # Log
 
@@ -27,3 +29,5 @@ review_by: 2027-02-23
 - 2026-11-25T05:38:06Z [triage] Kept. Status triaged. Problem confirmed. Not Next: shape first. Decided by Jayson De los Reyes.
 - 2026-11-25T05:38:06Z [appetite] Set to big batch. Decided by Jayson De los Reyes.
 - 2026-11-25T09:15:19Z [slice] Slice 1: afk.py runs `design` and `commits` built in, from an Orca coordinator dispatch. `evals` and `sessions` left.
+- 2026-11-25T10:18:25Z [grill] Slice 2: a person runs Manual checks; design marks the rows; the gate checks who, time and text. Decided by Jayson De los Reyes.
+- 2026-11-25T10:18:25Z [slice] Slice 2: afk.py runs `sessions` built in; the design stage marks `Manual` rows. Next by Jayson De los Reyes, from an Orca coordinator dispatch. `evals` left.
