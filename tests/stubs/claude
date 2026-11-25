@@ -11,7 +11,7 @@ STUB_MODE: good (default) | no_red (the test passes before the code exists)
 Reviewer prompts say "reviewer": the stub prints findings. Fix-round prompts say "fix round".
 With --output-format json it prints {"result", "total_cost_usd"}: STUB_COST (default 0.25) per call.
 STUB_SLEEP: seconds to sleep first (to hit a time limit).
-Build prompts name `T<n>`: the stub makes the test(T<n>) and feat(T<n>) commits.
+Build prompts name `T<n>`: a "tests part" prompt makes the test(T<n>) commit, a "code part" prompt the feat(T<n>) commit.
 Review prompts name REVIEW.md: the stub writes REVIEW.md with `Decision: pending` in the task folder the
 prompt names (a full path for a child-repo task, whose session runs in the child worktree).
 """
@@ -59,24 +59,25 @@ elif "reviewer" in prompt:
         said.append("FINDINGS: none")
 elif "fix round" in prompt:
     commit("fix: cover VALUE 0", {"feature_t1.py": "VALUE = 1  # fixed\n"})
-elif build:
+elif build and "tests part" in prompt:
     n = build.group(1).lower()
     check = {f"check_{n}.py": f"import feature_{n}\n"}
-    feature = {f"feature_{n}.py": "VALUE = 1\n"}
-    if mode == "weaken":
-        commit(f"test({build.group(1)}): add check", check)
-        commit(f"feat({build.group(1)}): add feature", {**feature, f"check_{n}.py": "pass\n"})
-    elif mode == "add_test":
-        commit(f"test({build.group(1)}): add check", check)
-        commit(f"feat({build.group(1)}): add feature", {**feature, f"check_{n}.py": f"import feature_{n}\nassert True\n"})
-    elif mode == "noqa":
-        commit(f"test({build.group(1)}): add check", check)
-        commit(f"feat({build.group(1)}): add feature", {f"feature_{n}.py": "VALUE = 1  # noqa: E501\n"})
-    elif mode == "no_red":
-        commit(f"test({build.group(1)}): add check", {**check, **feature})
-        commit(f"feat({build.group(1)}): no-op", {f"feature_{n}.py": "VALUE = 2\n"})
+    if mode == "no_red":
+        commit(f"test({build.group(1)}): add check", {**check, f"feature_{n}.py": "VALUE = 1\n"})
     else:
         commit(f"test({build.group(1)}): add check", check)
+elif build and "code part" in prompt:
+    n = build.group(1).lower()
+    feature = {f"feature_{n}.py": "VALUE = 1\n"}
+    if mode == "weaken":
+        commit(f"feat({build.group(1)}): add feature", {**feature, f"check_{n}.py": "pass\n"})
+    elif mode == "add_test":
+        commit(f"feat({build.group(1)}): add feature", {**feature, f"check_{n}.py": f"import feature_{n}\nassert True\n"})
+    elif mode == "noqa":
+        commit(f"feat({build.group(1)}): add feature", {f"feature_{n}.py": "VALUE = 1  # noqa: E501\n"})
+    elif mode == "no_red":
+        commit(f"feat({build.group(1)}): no-op", {f"feature_{n}.py": "VALUE = 2\n"})
+    else:
         commit(f"feat({build.group(1)}): add feature", feature)
 elif "REVIEW.md" in prompt:
     Path(folder.group(1), "REVIEW.md").write_text(
