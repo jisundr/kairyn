@@ -513,6 +513,28 @@ def test_milestones_eval_names_its_dependencies_scenario_and_asserts():
             assert check["metric"] in test["metadata"]["min_pass_rate"]
 
 
+def test_milestones_eval_runs_claude_with_no_model_set(tmp_path, monkeypatch):
+    """With KAIRYN_MODEL unset, MODEL is None: run 20261125T055503Z failed 10/10 with a TypeError on `--model None`."""
+    import importlib.util
+    from helpers import ROOT
+    spec = importlib.util.spec_from_file_location("kairyn_provider", ROOT / "evals" / "promptfoo" / "provider.py")
+    provider = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(provider)
+    calls = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(provider, "MODEL", None)
+    monkeypatch.setattr(provider, "RESULTS", tmp_path / "results")
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    provider.milestones_catchup(tmp_path / "work", "milestones_catchup", "run-test")
+    claude_calls = [c for c in calls if c[0] == "claude"]
+    assert claude_calls and all(isinstance(a, str) for a in claude_calls[0]), claude_calls
+    assert "--model" not in claude_calls[0]
+
+
 def test_starts_monitor_passes_only_for_a_monitor_on_milestones_watch():
     asserts = _asserts()
     watch = {"name": "Monitor", "input": {"command": 'python3 "/p/scripts/milestones.py" watch --root "/r"'}}
