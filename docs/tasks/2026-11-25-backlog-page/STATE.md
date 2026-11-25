@@ -2,16 +2,16 @@
 task: 2026-11-25-backlog-page
 title: A visual index of the backlog
 stage: build
-status: in-progress
+status: blocked
 stages:
   grill: done
   requirements: done
   design: done
-  build: in-progress
+  build: done
   gates: pending
   review: pending
 created: 2026-11-25T11:39:03Z
-updated: 2026-11-25T12:27:20Z
+updated: 2026-11-25T12:35:41Z
 ---
 
 # Log
@@ -27,3 +27,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-25T11:48:00Z [build] Build started by hand from an Orca coordinator dispatch, slices T1-T5 test-first.
 2026-11-25T12:03:58Z [build] T1-T5 green by hand, test-first; uv run pytest 734 passed. Evals run 20261125T115929Z PASS: backlog, check, init, upgrade 10/10 each metric, cost $0.30. AC7 Manual left for the owner. Waiting for the pull request review.
 2026-11-25T12:27:20Z [build] Owner review of the page: R16 overflow found at 390 px (507 px wide). Owner picked UX proposals 1, 2, 3, 5, 6 (not 4; no Learning line, A6 kept). Added T6 to DESIGN.md. Build resumed.
+2026-11-25T12:35:41Z [build] T6 green test-first; uv run pytest 750 passed. Evals run 20261125T123152Z PASS: backlog, check, init 10/10 each metric, cost $0.24 (upgrade unchanged, skipped). AC7 Manual left for the owner. Waiting for the pull request review.
