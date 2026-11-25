@@ -9,3 +9,5 @@
 - A home-repo task can build its code in one child repo: list it under repos: in afk.yml; approve merges the child, then the home. (2026-11-24-multi-repo; closes multi-repo)
 - Retro emptied learnings.md: two rules moved to testing-and-evals.md and change-a-stage.md; three ideas went to the backlog inbox. (2026-11-25-retro)
 - The exit stage is now close, so a bare /exit no longer clashes; /kairyn:upgrade removes unedited files a release no longer ships. (2026-11-25-skill-names-clash; closes skill-names-clash)
+- Milestones: hooks and afk.py write tagged progress lines to one log; a first-mate session streams them with Monitor. Opt in with .kairyn/milestones.yml. (2026-11-25-first-mate-hub)
+- Retro emptied learnings.md: four rules moved to upgrade.md and testing-and-evals.md; seven ideas went to the backlog inbox. (2026-11-25-retro-2)

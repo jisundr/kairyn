@@ -41,7 +41,7 @@ Each config starts with a header naming the plugin files it exercises:
 # depends: plugin/stages/REQUIREMENTS.md, plugin/stages/_template.md, plugin/templates/STATE.md
 ```
 
-The selector skips an eval when their hash equals the one saved at its last pass (`evals/results/passed.json`, git-ignored).
+The selector skips an eval when their hash equals the one saved at its last pass (`evals/results/passed.json`, git-ignored). A renamed eval needs a fresh pass: old passes are keyed by eval name.
 
 ```bash
 /run-evals                   # every eval whose dependencies changed, at 10 runs
