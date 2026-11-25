@@ -57,6 +57,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
 
+import atomic_write
 import milestones
 
 PLUGIN = Path(__file__).resolve().parent.parent
@@ -315,7 +316,7 @@ class Run:
         stamp = now()
         text = set_front(text, "updated", stamp)
         text = text.rstrip("\n") + f"\n{stamp} [{at}] {log}\n"
-        (self.folder / "STATE.md").write_text(text)
+        atomic_write.write_text(self.folder / "STATE.md", text)   # a reader in another process never sees it empty
         try:   # F3: milestones only report progress; a bad milestones.yml or log path never stops a run
             milestones.write(self.root, self.task, f"{at}: {log}", stamp)
         except (OSError, ValueError) as e:
