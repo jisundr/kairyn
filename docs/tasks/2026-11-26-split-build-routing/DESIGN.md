@@ -32,8 +32,8 @@ Eval plan, 10 runs each, as the selector picks them (`# depends:`). Costs: the l
 | `build` | `afk.py`, `BUILD.md`, `plugin/harness/**` | `afk_build` | $4.67 (all Opus) |
 | `review` | `afk.py`, `plugin/harness/**` | `afk_review` | $2.82 |
 | `gates` | `afk.py`, `plugin/harness/**` | `afk_gates_pass`, `afk_gates_fail` | $1.57 |
-| `close` | close and retro skills | `close_decision`, `close_plain`, `close_retro` | $4.73 (Sonnet; now Haiku) |
-| `retro` | retro skill, `plugin/harness/**` | `retro`, `retro_approval` | $4.54 (Sonnet; now Haiku) |
+| `close` | close and retro skills | `close_decision`, `close_plain`, `close_retro` | $4.73 (Sonnet) |
+| `retro` | retro skill, `plugin/harness/**` | `retro`, `retro_approval` | $4.54 (Sonnet) |
 | `check`, `init`, `upgrade` | scripts, stages, hashes | 5 | $0.25 |
 | `requirements` | `plugin/harness/**` only | 3 | $15.19 |
 | `design` | `plugin/harness/**` only | 3 | $16.93 |
