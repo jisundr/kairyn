@@ -1,0 +1,14 @@
+# depends: plugin/scripts/milestones.py, plugin/hooks/hooks.json
+description: milestones (the first mate starts the watcher at session start)
+prompts: ["{{scenario}}"]
+providers:
+  - id: file://provider.py
+    config: {timeout: 600000}
+tests:
+  - description: After catchup prints missed lines, the session reports them and starts milestones.py watch with Monitor
+    vars: {scenario: milestones_catchup}
+    metadata:
+      min_pass_rate: {starts_monitor: 0.9, reports_missed: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:starts_monitor", metric: starts_monitor}
+      - {type: python, value: "file://asserts.py:reports_missed", metric: reports_missed}

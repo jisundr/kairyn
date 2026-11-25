@@ -64,6 +64,7 @@
    "7b140b59df0602bee22e5130b0d94b3cc1982fd57b1d4196337db944047b54b1"
   ],
   ".harness/budgets.yml": [
+   "ba4b71ac74acca4b885f7aa7fcd5ec5de7f460943483a369121498f350ddeda9",
    "f46d476c01b092e688b6faf124130b39e218017875e65db27a0f706c1f2c0d31"
   ],
   ".harness/workflows/afk-run.md": [
@@ -73,13 +74,18 @@
    "f0b1bb0b5abe012a8a402a9a30d53ce24fd96783e8463905eeea58990258d2b4"
   ],
   ".harness/workflows/running-stages.md": [
+   "9c8104d87052c7d0128e50d83503686985efc067fdf80822151f5a7c1c6ae045",
    "bb4ca2a8933c45e0d522df2db05c7a58c31bc3c81c0aa88e6cf0c1e280617025"
   ],
   ".harness/workflows/task-lifecycle.md": [
-   "2f25affda5891aa86df18155aa4092ee825a536ef79d0c81b3c57cf806833ee5"
+   "2f25affda5891aa86df18155aa4092ee825a536ef79d0c81b3c57cf806833ee5",
+   "31102e30c9e52cba6ee9375cb8ef17c837c3df6fbed12fe24f083e82afc15bd8"
   ],
   ".kairyn/stages/BUILD.md": [
    "61934a697505cb6e01c72455794e3f829e6bf0ed6c24aff32455928e9201405b"
+  ],
+  ".kairyn/stages/CLOSE.md": [
+   "2f092da7debc2a83fab3d81f00e8952d2b41fbd5a60b48380f4cd47a648ddaee"
   ],
   ".kairyn/stages/DESIGN.md": [
    "4a7404d9c912c21d3b0171822c8ebc45dd35a78752e01fc9b33727d631d2b05e"
@@ -100,6 +106,7 @@
    "3cf14b8608276d9c1157a4c219b2820769a26fd6bef0859ce545a93b1bdc83e4"
   ],
   ".kairyn/stages/RETRO.md": [
+   "2a310b92d04d804c08c98c15c7d82091cc57aad45f7593e342c5db5b9fa0e17d",
    "ddc1fd8997ae8d59009ff04a77d7209af7689cb771f639ad3d86f3ff8a36c7ae"
   ],
   ".kairyn/stages/REVIEW.md": [
@@ -141,6 +148,7 @@
  },
  "0.11.0": {
   ".harness/README.md": [
+   "440dc8d7d25bfffca36f7aa91121efb5f27e2d88e3fd0a8c813e4b340f01a7f3",
    "7b140b59df0602bee22e5130b0d94b3cc1982fd57b1d4196337db944047b54b1"
   ],
   ".harness/budgets.yml": [
@@ -151,6 +159,9 @@
   ],
   ".harness/workflows/keeping-docs-lean.md": [
    "f0b1bb0b5abe012a8a402a9a30d53ce24fd96783e8463905eeea58990258d2b4"
+  ],
+  ".harness/workflows/milestones.md": [
+   "151066425658512ec68a23a480eedc6f5bae612ecc9f8c1109150e40d4258e3a"
   ],
   ".harness/workflows/running-stages.md": [
    "9c8104d87052c7d0128e50d83503686985efc067fdf80822151f5a7c1c6ae045"

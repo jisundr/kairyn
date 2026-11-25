@@ -11,6 +11,7 @@ Read a doc only when the task matches; `head -6 <file>` shows its header.
 | looking for the repo's AI workflows or adding a harness doc | `.harness/README.md` |
 | running /kairyn:build or /kairyn:review, or editing afk.yml | `.harness/workflows/afk-run.md` |
 | adding or editing a harness doc, or when /kairyn:check fails | `.harness/workflows/keeping-docs-lean.md` |
+| setting up or changing .kairyn/milestones.yml, or when milestone messages stop | `.harness/workflows/milestones.md` |
 | running a stage, or editing or adding stage instructions | `.harness/workflows/running-stages.md` |
 | starting or resuming a task, or touching STATE.md or task folders | `.harness/workflows/task-lifecycle.md` |
 <!-- harness-docs:end -->

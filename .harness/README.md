@@ -16,6 +16,7 @@ How work gets done in this repo: the workflows for developing kairyn itself. Rea
 | [Change a stage](workflows/change-a-stage.md) | editing or adding a stage in plugin/stages/ |
 | [Init](workflows/init.md) | changing /kairyn:init, init.sh or verify-init.sh |
 | [Keeping docs lean](workflows/keeping-docs-lean.md) | adding or editing a harness doc, or when /kairyn:check fails |
+| [Milestones](workflows/milestones.md) | changing milestones.py, its hooks or its eval |
 | [Pull request](workflows/pull-request.md) | committing, or opening or updating a pull request |
 | [Running stages](workflows/running-stages.md) | running a stage, or editing or adding stage instructions |
 | [Task lifecycle](workflows/task-lifecycle.md) | changing STATE.md, task folders or timestamps |
@@ -34,7 +35,7 @@ How work gets done in this repo: the workflows for developing kairyn itself. Rea
 
 ## Doc format
 
-Every doc here starts with a header an agent can read without opening the body:
+Every doc here starts with this header:
 
 ```yaml
 ---
@@ -55,7 +56,7 @@ load: on-demand
 
 Classes are set per file pattern in `budgets.yml` and must match each doc's header. Only `on-demand` docs appear in the index tables.
 
-Read only those first lines (`head -6 <file>`) to decide whether a doc matters. The tables above and in `CLAUDE.md` are generated from these headers:
+The tables above and in `CLAUDE.md` are generated from these headers:
 
 ```bash
 uv run python plugin/scripts/harness_docs.py --write   # regenerate the index tables

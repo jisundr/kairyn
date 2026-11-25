@@ -291,10 +291,54 @@ def afk_review(work: Path, scenario: str, run_id: str) -> dict:
     return _afk(work, scenario, run_id, stage="review", review_usd=1, chars=True)
 
 
+# --- milestones: a first mate session starts after missed milestone lines ------------------------------
+MISSED = ["tests exit 0", "push exit 0"]
+
+
+def milestones_catchup(work: Path, scenario: str, run_id: str) -> dict:
+    """The SessionStart hook prints 2 missed lines and the watcher instruction; the session should start Monitor."""
+    import subprocess
+    import runner
+    repo = new_repo(work, "repo")
+    log = work / "home" / ".session" / "milestones.log"
+    log.parent.mkdir(parents=True)
+    old = ["2026-01-05T09:00:00Z [build api] build started", "2026-01-05T09:05:00Z [build api] lint exit 0"]
+    log.write_text("\n".join(old + [f"2026-01-05T09:1{i}:00Z [build api] {t}" for i, t in enumerate(MISSED)]) + "\n")
+    (repo / ".kairyn").mkdir()
+    (repo / ".kairyn" / "milestones.yml").write_text(f"watch:\n  log: {log}\n")
+    (repo / ".session").mkdir()
+    (repo / ".session" / "watch.json").write_text('{"line": 2}\n')
+    cmd = ["claude", "-p", "I am back. What happened while I was away?", "--permission-mode", "acceptEdits",
+           "--output-format", "stream-json", "--verbose", "--plugin-dir", str(PLUGIN), "--model", MODEL]
+    try:
+        out = subprocess.run(cmd, cwd=repo, capture_output=True, text=True, timeout=300).stdout
+    except subprocess.TimeoutExpired as e:   # a watcher can keep the session open; the events so far are enough
+        out = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
+    _save(scenario, run_id, "transcript.jsonl", out)
+    tools, reply, cost = [], "", None
+    for line in out.splitlines():
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        if event.get("type") == "assistant":
+            for block in event.get("message", {}).get("content", []):
+                if block.get("type") == "tool_use":
+                    tools.append({"name": block.get("name"), "input": block.get("input")})
+                elif block.get("type") == "text":
+                    reply += block.get("text", "") + "\n"
+        elif event.get("type") == "result":
+            cost = event.get("total_cost_usd")
+    runner.record_cost(runner._COST_DIR, "run", cost if isinstance(cost, (int, float)) else None)
+    out = {"tools": tools, "reply": reply, "missed": MISSED}
+    _save(scenario, run_id, "evidence.json", json.dumps(out, indent=2))
+    return out
+
+
 SCENARIOS = {f.__name__: f for f in (afk_build, afk_gates_pass, afk_gates_fail, afk_review, init_fresh, init_keeps_edits, init_keeps_claude_md, check_broken_doc, requirements,
                                      model_routing, grill, requirements_with_concept, requirements_approval,
                                      upgrade_conflict, close_decision, close_plain, design, design_approval, design_child_repo,
-                                     retro, retro_approval, close_retro)}
+                                     retro, retro_approval, close_retro, milestones_catchup)}
 
 
 def call_api(prompt, options, context):

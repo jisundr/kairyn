@@ -64,7 +64,8 @@ def installed_files(plugin: Path) -> list[Entry]:
 
 # A new shipped harness doc must be added here, or init cannot record it (a test checks).
 _KAIRYN_HARNESS_DOCS = {".harness/workflows/running-stages.md", ".harness/workflows/task-lifecycle.md",
-                        ".harness/workflows/keeping-docs-lean.md", ".harness/workflows/afk-run.md"}
+                        ".harness/workflows/keeping-docs-lean.md", ".harness/workflows/afk-run.md",
+                        ".harness/workflows/milestones.md"}
 
 
 def owner_of(path: str) -> str | None:
