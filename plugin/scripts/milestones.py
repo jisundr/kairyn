@@ -4,6 +4,7 @@
     python3 milestones.py write --tag <run tag> <text>   # append one line (afk.py imports write())
     python3 milestones.py hook                           # PostToolUse, PostToolUseFailure, Stop: hook JSON on stdin
     python3 milestones.py watch [--interval <s>]         # print each new log line; run it with Monitor
+    python3 milestones.py catchup                        # SessionStart: missed lines, then how to start watch
 
 All take --root (default: the current directory). Settings: .kairyn/milestones.yml, optional:
     write:
@@ -14,7 +15,9 @@ All take --root (default: the current directory). Settings: .kairyn/milestones.y
       log: ~/Projects/home/.session/milestones.log   # first mate repo: the log to read
 A line is `<UTC timestamp> [<run tag>] <text>`, the text cut to 200 characters. A new `.session/`
 folder gets a `.gitignore` that ignores all its files. `watch` stores the number of the last line it
-printed in `.session/watch.json` of its repo; with no stored number it starts at the log's end.
+printed in `.session/watch.json` of its repo; with no stored number it starts at the log's end, and a
+log shorter than the stored number starts from line 1. `catchup` prints the lines after the stored number,
+stores the new number, and tells the first mate to start `watch` with the Monitor tool.
 `hook` writes the label and the exit code of a Bash command that matches a pattern (never the command text) and
 the first line of the last assistant message at Stop. Its run tag is `<tmux session>:<window> <repo folder>`,
 or the repo folder outside tmux. KAIRYN_MILESTONES=off (afk.py sessions) makes it write nothing.
@@ -201,21 +204,58 @@ def hook(root: Path, raw: str) -> None:
         write(root, run_tag(root), text)
 
 
-def watch(root: Path, interval: float) -> int:
+def watch_log(root: Path):
     conf = settings(root).get("watch")
     raw = conf.get("log") if isinstance(conf, dict) else None
-    if not raw:
+    return _path(root, raw) if raw else None
+
+
+def stored_line(state: Path):
+    try:
+        return int(json.loads(state.read_text())["line"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
+def catchup(root: Path) -> None:
+    """Print the lines after the stored number and the watcher instruction (R10, R13)."""
+    if os.environ.get("KAIRYN_MILESTONES", "").lower() == "off":
+        return
+    log = watch_log(root)
+    if not log:
+        return
+    state = session_dir(root / SESSION) / "watch.json"
+    lines = _read_lines(log)
+    done = stored_line(state)
+    if done is None:
+        done = len(lines)
+    elif done > len(lines):
+        done = 0
+    missed = lines[done:]
+    if missed:
+        print(f"Milestones since the last session ({len(missed)}):")
+        for line in missed:
+            print(line)
+    state.write_text(json.dumps({"line": len(lines)}) + "\n")
+    script = Path(__file__).resolve()
+    print(f'Start the milestone watcher now with the Monitor tool: python3 "{script}" watch --root "{root}". '
+          "Each line it prints is one milestone; tell the user. When Monitor stops, start it again.")
+
+
+def watch(root: Path, interval: float) -> int:
+    log = watch_log(root)
+    if not log:
         print("milestones: no watch log set in .kairyn/milestones.yml", file=sys.stderr)
         return 2
-    log = _path(root, raw)
     state = session_dir(root / SESSION) / "watch.json"
-    try:
-        done = int(json.loads(state.read_text())["line"])
-    except (OSError, ValueError, KeyError, TypeError):
+    done = stored_line(state)
+    if done is None:
         done = len(_read_lines(log))
         state.write_text(json.dumps({"line": done}) + "\n")
     while True:
         lines = _read_lines(log)
+        if len(lines) < done:   # a shorter log: cleanup removed it, start from line 1 (R13)
+            done = 0
         if len(lines) > done:
             for line in lines[done:]:
                 print(line, flush=True)
@@ -233,7 +273,8 @@ def main(argv=None) -> int:
     v = sub.add_parser("watch")
     v.add_argument("--interval", type=float, default=5.0)
     h = sub.add_parser("hook")
-    for p in (w, v, h):
+    c = sub.add_parser("catchup")
+    for p in (w, v, h, c):
         p.add_argument("--root", default=".")
     args = parser.parse_args(argv)
     root = Path(args.root).resolve()
@@ -244,6 +285,12 @@ def main(argv=None) -> int:
         try:
             hook(root, sys.stdin.read())
         except Exception as err:   # a milestone must never fail the user's turn
+            print(f"milestones: {err}", file=sys.stderr)
+        return 0
+    if args.command == "catchup":
+        try:
+            catchup(root)
+        except Exception as err:   # a session start must never fail
             print(f"milestones: {err}", file=sys.stderr)
         return 0
     return watch(root, args.interval)
