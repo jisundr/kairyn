@@ -7,6 +7,7 @@ import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -768,3 +769,15 @@ def test_build_blocks_before_code_without_a_red_test(repo, mode, reason):
     assert (front(state, "stage"), front(state, "status")) == ("build", "blocked")
     assert re.search(rf"\[build\] Blocked: T1: {reason}", state)
     assert build_parts(repo) == [("T1", "tests", "opus")], "no code part runs"
+
+
+def test_resume_with_red_test_runs_only_the_code_part(repo):
+    """R6, A1: a resume does not write a red test again."""
+    assert run(repo, "run", TASK, mode="no_feat").returncode == 0
+    assert re.search(r"\[build\] Blocked: T1: no feat\(T1\) commit", task_file(repo, "STATE.md"))
+    for suffix in ("", ".args", ".cwd", ".env"):
+        Path(str(repo.parent / "stub.log") + suffix).unlink()
+    assert run(repo, "run", TASK).returncode == 0
+    assert build_parts(repo) == [("T1", "code", "sonnet"), ("T2", "tests", "opus"), ("T2", "code", "sonnet")]
+    subjects = git(worktree(repo), "log", "--format=%s").splitlines()
+    assert sum(s.startswith("test(T1)") for s in subjects) == 1
