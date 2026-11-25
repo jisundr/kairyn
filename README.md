@@ -53,7 +53,7 @@ docs/tasks/<YYYY-MM-DD>-<slug>/
 └── REQUIREMENTS.md       # ends with an approval line
 ```
 
-When the change merges, `/kairyn:exit` leaves an ADR (if a decision was load-bearing) and a `CHANGELOG.md` line, then deletes the folder. When `.kairyn/learnings.md` passes half its budget, exit runs retro to move or drop each learning.
+When the change merges, `/kairyn:close` leaves an ADR (if a decision was load-bearing) and a `CHANGELOG.md` line, then deletes the folder. When `.kairyn/learnings.md` passes half its budget, close runs retro to move or drop learnings.
 
 ## Tests and evals
 

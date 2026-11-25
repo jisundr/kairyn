@@ -11,6 +11,10 @@ One line per shipped file: REPLACED, MERGED, ADDED, CONFLICT or KEPT, then the p
 On CONFLICT the local file stays as it is and the merge goes to <file>.kairyn-new. The user
 takes what they want from it and deletes it; the next upgrade records the file as resolved. If the
 conflict had nothing to merge from and they kept their version, the file is theirs from then on.
+A recorded file the plugin no longer ships:
+    missing, or unedited (matches .base/ or a released version)   REMOVED  (file, .base/ copy and entry)
+    edited                                                         CONFLICT (kept; the user moves the edits
+                                                                   and deletes it; the next upgrade removes it)
 The manifest takes the new version only when no conflict is open. Exit 1 on any conflict.
 Files kairyn does not own (learnings, tasks, the user's own docs) are never touched.
 
@@ -67,6 +71,28 @@ def _merge(local: bytes, base: bytes, new: bytes) -> tuple[int, bytes] | None:
         except OSError:
             return None
     return (result.returncode, result.stdout) if 0 <= result.returncode < 128 else None
+
+
+def _remove_unshipped(repo: Path, manifest: dict, shipped: set, records: dict, releases: dict) -> list:
+    """Recorded files this plugin no longer ships: REMOVED if missing or unedited, else CONFLICT."""
+    lines = []
+    for path in sorted(set(manifest["files"]) - shipped):
+        old, local = records.get(path), current_bytes(repo, path)
+        released = local is not None and any(sha256(local) in files.get(path, []) for files in releases.values())
+        # A record with no real base (its .base/ copy was lost) holds the user's own bytes:
+        # matching them proves nothing, so only the user's delete removes the file (F1).
+        has_base = old is not None and not old.no_base
+        if local is None or released or (has_base and local == old.data):
+            if local is not None:
+                (repo / path).unlink()
+            (repo / BASE / path).unlink(missing_ok=True)
+            records.pop(path, None)
+            lines.append(("REMOVED", path))
+        else:
+            records[path] = Record(old.data if has_base else local, manifest["files"][path]["owner"], True,
+                                   no_base=not has_base)
+            lines.append(("CONFLICT", path))
+    return lines
 
 
 def upgrade(repo: Path, plugin: Path) -> tuple[list[tuple[str, str]], bool]:
@@ -136,6 +162,8 @@ def upgrade(repo: Path, plugin: Path) -> tuple[list[tuple[str, str]], bool]:
                     records[path], result = Record(new, entry.owner, True, no_base=old is None), "CONFLICT"
         lines.append((result, path))
 
+    lines += _remove_unshipped(repo, manifest, {e.path for e in installed_files(plugin)}, records, releases)
+
     if block_written and (repo / ".harness").is_dir():
         try:
             import harness_docs
@@ -154,9 +182,14 @@ def main(argv: list[str]) -> int:
         print("FAIL: no .kairyn/ here: run /kairyn:init first")
         return 2
     lines, conflicts = upgrade(root.resolve(), plugin.resolve())
+    shipped = {e.path for e in installed_files(plugin.resolve())}
     for result, path in lines:
         print(f"{result} {path}")
-    if conflicts:
+    for result, path in lines:
+        if result == "CONFLICT" and path not in shipped:
+            print(f"{path}: kairyn no longer ships this file: move your edits into its new file, "
+                  "delete it, then run /kairyn:upgrade again.")
+    if any(result == "CONFLICT" and path in shipped for result, path in lines):
         print(f"Open conflicts: take what you want from each <file>{NEW}, delete it, then run /kairyn:upgrade again.")
     return 1 if conflicts else 0
 

@@ -1,0 +1,45 @@
+---
+task: 2026-11-25-skill-names-clash
+title: Skill names clash with built-in commands
+stage: review
+status: done
+stages:
+  grill: done
+  requirements: done
+  design: done
+  build: done
+  gates: done
+  review: done
+created: 2026-11-24T23:13:12Z
+updated: 2026-11-25T00:20:34Z
+---
+
+# Log
+
+Newest entry last. One entry per stage run or notable event.
+
+2026-11-24T23:13:12Z [grill] Task created from backlog idea 20261124224610-skill-names-clash. Waiting for answer to Q1.
+2026-11-24T23:14:18Z [grill] D1: rename only exit; init and review stay. Waiting for answer to Q2.
+2026-11-24T23:14:56Z [grill] D2: new name is close. Waiting for answer to Q3.
+2026-11-24T23:15:22Z [grill] D3: rename everything shipped or tested; history stays. Waiting for answer to Q4.
+2026-11-24T23:15:50Z [grill] D4: upgrade gets a general removal step. Waiting for answer to Q5.
+2026-11-24T23:16:51Z [grill] D5: close.py keeps its subcommands. No open branch. Waiting for concept confirmation.
+2026-11-24T23:17:06Z [grill] User confirmed the concept (D1-D5). Next stage: requirements.
+2026-11-24T23:18:00Z [requirements] Wrote REQUIREMENTS.md: R1-R10, A1-A5, K1-K3. Waiting for user approval.
+2026-11-24T23:18:20Z [requirements] Approved by Jayson De los Reyes. Next stage: design.
+2026-11-24T23:20:19Z [design] Wrote DESIGN.md: option A, T1-T4, AC1-AC11. Waiting for user approval.
+2026-11-24T23:20:37Z [design] Approved by Jayson De los Reyes. Next stage: build.
+2026-11-24T23:29:07Z [build] Blocked: readiness: gate testing exits 1 on the base commit
+2026-11-24T23:32:18Z [build] Fixed readiness: REQUIREMENTS.md cut to its 1500-token budget; uv run pytest passes on the base. Resumed.
+2026-11-24T23:33:39Z [build] Build started.
+2026-11-24T23:56:57Z [build] Blocked: the reviewer still objects after the fix round: `tests/test_dev_harness.py:66` `test_plugin_version_is_0_11_0_or_later` still checks almost nothing, though the fix round raised it. It only checks a version floor. `test_this_repo_kairyn_is_upgraded_to_the_plugin_version`, next to it, already ties the manifest to `plugin_version(PLUGIN)`, and the dogfood test now expects `CLOSE.md`, which only 0.11.0 ships. Remove it, or say why it stays.
+2026-11-24T23:58:15Z [build] Fixed the reviewer objection: removed test_plugin_version_is_0_11_0_or_later (decided by Jayson De los Reyes). Resumed.
+2026-11-24T23:58:16Z [build] Build started.
+2026-11-25T00:02:53Z [build] All 4 tasks green. Cost $1.84. Next: gates.
+2026-11-25T00:03:00Z [build] Pushed kairyn/2026-11-25-skill-names-clash. Pull request: https://github.com/jisundr/kairyn/pull/24
+2026-11-25T00:04:24Z [gates] 2 pass, 4 not set: accessibility, performance, observability, security. Cost $0.00. Next: review.
+2026-11-25T00:04:28Z [review] Review started.
+2026-11-25T00:07:01Z [review] Cost $0.70. Waiting for the merge decision: /kairyn:review 2026-11-25-skill-names-clash approve or reject.
+2026-11-25T00:10:58Z [review] Fixed F1 by hand (decided by Jayson De los Reyes): test 10ab834 failed, fix 2b188a6 passes; uv run pytest 593 passed. Next: evals close and upgrade.
+2026-11-25T00:16:10Z [review] F2: evals run 20261125T001106Z PASS: close and upgrade 10/10 each metric (gate 9), cost $6.17. Waiting for the merge decision.
+2026-11-25T00:20:34Z [review] Approved by Jayson De los Reyes.

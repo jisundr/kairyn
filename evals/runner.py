@@ -494,23 +494,23 @@ def run_design_child(repo: Path) -> dict:
     return {"task": repo / "docs" / "tasks" / DESIGN_TASK, "start": start, "end": utcnow()}
 
 
-# --- exit stage --------------------------------------------------------------------
+# --- close stage --------------------------------------------------------------------
 # Two done, approved tasks: one with a load-bearing decision (D1 → an ADR), one with none (no ADR).
-EXIT_DECISION_TASK = "2026-01-07-history-store"
-EXIT_PLAIN_TASK = "2026-01-08-help-typo"
-EXIT_KEYWORD = "SQLite"
-EXIT_TASKS = {
-    EXIT_DECISION_TASK: ("Keep a history of report runs.",
+CLOSE_DECISION_TASK = "2026-01-07-history-store"
+CLOSE_PLAIN_TASK = "2026-01-08-help-typo"
+CLOSE_KEYWORD = "SQLite"
+CLOSE_TASKS = {
+    CLOSE_DECISION_TASK: ("Keep a history of report runs.",
                          "- R1: When a report runs, the CLI shall store its totals in `data/history.db`. (D1)",
                          "- D1: Store history in SQLite, not a JSON file. A JSON file is rewritten in full on each run, "
                          "and SQLite adds no dependency to Python 3.12. (user)"),
-    EXIT_PLAIN_TASK: ("Fix the typo 'totla' in the --help text.",
+    CLOSE_PLAIN_TASK: ("Fix the typo 'totla' in the --help text.",
                       "- R1: The --help text shall spell 'total' correctly. (request)", ""),
 }
 
 
-def exit_task_files(task: str) -> dict[str, str]:
-    request, req, decision = EXIT_TASKS[task]
+def close_task_files(task: str) -> dict[str, str]:
+    request, req, decision = CLOSE_TASKS[task]
     state = (f"---\ntask: {task}\ntitle: {request}\nstage: requirements\nstatus: done\nstages:\n  requirements: done\n"
              f"created: 2026-01-07T09:00:00Z\nupdated: 2026-01-07T10:00:00Z\n---\n\n# Log\n\n"
              f"2026-01-07T09:00:00Z [requirements] Task created. {request}\n"
@@ -522,10 +522,10 @@ def exit_task_files(task: str) -> dict[str, str]:
     return {"STATE.md": state, "REQUIREMENTS.md": reqs}
 
 
-def make_exit_repo(repo: Path, task: str) -> Path:
+def make_close_repo(repo: Path, task: str) -> Path:
     folder = repo / "docs" / "tasks" / task
     folder.mkdir(parents=True)
-    for name, text in exit_task_files(task).items():
+    for name, text in close_task_files(task).items():
         (folder / name).write_text(text)
     backlog = repo / "docs" / "backlog"
     backlog.mkdir(parents=True)
@@ -538,8 +538,8 @@ def make_exit_repo(repo: Path, task: str) -> Path:
     return repo
 
 
-def run_exit(repo: Path, task: str) -> dict:
-    claude(f"/kairyn:exit {task}", repo, plugin=True, model=MODEL)
+def run_close(repo: Path, task: str) -> dict:
+    claude(f"/kairyn:close {task}", repo, plugin=True, model=MODEL)
     adr_dir = repo / "docs" / "adr"
     log = repo / "CHANGELOG.md"
     return {"task": task, "task_exists": (repo / "docs" / "tasks" / task).exists(),

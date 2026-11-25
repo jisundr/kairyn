@@ -1,0 +1,25 @@
+# depends: plugin/skills/close/SKILL.md, plugin/stages/CLOSE.md, plugin/stages/_template.md, plugin/scripts/close.py, plugin/scripts/retro.py, plugin/stages/RETRO.md, plugin/templates/RETRO.md, plugin/skills/retro/SKILL.md, plugin/scripts/init.sh
+description: close stage
+prompts: ["{{scenario}}"]
+providers:
+  - id: file://provider.py
+    config: {timeout: 600000}
+tests:
+  - description: Close a done task with a load-bearing decision
+    vars: {scenario: close_decision}
+    metadata:
+      min_pass_rate: {closes: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:closes_with_adr", metric: closes}
+  - description: Close a done task with no load-bearing decision
+    vars: {scenario: close_plain}
+    metadata:
+      min_pass_rate: {closes: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:closes_without_adr", metric: closes}
+  - description: Close with learnings.md past half its budget starts retro, which waits for approval
+    vars: {scenario: close_retro}
+    metadata:
+      min_pass_rate: {close_starts_retro: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:close_starts_retro", metric: close_starts_retro}

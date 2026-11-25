@@ -11,7 +11,7 @@ sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
 from checks import (build_row_problems, flags_problems, gate_row, new_constraint_lines, output_header_problems, red_before_code_problems, review_gap_problems,  # noqa: E402
                     retro_applied_problems, retro_proposal_problems, retro_scope_problems, chosen_option, design_run_problems, design_test_plan_problems, grounded_problems, options_problems,  # noqa: E402
-                    exit_problems, TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_reply_problems, next_routing_stage,  # noqa: E402
+                    close_problems, TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_reply_problems, next_routing_stage,  # noqa: E402
                     open_decisions, routing_problems, state_fields, ste_problems, ste_rate, structural_problems,
                     traceability_problems, repo_line_problems)
 from runner import JUDGE_MODEL, NO_QUESTIONS, claude  # noqa: E402
@@ -315,15 +315,15 @@ def records_approval(output, context):
     return _result(problems)
 
 
-def exits_with_adr(output, context):
+def closes_with_adr(output, context):
     """A load-bearing decision (D1, SQLite over JSON) gets an ADR; the task, its backlog file and only those go."""
-    from runner import EXIT_KEYWORD
-    return _result(exit_problems(json.loads(output), expect_adr=True, keyword=EXIT_KEYWORD))
+    from runner import CLOSE_KEYWORD
+    return _result(close_problems(json.loads(output), expect_adr=True, keyword=CLOSE_KEYWORD))
 
 
-def exits_without_adr(output, context):
+def closes_without_adr(output, context):
     """A typo fix has no load-bearing decision: changelog and deletion, no ADR."""
-    return _result(exit_problems(json.loads(output), expect_adr=False))
+    return _result(close_problems(json.loads(output), expect_adr=False))
 
 
 # --- design stage: scenario 1 = one run on an approved task; 2 = stage, non-approval, "go with option X", approval -----
@@ -455,7 +455,7 @@ def design_records_approval(output, context):
     return _result(problems)
 
 
-# --- retro stage: 1 = proposal only; 2 = proposal, then "Approved."; 3 = exit with a full learnings.md -----
+# --- retro stage: 1 = proposal only; 2 = proposal, then "Approved."; 3 = close with a full learnings.md -----
 def _times(d: dict) -> dict:
     parse = lambda s: datetime.strptime(s, TS_FORMAT).replace(tzinfo=timezone.utc)
     return {**d, "start": parse(d["start"]), "end": parse(d["end"])}
@@ -486,10 +486,10 @@ def retro_applies(output, context):
     return _result([f"turn 0: {p}" for p in problems] + retro_applied_problems(d))
 
 
-def exit_starts_retro(output, context):
-    """Exit closes the task as usual, then retro writes a proposal and changes no learning yet."""
+def close_starts_retro(output, context):
+    """Close removes the task as usual, then retro writes a proposal and changes no learning yet."""
     d = json.loads(output)
-    problems = exit_problems(d, expect_adr=False)
+    problems = close_problems(d, expect_adr=False)
     if len(d["retro_dirs"]) != 1:
         problems.append(f"retro folders {d['retro_dirs']}, expected one")
     elif "Approval: pending" not in d["retro"]:

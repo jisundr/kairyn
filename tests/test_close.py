@@ -1,4 +1,4 @@
-"""exit.py: the scripted half of the exit stage (checks, changelog, deletion, release tag)."""
+"""close.py: the scripted half of the close stage (checks, changelog, deletion, release tag)."""
 import subprocess
 import sys
 
@@ -6,7 +6,7 @@ import pytest
 
 from helpers import PLUGIN
 
-EXIT = PLUGIN / "scripts" / "exit.py"
+CLOSE = PLUGIN / "scripts" / "close.py"
 TASK = "2026-01-05-dry-run"
 
 STATE = """---
@@ -31,7 +31,7 @@ def backlog(status, body=""):
 
 
 def run(root, *args):
-    return subprocess.run([sys.executable, str(EXIT), *args, "--root", str(root)], capture_output=True, text=True)
+    return subprocess.run([sys.executable, str(CLOSE), *args, "--root", str(root)], capture_output=True, text=True)
 
 
 def make_task(root, task=TASK, status="done", approval=APPROVED):
@@ -133,7 +133,7 @@ def git(repo, *args):
 
 def test_release_moves_unreleased_and_tags_locally(repo):
     run(repo, "close", TASK, "--entry", "Added a dry-run flag.")
-    git(repo, "add", "-A"); git(repo, "commit", "-qm", "exit")
+    git(repo, "add", "-A"); git(repo, "commit", "-qm", "close")
     r = run(repo, "release", "0.6.0")
     assert r.returncode == 0, r.stdout + r.stderr
     log = (repo / "CHANGELOG.md").read_text()

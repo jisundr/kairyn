@@ -253,3 +253,91 @@ def test_a_pre_manifest_repo_owned_file_kept_by_resolving_stays_the_users(tmp_pa
     result, lines = upgrade(repo, plugin)
     assert result.returncode == 0 and readme.read_text() == "our own dev readme\n"
     assert not (repo / ".harness" / "README.md.kairyn-new").exists()
+
+
+# --- files the new plugin no longer ships ----------------------------------------
+
+GONE = ".kairyn/stages/EXIT.md"  # old-name
+
+
+def old_install(tmp_path):
+    """A repo installed from a plugin copy that ships stages/EXIT.md, and a newer plugin that does not."""  # old-name
+    old = tmp_path / "plugin-old"
+    shutil.copytree(PLUGIN, old)
+    if not (old / "stages" / "EXIT.md").is_file():  # old-name
+        (old / "stages" / "EXIT.md").write_text("---\nname: exit\n---\n\n# Stage: exit\n")  # old-name
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["bash", str(old / "scripts" / "init.sh"), str(repo)], check=True, capture_output=True)
+    plugin = new_plugin(tmp_path)
+    (plugin / "stages" / "EXIT.md").unlink(missing_ok=True)  # old-name
+    assert GONE in read_manifest(repo)["files"] and (repo / GONE).is_file()
+    return repo, plugin
+
+
+def test_an_unedited_file_no_longer_shipped_is_removed(tmp_path):
+    repo, plugin = old_install(tmp_path)
+    result, lines = upgrade(repo, plugin)
+    assert result.returncode == 0, result.stdout
+    assert lines[GONE] == "REMOVED"
+    assert not (repo / GONE).exists() and not (repo / ".kairyn" / ".base" / GONE).exists()
+    manifest = read_manifest(repo)
+    assert GONE not in manifest["files"] and manifest["version"] == "9.9.9"
+    assert manifest_problems(repo) == []
+
+
+def test_an_edited_file_no_longer_shipped_is_kept_as_a_conflict_until_deleted(tmp_path):
+    repo, plugin = old_install(tmp_path)
+    (repo / GONE).write_text((repo / GONE).read_text() + "\nmy edit\n")
+    result, lines = upgrade(repo, plugin)
+    assert result.returncode == 1 and lines[GONE] == "CONFLICT"
+    assert (repo / GONE).read_text().endswith("my edit\n")
+    assert f"{GONE}: kairyn no longer ships this file" in result.stdout
+    assert "move your edits" in result.stdout and "delete" in result.stdout
+    assert read_manifest(repo)["version"] != "9.9.9"
+    result, lines = upgrade(repo, plugin)                       # still open
+    assert result.returncode == 1 and lines[GONE] == "CONFLICT"
+    (repo / GONE).unlink()                                      # the user moved the edits
+    result, lines = upgrade(repo, plugin)
+    assert result.returncode == 0 and lines[GONE] == "REMOVED"
+    manifest = read_manifest(repo)
+    assert GONE not in manifest["files"] and manifest["version"] == "9.9.9"
+    assert not (repo / ".kairyn" / ".base" / GONE).exists() and manifest_problems(repo) == []
+
+
+def test_an_edited_file_no_longer_shipped_without_a_base_is_never_removed_while_it_exists(tmp_path):
+    """Review F1: with no .base/ copy, the edited file stays a conflict on each run until the user deletes it."""
+    repo, plugin = old_install(tmp_path)
+    (repo / GONE).write_text((repo / GONE).read_text() + "\nmy edit\n")
+    (repo / ".kairyn" / ".base" / GONE).unlink()
+    for _ in range(3):
+        result, lines = upgrade(repo, plugin)
+        assert result.returncode == 1 and lines[GONE] == "CONFLICT", result.stdout
+        assert (repo / GONE).read_text().endswith("my edit\n")
+    (repo / GONE).unlink()
+    result, lines = upgrade(repo, plugin)
+    assert result.returncode == 0 and lines[GONE] == "REMOVED"
+    manifest = read_manifest(repo)
+    assert GONE not in manifest["files"] and manifest["version"] == "9.9.9"
+    assert not (repo / ".kairyn" / ".base" / GONE).exists() and manifest_problems(repo) == []
+
+
+def test_a_recorded_file_already_deleted_is_removed_from_the_record(tmp_path):
+    repo, plugin = old_install(tmp_path)
+    (repo / GONE).unlink()
+    result, lines = upgrade(repo, plugin)
+    assert result.returncode == 0 and lines[GONE] == "REMOVED"
+    assert not (repo / ".kairyn" / ".base" / GONE).exists()
+    assert GONE not in read_manifest(repo)["files"]
+
+
+def test_an_unrecorded_file_at_a_path_no_longer_shipped_stays(tmp_path):
+    repo, plugin = old_install(tmp_path)
+    manifest = read_manifest(repo)
+    del manifest["files"][GONE]
+    (repo / ".kairyn" / "manifest.json").write_text(json.dumps(manifest))
+    (repo / ".kairyn" / ".base" / GONE).unlink()
+    before = (repo / GONE).read_bytes()
+    result, lines = upgrade(repo, plugin)
+    assert result.returncode == 0 and GONE not in lines
+    assert (repo / GONE).read_bytes() == before

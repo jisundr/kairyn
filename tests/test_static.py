@@ -140,3 +140,58 @@ def test_grill_output_points_to_the_concept_template():
     text = (PLUGIN / "stages" / "GRILL.md").read_text()
     output = text.split("## Output", 1)[1].split("\n## ", 1)[0]
     assert ".kairyn/templates/CONCEPT.md" in output
+
+
+# --- the close stage (R4, R5) -------------------------------------------------
+
+# A bare /exit is the Claude Code built-in, so no shipped or tested file names the stage exit.  # old-name
+STAGE_WORD = re.compile(r"(?<![A-Za-z_])exits?(?![A-Za-z])", re.I)  # old-name
+# Process exit codes and `## Exit criteria` keep the word (A1).
+CODE_USES = re.compile(r"sys\.exit|SystemExit|Exit criteria|exits? (with )?code|exits? ([0-9]|\{|non-zero)|exit \"\$"  # old-name
+                       r"|exit \((not )?0\)|exit=|\| Exit \||(red|green|other) exit|\"exit\":|exit: skipped", re.I)  # old-name
+# History keeps the old name. JSON has no comments, so the whole file is allowed.
+HISTORY_FILES = {"plugin/release-hashes.json"}
+# A test that checks the old name is gone marks each such line, so the rest of the file stays guarded.
+OLD_NAME_MARK = "# old-name"
+MARK_FILES = {"tests/test_static.py", "tests/test_skills.py", "tests/test_upgrade.py", "tests/test_dev_harness.py"}
+
+
+def _guarded_files():
+    roots = [PLUGIN, ROOT / "tests", ROOT / "evals" / "promptfoo", ROOT / "README.md", *(ROOT / "evals").glob("*.py")]
+    for root in roots:
+        for path in ([root] if root.is_file() else sorted(root.rglob("*"))):
+            rel = path.relative_to(ROOT).as_posix()
+            if path.is_file() and "__pycache__" not in rel and rel not in HISTORY_FILES:
+                yield rel, path
+
+
+def _guarded_lines():
+    for rel, path in _guarded_files():
+        try:
+            text = path.read_text()
+        except UnicodeDecodeError:
+            continue
+        for n, line in enumerate(text.splitlines(), 1):
+            yield rel, n, line
+
+
+def test_no_shipped_or_tested_file_names_the_exit_stage():
+    hits = [f"{rel}:{n}: {line.strip()[:100]}" for rel, n, line in _guarded_lines()
+            if not (rel in MARK_FILES and line.rstrip().endswith(OLD_NAME_MARK))
+            and STAGE_WORD.search(CODE_USES.sub("", line))]
+    assert not hits, "\n".join(hits)
+
+
+def test_only_the_old_name_tests_mark_lines():
+    marked = sorted({rel for rel, _, line in _guarded_lines() if OLD_NAME_MARK in line} - MARK_FILES)
+    assert marked == []
+
+
+def test_close_stage_tags_its_lines_close():
+    text = (PLUGIN / "stages" / "CLOSE.md").read_text()
+    assert "[close]" in text and "[exit]" not in text  # old-name
+
+
+def test_close_eval_replaces_the_exit_eval():
+    assert (ROOT / "evals" / "promptfoo" / "close.yaml").is_file()
+    assert not (ROOT / "evals" / "promptfoo" / "exit.yaml").exists()  # old-name

@@ -428,13 +428,13 @@ def concept_use_problems(task: Path, decisions: tuple[str, ...], must_mention: s
     return problems
 
 
-# --- exit stage -------------------------------------------------------------------
+# --- close stage -------------------------------------------------------------------
 
 ADR_SECTIONS = ("## Status", "## Context", "## Decision", "## Consequences")
 
 
-def exit_problems(e: dict, expect_adr: bool, keyword: str = "") -> list[str]:
-    """What /kairyn:exit must leave: no task folder, a changelog entry, closed backlog gone, ADRs only when due.
+def close_problems(e: dict, expect_adr: bool, keyword: str = "") -> list[str]:
+    """What /kairyn:close must leave: no task folder, a changelog entry, closed backlog gone, ADRs only when due.
 
     e: {"task", "task_exists", "changelog", "adrs": {name: text}, "backlog_left": [names]}
     """
@@ -603,7 +603,7 @@ def repo_line_problems(state: str, expected: str | None) -> list[str]:
 # --- retro stage ------------------------------------------------------------------
 # RETRO.md has one table row per learning, numbered L<n> in learnings.md order:
 #   | L1 | move | `<home>` | <text to add> |
-# Actions: move, drop, backlog, keep. Exit runs retro when learnings.md is past half its budget.
+# Actions: move, drop, backlog, keep. Close runs retro when learnings.md is past half its budget.
 RETRO_ACTIONS = ("move", "drop", "backlog", "keep")
 _RETRO_ROW = re.compile(r"^\|\s*\**`?(L\d+)`?\**\s*\|\s*\**`?(\w+)`?\**\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*$", re.M)
 _ENTRY = re.compile(r"^- \d{4}-\d\d-\d\d \[[\w-]+\] (.+)$", re.M)
