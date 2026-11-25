@@ -29,11 +29,13 @@ Each stop sets `status: blocked` and logs why in `STATE.md`:
 - a slice marked `(approval)`, or a changed path that matches `approval:` with no approval;
 - the merge decision, the one planned stop.
 
-Fix the cause, then run `/kairyn:build <task>` again. It resumes at `stage:` in `STATE.md`.
+Fix the cause on the `kairyn/<task>` branch, then run `/kairyn:build <task>` again. It sets `status: in-progress` and resumes at `stage:` in `STATE.md`. A pending merge decision does not resume.
+
+The task folder can be uncommitted in the main checkout: the run copies it to `kairyn/<task>` and commits it there. Keep the main checkout off `kairyn/<task>`: git cannot check out one branch twice, and the run prints `BLOCKED:`.
 
 ## Approve
 - A slice: `/kairyn:build <task> approve T<n> "<words>"`.
-- The merge: read the diff and `REVIEW.md`, then `/kairyn:review <task> approve "<words>"` or `reject "<reason>"`. Approve merges the pull request with a merge commit.
+- The merge: read the diff and `REVIEW.md`, then `/kairyn:review <task> approve "<words>"` or `reject "<reason>"`. Approve merges the pull request with a merge commit. If the merge fails, fix the cause and run approve again: it keeps the `Decision:` line.
 
 ## Code in a child repo
 A home repo holds the tasks; a child repo holds the code. List each child under `repos:` in `.kairyn/afk.yml`, with `path:` and its own `gates:`. Design writes `repo: <name>` in the task's `STATE.md`.

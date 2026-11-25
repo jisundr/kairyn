@@ -38,4 +38,4 @@ Never write dates from memory. Use `date +%Y-%m-%d` for folder names and `date -
 
 ## Close a task
 
-After a task's change merges, `/kairyn:close <task>` runs `CLOSE.md`. It writes an ADR in `docs/adr/` for each load-bearing decision, a line under `## Unreleased` in `CHANGELOG.md` and learnings. Then `close.py` deletes the task folder and its closed backlog files. Git history keeps them. If `learnings.md` is then past half its budget, `close` prints `RETRO:` and the stage runs `RETRO.md`. `/kairyn:release <version>` moves `## Unreleased` to the version and tags it locally; you push the tag.
+After a task's change merges, `/kairyn:close <task>` runs `CLOSE.md`. It writes an ADR in `docs/adr/` for each load-bearing decision, a line under `## Unreleased` in `CHANGELOG.md` and learnings. Then `close.py` deletes the task folder and its closed backlog files. Git history keeps them. With no git, `close.py` first copies them to `.kairyn/archive/`. If `learnings.md` is then past half its budget, `close` prints `RETRO:` and the stage runs `RETRO.md`. `/kairyn:release <version>` moves `## Unreleased` to the version and tags it locally; you push the tag.
