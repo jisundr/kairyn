@@ -8,3 +8,4 @@ Stages append here.
 - 2026-11-26 [build] Headless Chrome keeps a minimum window width (about 500 px), so a --window-size=390 screenshot is cropped: load the page in a 390 px iframe and crop the shot (2026-11-26-effort-and-impact).
 - 2026-11-26 [close] A fixed list order is not a sort control: the owner asked for "sorting" and rejected a page with only a default order, so offer a visible Sort select (2026-11-26-effort-and-impact).
 - 2026-11-26 [build] plugin/scripts/upgrade.py takes no flags: `--help` runs the upgrade, which replaced the edited running-stages.md (kept as .kairyn-old). Restore it from git (2026-11-26-ship-evals-gate).
+- 2026-11-26 [close] Closing a task merged by hand needs no edits by hand: close step 1 runs close.py record-merge, which writes STATE.md and REVIEW.md from the merged PR. This replaces the 2026-11-26 rule above about a hand-written REVIEW.md (2026-11-26-close-hand-merged).
