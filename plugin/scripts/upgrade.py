@@ -5,6 +5,7 @@ One line per shipped file: REPLACED, MERGED, ADDED, CONFLICT or KEPT, then the p
     missing                                   ADDED     (written)
     same as the new version                   KEPT
     plugin-owned, recorded or released        REPLACED  (an edited copy is saved as <file>.kairyn-old)
+                                              then SAVED <file>.kairyn-old, with the next step
     repo-owned, unedited                      REPLACED  (unedited: matches .base/ or a released version)
     repo-owned, edited, with a base           git merge-file: MERGED, or CONFLICT
     edited and nothing to merge from          CONFLICT  (a repo without a manifest, or no git)
@@ -144,6 +145,9 @@ def upgrade(repo: Path, plugin: Path) -> tuple[list[tuple[str, str]], bool]:
                 _write(repo, path, entry.source)
                 block_written |= path == BLOCK
                 records[path], result = Record(new, entry.owner), "REPLACED"
+                if not unedited:
+                    lines += [(result, path), ("SAVED", side.relative_to(repo).as_posix() + OLD)]
+                    continue
             elif unedited:
                 _write(repo, path, entry.source)
                 records[path], result = Record(new, entry.owner), "REPLACED"
@@ -184,7 +188,11 @@ def main(argv: list[str]) -> int:
     lines, conflicts = upgrade(root.resolve(), plugin.resolve())
     shipped = {e.path for e in installed_files(plugin.resolve())}
     for result, path in lines:
-        print(f"{result} {path}")
+        if result == "SAVED":
+            print(f"SAVED {path}: your edited copy; kairyn owns {path[:-len(OLD)]} and replaced it. "
+                  "Move your edits into a file you own, then delete this one.")
+        else:
+            print(f"{result} {path}")
     for result, path in lines:
         if result == "CONFLICT" and path not in shipped:
             print(f"{path}: kairyn no longer ships this file: move your edits into its new file, "
