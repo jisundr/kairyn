@@ -12,7 +12,7 @@ stages:
   gates: done
   review: pending
 created: 2026-11-26T06:36:53Z
-updated: 2026-11-26T07:07:59Z
+updated: 2026-11-26T07:34:01Z
 ---
 
 # Log
@@ -31,3 +31,5 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-26T07:01:48Z [design] Design approved by Jayson De los Reyes: "Approve" (relayed by the coordinator). Build by hand on branch jisundr/logs-as-bullet-lists.
 - 2026-11-26T07:07:59Z [build] T1-T3 built by hand, tests first. Also evals/checks.py accepts bullet log lines (needed by the stage evals). pytest 813 pass, plugin validate, budgets and harness docs OK.
 - 2026-11-26T07:07:59Z [review] Waiting for eval approval (D3) and the pull request review.
+- 2026-11-26T07:34:01Z [review] PR #66 opened. Evals run 20261126T070848Z (set picked by Kairyn Steward): 7 of 8 pass; grill quality min 2 in 1 of 10 runs. Cost $28.04.
+- 2026-11-26T07:34:01Z [review] Rebased onto main f041019 (0.20.1 from #65, docs from #67); version stays 0.21.0; pytest 816 pass.
