@@ -1,4 +1,4 @@
-"""afk.py review gates `design`, `commits` and `sessions` (backlog idea ship-review-gates, slices 1 and 2).
+"""afk.py review gates `design`, `commits`, `sessions` and `evals` (backlog idea ship-review-gates, slices 1-3).
 
 Each test builds kairyn/<task> by hand with STATE.md at `stage: gates`, then runs afk.py against
 tests/stubs/claude. The gates stage runs the review gates first, then the afk.yml `gates:`.
@@ -59,7 +59,7 @@ def test_review_gates_pass_and_come_first(repo):
     state = task_file(repo, "STATE.md")
     assert front(state, "stage") == "review", state
     names = list(rows(repo))
-    assert names[:4] == ["design", "commits", "sessions", "testing"], names
+    assert names[:5] == ["design", "commits", "sessions", "evals", "testing"], names
     assert "| pass |" in rows(repo)["design"] and "| pass |" in rows(repo)["commits"]
 
 
@@ -196,3 +196,65 @@ def test_manual_criteria_reads_the_test_plan():
     text = PLAN + "| AC3 x | T2 | manual check |\n| AC4 y | T2 | not Manual |\n"
     assert afk.manual_criteria(text) == {"AC2": "| AC2 the page shows the sum | T1 | Manual: open the page |",
                                          "AC3": "| AC3 x | T2 | manual check |"}
+
+
+# --- evals: a command and paths from .kairyn/afk.yml (slice 3) ----------------------------------
+
+
+def set_evals(repo, evals):
+    """Commit a .kairyn/afk.yml on main with the testing gate and the `evals:` section text."""
+    (repo / ".kairyn" / "afk.yml").write_text(f"gates:\n  testing: {base.GOOD_GATE}\n" + evals)
+    git(repo, "commit", "-qam", "afk.yml")
+
+
+def marker_command(repo):
+    """A command that records KAIRYN_BASE in a file outside the repo, so a test sees that it ran."""
+    marker = repo.parent / "evals_ran"
+    return marker, f"printf %s \"$KAIRYN_BASE\" > {marker}"
+
+
+def test_evals_gate_runs_the_command_on_a_guarded_change(repo):
+    marker, command = marker_command(repo)
+    set_evals(repo, f"evals:\n  command: {command}\n  paths:\n    - 'app.py'\n")
+    branch(repo, PAIR)
+    assert run(repo, "run", TASK).returncode == 0
+    assert front(task_file(repo, "STATE.md"), "stage") == "review"
+    assert "| pass | 0 |" in rows(repo)["evals"], rows(repo)["evals"]
+    assert re.fullmatch(r"[0-9a-f]{7,40}", marker.read_text()), "the command gets KAIRYN_BASE"
+
+
+def test_evals_gate_blocks_on_a_failing_command(repo):
+    set_evals(repo, "evals:\n  command: exit 3\n  paths:\n    - 'app.py'\n")
+    branch(repo, PAIR)
+    run(repo, "run", TASK)
+    state = task_file(repo, "STATE.md")
+    assert (front(state, "stage"), front(state, "status")) == ("gates", "blocked")
+    assert "gate evals failed: `exit 3` exited 3" in state.splitlines()[-1], state
+    assert "| fail | 3 |" in rows(repo)["evals"] and "testing" not in rows(repo)
+
+
+
+def test_evals_gate_not_set_prints_one_note(repo):
+    branch(repo, PAIR)
+    result = run(repo, "run", TASK)
+    assert result.returncode == 0 and front(task_file(repo, "STATE.md"), "stage") == "review"
+    notes = [line for line in result.stdout.splitlines() if line.startswith("NOTE: evals")]
+    assert len(notes) == 1 and ".kairyn/afk.yml" in notes[0], result.stdout
+    assert "| not set |" in rows(repo)["evals"]
+
+
+def test_evals_gate_skips_when_no_path_matches(repo):
+    marker, command = marker_command(repo)
+    set_evals(repo, f"evals:\n  command: {command}\n  paths:\n    - 'plugin/**'\n")
+    branch(repo, PAIR)
+    assert run(repo, "run", TASK).returncode == 0
+    assert not marker.exists()
+    assert "| pass |" in rows(repo)["evals"] and "no path matched" in rows(repo)["evals"]
+
+
+def test_evals_gate_with_no_paths_runs_on_any_change(repo):
+    marker, command = marker_command(repo)
+    set_evals(repo, f"evals:\n  command: {command}\n")
+    branch(repo, PAIR)
+    assert run(repo, "run", TASK).returncode == 0
+    assert marker.exists() and "| pass | 0 |" in rows(repo)["evals"]
