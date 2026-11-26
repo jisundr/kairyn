@@ -27,3 +27,4 @@
 - close.py adds ' (<task>)' to a changelog line only when the entry does not already name the task. (2026-11-26-close-changelog-double-name; closes close-changelog-double-task-name)
 - Backlog ideas have effort and impact (low, medium, high) in place of appetite; the backlog page filters, sorts and colours by them. (2026-11-26-effort-and-impact; closes effort-and-impact)
 - afk.py runs an evals review gate: the .kairyn/afk.yml evals: command runs when a changed file matches its paths (ADR 0021). (2026-11-26-ship-evals-gate; closes ship-review-gates)
+- Close records a hand merge itself: close.py record-merge reads the merged pull request through gh and writes STATE.md and the REVIEW.md Decision line. (2026-11-26-close-hand-merged)
