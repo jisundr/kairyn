@@ -7,14 +7,14 @@ summary: "Option A: close.py record-merge reads the merged PR through gh and wri
 # Design: close records a hand merge from the merged pull request
 
 ## Approach
-Option A. `close.py` gets a command `record-merge <task> [--pr <n>]`. It exits 0 with `OK: <task> is done` when `STATE.md` says `status: done`, before it calls `gh` (R7). Else it finds the pull request: `--pr` (R10), else the last `PR #<n>` in `STATE.md` (R4), else `gh pr list --state merged --limit 200 --json number,headRefName` and the heads that are `kairyn/<task>` or whose last `/` part is the task folder name or its slug (R5). A named pull request comes from `gh pr view <n> --json number,state,mergedAt,mergedBy`. Any problem prints `FAIL: <cause>` and exits 1 before a file is written (R6). Then it writes `REVIEW.md` (R2, R3) and `STATE.md` (R1) with `atomic_write`, and prints `RECORDED: PR #<n> merged by <name> at <time>`. `gh` is `KAIRYN_GH`, else `gh` on `PATH` (A8), run with an argument list in `--root`.
+Option A. `close.py` gets a command `record-merge <task> [--pr <n>]`. It exits 0 with `OK: <task> is done` when `STATE.md` says `status: done`, before it calls `gh` (R7). Else it finds the pull request: `--pr` (R10), else the last `PR #<n>` in `STATE.md` (R4), else `gh pr list --state merged --limit 200 --json number,headRefName` and the heads that are `kairyn/<task>` or whose last `/` part is the task folder name or its slug (R5). A named pull request comes from `gh pr view <n> --json number,state,mergedAt,mergedBy`. A problem prints `FAIL: <cause>` and exits 1 before any write (R6). Then it writes `REVIEW.md` (R2, R3) and `STATE.md` (R1) with `atomic_write`, and prints `RECORDED: PR #<n> merged by <name> at <time>`. `gh` is `KAIRYN_GH`, else `gh` on `PATH` (A8), run with an argument list in `--root`.
 
-`CLOSE.md` step 1 always runs `record-merge <task>` (with `--pr <n>` when the user names one), then `check <task>` (R8). R7 makes that safe on a done task, so the stage needs no status check of its own. The close skill's `argument-hint` gets `[PR number]`.
+`CLOSE.md` step 1 always runs `record-merge <task>` (with `--pr <n>` when the user names one), then `check <task>` (R8). R7 makes that safe on a done task. The close skill's `argument-hint` gets `[PR number]`.
 
 ## Options
 | Option | What | Cost | Risk |
 |---|---|---|---|
-| A (smallest thing) | One `close.py` command; `CLOSE.md` step 1 always runs it | About 90 lines of Python, one stage line, one stub | Low: `check` and `close` do not change |
+| A (smallest thing) | One `close.py` command; `CLOSE.md` step 1 always runs it | About 90 lines, one stage line, one stub | Low: `check`, `close` stay |
 | B | A, and a `--record-merge` flag on `close` | Two paths to one write | Saves no step: ADRs come between |
 | C | `CLOSE.md` runs the command only when not done | One more model step | The model can skip it |
 
