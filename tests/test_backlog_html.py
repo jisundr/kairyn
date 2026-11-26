@@ -14,14 +14,15 @@ from backlog_html import PAGE_PATH, render_html
 SCRIPT = PLUGIN / "scripts" / "backlog_html.py"
 
 
-def idea(title="Ship the gates", status="triaged", appetite="big batch", date="2026-11-25",
+def idea(title="Ship the gates", status="triaged", effort="medium", impact="high", date="2026-11-25",
          problem="The gates are repo-only.", extra="", log="- 2026-11-25T05:30:13Z [capture] Created."):
     return f"""---
 title: {title}
 status: {status}
 requester: Jo
 date: {date}
-appetite: {appetite}
+effort: {effort}
+impact: {impact}
 review_by:
 ---
 
@@ -92,15 +93,17 @@ def test_command_runs_the_script_and_reports_the_path():
 
 def test_lists_each_idea_with_its_fields(tmp_path):
     root = make_repo(tmp_path, {
-        "20261125053013-a.md": idea(title="Idea A", appetite="big batch", date="2026-11-25", problem="Problem A."),
-        "20261124053013-b.md": idea(title="Idea B", appetite="small batch", date="2026-11-24", problem="Problem `B`."),
-        "20261123053013-c.md": idea(title="Idea C", appetite="", date="2026-11-23", problem="See [A](20261125053013-a.md)."),
+        "20261125053013-a.md": idea(title="Idea A", effort="low", impact="high", date="2026-11-25", problem="Problem A."),
+        "20261124053013-b.md": idea(title="Idea B", effort="High", impact="medium", date="2026-11-24", problem="Problem `B`."),
+        "20261123053013-c.md": idea(title="Idea C", effort="", impact="", date="2026-11-23", problem="See [A](20261125053013-a.md)."),
     })
     data = page_data(render_html(root))
-    rows = [(d["title"], d["appetite"], d["date"], d["problem"]) for d in data]
-    assert rows == [("Idea A", "big batch", "2026-11-25", "Problem A."),
-                    ("Idea B", "small batch", "2026-11-24", "Problem B."),
-                    ("Idea C", "", "2026-11-23", "See A.")]
+    rows = [(d["title"], d["effort"], d["effort_level"], d["impact"], d["impact_level"], d["date"], d["problem"]) for d in data]
+    assert rows == [("Idea A", "low", "low", "high", "high", "2026-11-25", "Problem A."),
+                    ("Idea B", "High", "high", "medium", "medium", "2026-11-24", "Problem B."),
+                    ("Idea C", "", "", "", "", "2026-11-23", "See A.")]
+    assert set(data[0]) == {"title", "effort", "impact", "date", "review_by", "requester", "file", "slug", "problem",
+                            "effort_level", "impact_level", "date_label", "text", "problem_html", "body_html", "log_html"}
 
 
 def test_detail_view_has_front_matter_text_and_log(tmp_path):
@@ -187,19 +190,21 @@ def test_no_triage_file_means_no_notes(tmp_path):
     assert "<details" not in render_html(make_repo(tmp_path, {"20261125053013-a.md": idea()}))
 
 
-def test_page_has_search_and_an_appetite_filter(tmp_path):
-    root = make_repo(tmp_path, {"20261125053013-a.md": idea(appetite="big batch"),
-                                "20261124053013-b.md": idea(appetite="small batch"),
-                                "20261123053013-c.md": idea(appetite="")})
+def test_page_has_search_and_effort_and_impact_filters(tmp_path):
+    root = make_repo(tmp_path, {"20261125053013-a.md": idea(effort="big batch", impact="")})
     html = render_html(root)
     assert re.search(r'<input id="q" type="search"', html)
-    options = re.findall(r'<option value="([^"]*)">([^<]*)</option>', html)
-    assert options == [("", "Any appetite"), ("big batch", "Big batch"), ("small batch", "Small batch"), ("none", "Not set")]
+    selects = re.findall(r'<select id="(\w+)" aria-label="([^"]+)">(.*?)</select>', html)
+    assert [(i, label) for i, label, _ in selects] == [("imp", "Impact"), ("eff", "Effort"), ("sort", "Sort")]
+    for (_, label, body) in selects[:2]:
+        assert re.findall(r'<option value="([^"]*)">([^<]*)</option>', body) == [
+            ("", "Any " + label.lower()), ("low", "Low"), ("medium", "Medium"), ("high", "High"), ("none", "Not set")]
+    assert 'id="app"' not in html
 
 
 def test_page_has_no_edit_controls(tmp_path):
     html = render_html(make_repo(tmp_path, {"20261125053013-a.md": idea()}, triage=TRIAGE))
-    assert len(re.findall(r"<input\b", html)) == 1 and len(re.findall(r"<select\b", html)) == 1
+    assert len(re.findall(r"<input\b", html)) == 1 and len(re.findall(r"<select\b", html)) == 3
     assert set(re.findall(r'<button class="(\w+)"', html)) == {"row", "close"}
     assert len(re.findall(r"<button\b", html)) == 2
     for marker in ("<textarea", "<form", "contenteditable", "localstorage", "fetch("):
@@ -292,7 +297,7 @@ def test_readme_names_the_command():
 
 # ---------- T6: readability (owner's pick, 2026-11-25) ----------
 
-LONG_APPETITE = "small batch (proposed by the steward; owner to confirm)"
+ODD = "Big (proposed by the steward; owner to confirm)"
 
 
 def test_problem_line_is_the_first_sentence(tmp_path):
@@ -303,13 +308,14 @@ def test_problem_line_is_the_first_sentence(tmp_path):
     assert [d["problem"] for d in page_data(render_html(root))] == ["Version 1.2 is out.", "No full stop at all"]
 
 
-@pytest.mark.parametrize("value, label", [
-    ("big batch", "Big batch"), (LONG_APPETITE, "Small batch …"), ("", ""),
+@pytest.mark.parametrize("value, level", [
+    ("low", "low"), ("Medium", "medium"), ("HIGH", "high"), ("high (owner to confirm)", "high"),
+    ("", ""), ("big batch", ""), (ODD, ""), ("lowest", ""),
 ])
-def test_appetite_gets_a_short_label_and_keeps_the_full_text(tmp_path, value, label):
-    root = make_repo(tmp_path, {"20261125053013-a.md": idea(appetite=value)})
+def test_effort_and_impact_get_a_level_and_keep_the_raw_value(tmp_path, value, level):
+    root = make_repo(tmp_path, {"20261125053013-a.md": idea(effort=value, impact=value)})
     d = page_data(render_html(root))[0]
-    assert (d["appetite"], d["appetite_label"]) == (value, label)
+    assert (d["effort"], d["effort_level"], d["impact"], d["impact_level"]) == (value, level, value, level)
 
 
 @pytest.mark.parametrize("value, label", [("2026-11-25", "Nov 25"), ("2026-01-03", "Jan 3"), ("", "—"), ("soon", "soon")])
@@ -387,10 +393,10 @@ def in_browser(tmp_path, page: str, width: int, js: str) -> dict:
 
 def browser_repo(tmp_path):
     return make_repo(tmp_path / "repo", {
-        "20261125053013-a.md": idea(title="An idea with a fairly long title that wraps on a phone", appetite=LONG_APPETITE,
+        "20261125053013-a.md": idea(title="An idea with a fairly long title that wraps on a phone", effort=ODD,
                                     problem="A long problem sentence " + "that goes on and on " * 12 + "."),
-        "20261124053013-b.md": idea(title="Second", appetite="big batch", extra="Unbroken: " + "x" * 120),
-        "20261123053013-c.md": idea(title="Third", appetite="").replace("**Problem (confirmed by Jo, 2026-11-25):**", "**Learning:**"),
+        "20261124053013-b.md": idea(title="Second", effort="low", impact="medium", extra="Unbroken: " + "x" * 120),
+        "20261123053013-c.md": idea(title="Third", effort="", impact="").replace("**Problem (confirmed by Jo, 2026-11-25):**", "**Learning:**"),
     })
 
 
@@ -409,13 +415,13 @@ def test_desktop_rows_are_one_line_summaries_with_aligned_dates(tmp_path):
     js = ("const s=[...d.querySelectorAll('.row .s')].map(e=>e.getBoundingClientRect().height);"
           "const lh=parseFloat(w.getComputedStyle(d.querySelector('.row .s')).lineHeight);"
           "const x=[...d.querySelectorAll('.row .date')].map(e=>Math.round(e.getBoundingClientRect().right));"
-          "const tip=d.querySelector('.row .app').title;"
+          "const tip=d.querySelector('.row .lv.effort').title;"
           "const none=d.querySelectorAll('.row')[2].querySelector('.s').textContent;"
           "return {s, lh, x, tip, none, sw:d.documentElement.scrollWidth}")
     got = in_browser(tmp_path, page, 1280, js)
     assert all(h <= got["lh"] * 1.2 for h in got["s"]), got
     assert len(set(got["x"])) == 1, got
-    assert got["tip"] == LONG_APPETITE and got["none"] == "No problem statement" and got["sw"] <= 1280
+    assert got["tip"] == "Effort: " + ODD and got["none"] == "No problem statement" and got["sw"] <= 1280
 
 
 def test_search_shows_a_count_and_highlights_matches(tmp_path):
@@ -426,3 +432,110 @@ def test_search_shows_a_count_and_highlights_matches(tmp_path):
           "mark:d.querySelector('.row mark')&&d.querySelector('.row mark').textContent}")
     got = in_browser(tmp_path, page, 1280, js)
     assert got == {"focused": "q", "count": "1 of 3", "rows": 1, "mark": "Third"}, got
+
+
+# ---------- effort and impact (2026-11-26-effort-and-impact) ----------
+
+def test_rows_and_pane_show_effort_and_impact(tmp_path):
+    page = render_html(browser_repo(tmp_path))
+    js = ("const rows=[...d.querySelectorAll('.row')].map(r=>[...r.querySelectorAll('.lv')].map(e=>e.textContent));"
+          "w.openPane('a');const facts=d.querySelector('#pane .facts').textContent;"
+          "return {rows, facts}")
+    got = in_browser(tmp_path, page, 1280, js)
+    assert got["rows"] == [["Impact High", "Effort Not set"], ["Impact Medium", "Effort Low"],
+                           ["Impact Not set", "Effort Not set"]], got
+    assert "Impact high" in got["facts"] and "Effort " + ODD in got["facts"], got
+
+
+def test_filters_pick_ideas_by_level(tmp_path):
+    page = render_html(browser_repo(tmp_path))
+    js = ("const pick=(id,v)=>{const s=d.getElementById(id);s.value=v;s.dispatchEvent(new w.Event('change'))};"
+          "const titles=()=>[...d.querySelectorAll('.row .t')].map(e=>e.textContent);"
+          "pick('imp','medium');const medium=titles();pick('imp','');pick('eff','none');const unset=titles();"
+          "pick('imp','high');const both=titles();pick('imp','low');"
+          "return {medium, unset, both, empty:d.querySelector('.empty').textContent}")
+    got = in_browser(tmp_path, page, 1280, js)
+    assert got["medium"] == ["Second"], got
+    assert got["unset"] == ["An idea with a fairly long title that wraps on a phone", "Third"], got
+    assert got["both"] == ["An idea with a fairly long title that wraps on a phone"], got
+    assert got["empty"] == "No ideas match. Clear the search or change the filters.", got
+
+
+def test_ideas_sort_by_impact_then_effort_then_newest(tmp_path):
+    spec = [  # file time, impact, effort
+        ("20261120000000", "high", "high"), ("20261121000000", "low", "low"), ("20261122000000", "", "low"),
+        ("20261123000000", "high", "low"), ("20261124000000", "medium", ""), ("20261125000000", "medium", "medium"),
+        ("20261126000000", "High", "Low"), ("20261127000000", "big", "medium"), ("20261128000000", "medium", "medium"),
+    ]
+    ideas = {f"{t}-i{n}.md": idea(title=f"I{n}", impact=i, effort=e) for n, (t, i, e) in enumerate(spec)}
+    data = page_data(render_html(make_repo(tmp_path, ideas)))
+    assert [d["title"] for d in data] == ["I6", "I3", "I0", "I8", "I5", "I4", "I1", "I2", "I7"]
+
+
+def test_header_names_the_order(tmp_path):
+    html = render_html(make_repo(tmp_path, {"20261125053013-a.md": idea()}))
+    assert "by impact (high first), then effort (low first), then newest" in html
+    assert "newest first." not in html
+
+
+# ---------- T6: colour by level and a Sort control (owner, 2026-11-26, PR #59) ----------
+
+TONES = {"impact": {"high": "good", "medium": "mid", "low": "low"}, "effort": {"low": "good", "medium": "mid", "high": "bad"}}
+
+
+def test_chips_are_coloured_by_level(tmp_path):
+    ideas = {f"2026112{n}000000-i{n}.md": idea(title=f"I{n}", impact=i, effort=e)
+             for n, (i, e) in enumerate([("high", "low"), ("medium", "medium"), ("low", "high"), ("", "")])}
+    page = render_html(make_repo(tmp_path / "repo", ideas))
+    js = ("const chips=[...d.querySelectorAll('.row .lv')].map(e=>[e.className,e.textContent,"
+          "w.getComputedStyle(e).backgroundColor,w.getComputedStyle(e).borderStyle]);return {chips}")
+    chips = in_browser(tmp_path, page, 1280, js)["chips"]
+    got = [(c[0].split()[1], c[0].split()[2], c[1]) for c in chips]
+    assert got == [("impact", "good", "Impact High"), ("effort", "good", "Effort Low"),
+                   ("impact", "mid", "Impact Medium"), ("effort", "mid", "Effort Medium"),
+                   ("impact", "low", "Impact Low"), ("effort", "bad", "Effort High"),
+                   ("impact", "unset", "Impact Not set"), ("effort", "unset", "Effort Not set")], got
+    backgrounds = {c[0].split()[2]: c[2] for c in chips}
+    assert len({backgrounds[t] for t in ("good", "mid", "bad", "low")}) == 4, backgrounds
+    assert backgrounds["unset"] in ("rgba(0, 0, 0, 0)", "transparent") and chips[-1][3] == "dashed"
+
+
+def _contrast(a: str, b: str) -> float:
+    def lum(h):
+        c = [int(h[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+        c = [x / 12.92 if x <= 0.03928 else ((x + 0.055) / 1.055) ** 2.4 for x in c]
+        return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+    hi, lo = sorted((lum(a), lum(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def test_level_colours_are_readable_in_both_themes(tmp_path):
+    html = render_html(make_repo(tmp_path, {"20261125053013-a.md": idea()}))
+    light = dict(re.findall(r"--([\w-]+):(#[0-9a-f]{6})", re.search(r":root\{(.*?)\}", html, re.S).group(1)))
+    dark = dict(re.findall(r"--([\w-]+):(#[0-9a-f]{6})", re.search(r"prefers-color-scheme: dark\)\{:root\{(.*?)\}", html, re.S).group(1)))
+    for theme in (light, dark):
+        for tone in ("good", "mid", "bad", "low"):
+            assert _contrast(theme[tone + "-fg"], theme[tone + "-bg"]) >= 4.5, (tone, theme)
+    assert dark["good-bg"] != light["good-bg"]
+
+
+def test_sort_control_changes_and_names_the_order(tmp_path):
+    ideas = {"20261120000000-a.md": idea(title="A", impact="high", effort="low"),
+             "20261121000000-b.md": idea(title="B", impact="low", effort="low"),
+             "20261122000000-c.md": idea(title="C", impact="high", effort="high"),
+             "20261123000000-d.md": idea(title="D", impact="medium", effort="")}
+    page = render_html(make_repo(tmp_path / "repo", ideas))
+    options = re.findall(r'<option value="([^"]*)">([^<]*)</option>',
+                         re.search(r'<select id="sort" aria-label="Sort">(.*?)</select>', page).group(1))
+    assert options == [("best", "Sort: Best value"), ("impact", "Sort: Impact"), ("effort", "Sort: Effort"), ("newest", "Sort: Newest")]
+    js = ("const s=d.getElementById('sort'),out={};"
+          "for(const v of ['best','impact','effort','newest','best']){s.value=v;s.dispatchEvent(new w.Event('change'));"
+          "out[v]=[[...d.querySelectorAll('.row .t')].map(e=>e.textContent).join(''),d.getElementById('order').textContent]}"
+          "return {first:s.options[s.selectedIndex].value,out}")
+    got = in_browser(tmp_path, page, 1280, js)
+    order = {k: v[0] for k, v in got["out"].items()}
+    assert order == {"best": "ACDB", "impact": "CADB", "effort": "BACD", "newest": "DCBA"}, got
+    assert got["out"]["best"][1] == "by impact (high first), then effort (low first), then newest"
+    assert got["out"]["impact"][1] == "by impact (high first), then newest"
+    assert got["out"]["effort"][1] == "by effort (low first), then newest"
+    assert got["out"]["newest"][1] == "newest first"

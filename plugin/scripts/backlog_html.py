@@ -34,7 +34,10 @@ def split_front_matter(text: str) -> tuple[dict, str]:
 
 
 LOG_HEADING = re.compile(r"^# Log\s*$", re.M)
-FIELDS = ["title", "appetite", "date", "review_by", "requester"]
+FIELDS = ["title", "effort", "impact", "date", "review_by", "requester"]
+LEVELS = ("low", "medium", "high")
+IMPACT_RANK = {"high": 0, "medium": 1, "low": 2, "": 3}  # high impact first, not set last
+EFFORT_RANK = {"low": 0, "medium": 1, "high": 2, "": 3}  # low effort first, not set last
 
 
 def plain(text: str) -> str:
@@ -53,11 +56,11 @@ def first_sentence(text: str) -> str:
     return m.group(1) if m else text
 
 
-def appetite_label(value: str) -> str:
-    """'small batch (a note)' shows as 'Small batch …'; the full value goes in a tooltip."""
-    short = value.split("(")[0].strip()
-    short = short[:1].upper() + short[1:]
-    return short + " …" if "(" in value else short
+def level(value: str) -> str:
+    """'low', 'medium' or 'high' from the value's first word, in any case; else '' (not set)."""
+    m = re.match(r"\s*([A-Za-z]+)\b", value)
+    word = m.group(1).lower() if m else ""
+    return word if word in LEVELS else ""
 
 
 def date_label(value: str) -> str:
@@ -87,7 +90,8 @@ def parse_idea(path: Path) -> dict:
     idea.update(file=path.name, slug=re.sub(r"^\d{14}-|\.md$", "", path.name),
                 title=fields.get("title") or path.stem,
                 problem=first_sentence(plain(text)) if problem else "",
-                appetite_label=appetite_label(fields.get("appetite", "")),
+                effort_level=level(fields.get("effort", "")),
+                impact_level=level(fields.get("impact", "")),
                 date_label=date_label(fields.get("date", "")),
                 lead=problem, body=rest, log=parts[1].strip() if len(parts) > 1 else "")
     return idea
@@ -119,9 +123,13 @@ def render_log(text: str, links: dict) -> str:
 
 
 def load_ideas(root: Path) -> list[dict]:
-    """Every idea file, newest capture first (the file name starts with its capture time)."""
+    """Every idea file by impact (high first), then effort (low first), then newest capture.
+
+    The file name starts with its capture time, so a reverse name sort is newest first; the stable sort keeps it for ties.
+    """
     files = sorted((p for p in (root / BACKLOG).glob("*.md") if IDEA_FILE.match(p.name)), reverse=True)
-    ideas = [parse_idea(p) for p in files]
+    ideas = sorted((parse_idea(p) for p in files),
+                   key=lambda i: (IMPACT_RANK[i["impact_level"]], EFFORT_RANK[i["effort_level"]]))
     links = {i["file"]: "#" + i["slug"] for i in ideas}
     for i in ideas:
         i["text"] = plain(i["lead"] + " " + i["body"] + " " + i["log"]).lower()
@@ -243,12 +251,10 @@ def triage_notes(root: Path) -> str:
 
 def render_html(root: Path) -> str:
     ideas = load_ideas(root)
-    appetites = sorted({i["appetite"] for i in ideas if i["appetite"]})
-    options = "".join(f'<option value="{escape(a)}">{escape(appetite_label(a))}</option>' for a in appetites)
     notes = triage_notes(root)
     if notes:
         notes = f'<details class="notes"><summary>Triage notes: Next and Parked, from TRIAGE.md</summary><div class="md">{notes}</div></details>'
-    return (PAGE.replace("%APPETITES%", options).replace("%NOTES%", notes)
+    return (PAGE.replace("%NOTES%", notes)
             .replace("%COUNT%", str(len(ideas))).replace("%DATA%", _script_json(ideas)))
 
 
@@ -303,8 +309,9 @@ PAGE = r"""<!doctype html>
 <title>Backlog</title>
 <style>
 :root{--bg:#f6f7f6;--surface:#fff;--fg:#1b1f1e;--muted:#5c6763;--faint:#717c77;--line:#e3e6e4;--hover:#f2f4f3;--accent:#2f6f62;--mark:#fdf0b3;
+--good-bg:#e3f4ea;--good-fg:#1d6b3c;--mid-bg:#fbefd6;--mid-fg:#875200;--bad-bg:#fbe4e2;--bad-fg:#a3261d;--low-bg:#eceeed;--low-fg:#4f5955;
 --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color-scheme:light}
-@media (prefers-color-scheme: dark){:root{--bg:#121615;--surface:#191e1c;--fg:#e6eae8;--muted:#9da8a3;--faint:#8a958f;--line:#29302d;--hover:#202624;--accent:#6fc2ad;--mark:#5a4b12;color-scheme:dark}}
+@media (prefers-color-scheme: dark){:root{--bg:#121615;--surface:#191e1c;--fg:#e6eae8;--muted:#9da8a3;--faint:#8a958f;--line:#29302d;--hover:#202624;--accent:#6fc2ad;--mark:#5a4b12;--good-bg:#173626;--good-fg:#8fe0b0;--mid-bg:#3b2d10;--mid-fg:#f2c46d;--bad-bg:#40191a;--bad-fg:#f5a39c;--low-bg:#262c2a;--low-fg:#b4bdb9;color-scheme:dark}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
 .wrap{max-width:880px;margin:0 auto;padding:32px 16px 64px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
@@ -324,8 +331,12 @@ details.notes summary{cursor:pointer;color:var(--muted);font-weight:500}
 .row .s{grid-column:1;color:var(--muted);font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .row .s.none{color:var(--faint);font-style:italic}
 .row .m{grid-row:1/3;grid-column:2;display:flex;gap:10px;align-items:center;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
-.app{display:inline-block;min-width:84px;text-align:center;border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-size:12px}
-.app.unset{border-style:dashed;color:var(--faint)}
+.lv{display:inline-block;min-width:104px;text-align:center;border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-size:12px}
+.lv b{font-weight:400;color:inherit}
+.lv.good,.lv.mid,.lv.bad,.lv.low{border-color:transparent;font-weight:600}
+.lv.good{background:var(--good-bg);color:var(--good-fg)}.lv.mid{background:var(--mid-bg);color:var(--mid-fg)}
+.lv.bad{background:var(--bad-bg);color:var(--bad-fg)}.lv.low{background:var(--low-bg);color:var(--low-fg)}
+.lv.unset{border-style:dashed;color:var(--faint)}
 .date{width:48px;text-align:right}
 mark{background:var(--mark);color:inherit;border-radius:2px}
 .empty{color:var(--muted);padding:24px;text-align:center}
@@ -352,15 +363,17 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .tl li{display:grid;grid-template-columns:92px minmax(0,1fr);gap:2px 12px;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
 .tl time{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums;padding-top:2px}
 .tag{display:inline-block;font-size:11.5px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px;margin-right:4px}
-@media (max-width:560px){.row{grid-template-columns:minmax(0,1fr)}.row .m{grid-row:auto;grid-column:1;order:3}.app{min-width:0}.date{width:auto}.row .s{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.pane{padding:16px 16px 40px}.tl li{grid-template-columns:minmax(0,1fr)}.count{width:100%;margin:0}}
+@media (max-width:560px){.row{grid-template-columns:minmax(0,1fr)}.row .m{grid-row:auto;grid-column:1;order:3}.lv{min-width:0}.date{width:auto}.row .s{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.pane{padding:16px 16px 40px}.tl li{grid-template-columns:minmax(0,1fr)}.count{width:100%;margin:0}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header><h1>Backlog</h1><p>%COUNT% ideas in docs/backlog/, newest first. View only.</p></header>
+  <header><h1>Backlog</h1><p>%COUNT% ideas in docs/backlog/, <span id="order">by impact (high first), then effort (low first), then newest</span>. View only.</p></header>
   <div class="tools">
     <input id="q" type="search" placeholder="Search titles and text  ( / )" aria-label="Search">
-    <select id="app" aria-label="Appetite"><option value="">Any appetite</option>%APPETITES%<option value="none">Not set</option></select>
+    <select id="imp" aria-label="Impact"><option value="">Any impact</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="none">Not set</option></select>
+    <select id="eff" aria-label="Effort"><option value="">Any effort</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="none">Not set</option></select>
+    <select id="sort" aria-label="Sort"><option value="best">Sort: Best value</option><option value="impact">Sort: Impact</option><option value="effort">Sort: Effort</option><option value="newest">Sort: Newest</option></select>
     <span class="count" id="count" aria-live="polite"></span>
   </div>
   %NOTES%
@@ -373,17 +386,32 @@ const DATA=%DATA%;
 const bySlug=Object.fromEntries(DATA.map(d=>[d.slug,d]));
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const $=id=>document.getElementById(id);
+const LABEL={low:"Low",medium:"Medium",high:"High"};
+const TONE={impact:{high:"good",medium:"mid",low:"low"},effort:{low:"good",medium:"mid",high:"bad"}};
+const RANK={impact:{high:0,medium:1,low:2,"":3},effort:{low:0,medium:1,high:2,"":3}};
+const newest=(a,b)=>a.file<b.file?1:a.file>b.file?-1:0;
+const by=key=>(a,b)=>RANK[key][a[key+"_level"]]-RANK[key][b[key+"_level"]]||newest(a,b);
+const SORTS={best:null,impact:by("impact"),effort:by("effort"),newest};  // best: DATA's own order
+const ORDER={best:"by impact (high first), then effort (low first), then newest",impact:"by impact (high first), then newest",
+  effort:"by effort (low first), then newest",newest:"newest first"};
+function chip(d,key,name){
+  const v=d[key+"_level"],raw=d[key];
+  return `<span class="lv ${key} ${v?TONE[key][v]:"unset"}" title="${esc(name+": "+(raw||"not set"))}"><b>${name}</b> ${v?LABEL[v]:"Not set"}</span>`;
+}
 function hi(text,q){
   const t=String(text),i=q?t.toLowerCase().indexOf(q):-1;
   return i<0?esc(t):esc(t.slice(0,i))+"<mark>"+esc(t.slice(i,i+q.length))+"</mark>"+esc(t.slice(i+q.length));
 }
 function renderList(){
-  const q=$("q").value.trim().toLowerCase(),ap=$("app").value;
-  const items=DATA.filter(d=>(!ap||(ap==="none"?!d.appetite:d.appetite===ap))&&(!q||(d.title+" "+d.slug).toLowerCase().includes(q)||d.text.includes(q)));
+  const q=$("q").value.trim().toLowerCase(),im=$("imp").value,ef=$("eff").value;
+  const is=(v,pick)=>!pick||(pick==="none"?!v:v===pick);
+  const sk=$("sort").value;$("order").textContent=ORDER[sk];
+  let items=DATA.filter(d=>is(d.impact_level,im)&&is(d.effort_level,ef)&&(!q||(d.title+" "+d.slug).toLowerCase().includes(q)||d.text.includes(q)));
+  if(SORTS[sk])items=[...items].sort(SORTS[sk]);
   $("count").textContent=items.length===DATA.length?`${DATA.length} ideas`:`${items.length} of ${DATA.length}`;
-  if(!items.length){$("list").innerHTML=`<div class="list"><div class="empty">No ideas match. Clear the search or pick another appetite.</div></div>`;return}
+  if(!items.length){$("list").innerHTML=`<div class="list"><div class="empty">No ideas match. Clear the search or change the filters.</div></div>`;return}
   $("list").innerHTML=`<div class="list">`+items.map(d=>`<button class="row" data-slug="${esc(d.slug)}"><span class="t">${hi(d.title,q)}</span>`+
-    `<span class="m">${d.appetite?`<span class="app" title="${esc(d.appetite)}">${esc(d.appetite_label)}</span>`:`<span class="app unset">No appetite</span>`}<span class="date" title="${esc(d.date)}">${esc(d.date_label)}</span></span>`+
+    `<span class="m">${chip(d,"impact","Impact")}${chip(d,"effort","Effort")}<span class="date" title="${esc(d.date)}">${esc(d.date_label)}</span></span>`+
     `<span class="s${d.problem?"":" none"}">${d.problem?hi(d.problem,q):"No problem statement"}</span></button>`).join("")+`</div>`;
   $("list").querySelectorAll(".row").forEach(r=>r.onclick=()=>{location.hash=r.dataset.slug});
 }
@@ -392,7 +420,7 @@ function openPane(slug){
   const d=bySlug[slug],pane=$("pane");
   if(!d){pane.hidden=true;$("scrim").hidden=true;if(opener){opener.focus();opener=null}return}
   if(pane.hidden)opener=document.activeElement;
-  const facts=[["Appetite",d.appetite||"not set"],["Captured",d.date||"—"],["Review by",d.review_by||"—"],["Requester",d.requester||"—"]];
+  const facts=[["Impact",d.impact||"not set"],["Effort",d.effort||"not set"],["Captured",d.date||"—"],["Review by",d.review_by||"—"],["Requester",d.requester||"—"]];
   pane.innerHTML=`<button class="close" id="close" type="button">Close</button><h2>${esc(d.title)}</h2>
     <div class="facts">${facts.map(([k,v])=>`<span>${k} <b>${esc(v)}</b></span>`).join("")}</div>
     <div class="file">docs/backlog/${esc(d.file)}</div>${d.problem_html?`<div class="lead md">${d.problem_html}</div>`:""}
@@ -407,7 +435,7 @@ document.addEventListener("keydown",e=>{
   else if(e.key==="/"&&$("pane").hidden&&document.activeElement!==$("q")){e.preventDefault();$("q").focus()}
 });
 window.addEventListener("hashchange",()=>openPane(decodeURIComponent(location.hash.slice(1))));
-$("q").oninput=renderList;$("app").onchange=renderList;
+$("q").oninput=renderList;$("imp").onchange=renderList;$("eff").onchange=renderList;$("sort").onchange=renderList;
 renderList();
 if(location.hash)openPane(decodeURIComponent(location.hash.slice(1)));
 </script>

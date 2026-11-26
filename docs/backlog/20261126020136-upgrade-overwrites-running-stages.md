@@ -3,7 +3,8 @@ title: Upgrade overwrites this repo's edited running-stages.md
 status: triaged
 requester: Jayson De los Reyes
 date: 2026-11-26
-appetite: small batch
+effort: low
+impact: medium
 review_by:
 ---
 
@@ -27,3 +28,4 @@ review_by:
 - 2026-11-26T02:01:36Z [capture] Created from the owner's request through Orca. Status inbox, waiting for triage.
 - 2026-11-26T02:38:49Z [triage] Kept. Status triaged. Problem confirmed. Not Next. Decided by Jayson De los Reyes.
 - 2026-11-26T02:38:49Z [appetite] Set to small batch. Decided by Jayson De los Reyes.
+- 2026-11-26T03:01:29Z [triage] Effort low, impact medium confirmed by Jayson De los Reyes.

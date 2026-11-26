@@ -3,7 +3,8 @@ title: A script records the hook payload fixtures again
 status: parked
 requester: Jayson De los Reyes
 date: 2026-11-25
-appetite:
+effort: low
+impact: low
 review_by: 2027-02-23
 ---
 
@@ -23,3 +24,4 @@ review_by: 2027-02-23
 
 - 2026-11-25T04:00:49Z [capture] Created from review finding F5 at close. Status inbox, waiting for triage.
 - 2026-11-25T04:18:32Z [triage] Parked: nothing breaks until Claude Code changes the payload shape, and each run costs money. Decided by Jayson De los Reyes.
+- 2026-11-26T03:01:29Z [triage] Effort low, impact low confirmed by Jayson De los Reyes.

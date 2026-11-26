@@ -2,7 +2,8 @@
 title: Grill reads the private notes before it recommends
 status: parked
 date: 2026-11-24
-appetite: 
+effort: low
+impact: low
 requester: Jayson De los Reyes
 ---
 
@@ -16,3 +17,4 @@ requester: Jayson De los Reyes
 
 2026-11-24T01:44:15Z [capture] Created by the retro of 2026-11-24 from a learning. Status inbox, waiting for triage.
 2026-11-24T02:11:01Z [triage] Parked: helps only the author's own grills; .harness/README.md is full. Decided by Jayson De los Reyes.
+2026-11-26T03:01:29Z [triage] Effort low, impact low confirmed by Jayson De los Reyes.
