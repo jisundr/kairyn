@@ -34,7 +34,8 @@ def split_front_matter(text: str) -> tuple[dict, str]:
 
 
 LOG_HEADING = re.compile(r"^# Log\s*$", re.M)
-FIELDS = ["title", "appetite", "date", "review_by", "requester"]
+FIELDS = ["title", "effort", "impact", "date", "review_by", "requester"]
+LEVELS = ("low", "medium", "high")
 
 
 def plain(text: str) -> str:
@@ -53,11 +54,11 @@ def first_sentence(text: str) -> str:
     return m.group(1) if m else text
 
 
-def appetite_label(value: str) -> str:
-    """'small batch (a note)' shows as 'Small batch …'; the full value goes in a tooltip."""
-    short = value.split("(")[0].strip()
-    short = short[:1].upper() + short[1:]
-    return short + " …" if "(" in value else short
+def level(value: str) -> str:
+    """'low', 'medium' or 'high' from the value's first word, in any case; else '' (not set)."""
+    m = re.match(r"\s*([A-Za-z]+)\b", value)
+    word = m.group(1).lower() if m else ""
+    return word if word in LEVELS else ""
 
 
 def date_label(value: str) -> str:
@@ -87,7 +88,8 @@ def parse_idea(path: Path) -> dict:
     idea.update(file=path.name, slug=re.sub(r"^\d{14}-|\.md$", "", path.name),
                 title=fields.get("title") or path.stem,
                 problem=first_sentence(plain(text)) if problem else "",
-                appetite_label=appetite_label(fields.get("appetite", "")),
+                effort_level=level(fields.get("effort", "")),
+                impact_level=level(fields.get("impact", "")),
                 date_label=date_label(fields.get("date", "")),
                 lead=problem, body=rest, log=parts[1].strip() if len(parts) > 1 else "")
     return idea
@@ -243,8 +245,7 @@ def triage_notes(root: Path) -> str:
 
 def render_html(root: Path) -> str:
     ideas = load_ideas(root)
-    appetites = sorted({i["appetite"] for i in ideas if i["appetite"]})
-    options = "".join(f'<option value="{escape(a)}">{escape(appetite_label(a))}</option>' for a in appetites)
+    options = ""  # T2 replaces the appetite filter
     notes = triage_notes(root)
     if notes:
         notes = f'<details class="notes"><summary>Triage notes: Next and Parked, from TRIAGE.md</summary><div class="md">{notes}</div></details>'
@@ -324,8 +325,9 @@ details.notes summary{cursor:pointer;color:var(--muted);font-weight:500}
 .row .s{grid-column:1;color:var(--muted);font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .row .s.none{color:var(--faint);font-style:italic}
 .row .m{grid-row:1/3;grid-column:2;display:flex;gap:10px;align-items:center;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
-.app{display:inline-block;min-width:84px;text-align:center;border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-size:12px}
-.app.unset{border-style:dashed;color:var(--faint)}
+.lv{display:inline-block;min-width:104px;text-align:center;border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-size:12px}
+.lv b{font-weight:500;color:var(--faint)}
+.lv.unset{border-style:dashed;color:var(--faint)}
 .date{width:48px;text-align:right}
 mark{background:var(--mark);color:inherit;border-radius:2px}
 .empty{color:var(--muted);padding:24px;text-align:center}
@@ -352,7 +354,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .tl li{display:grid;grid-template-columns:92px minmax(0,1fr);gap:2px 12px;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
 .tl time{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums;padding-top:2px}
 .tag{display:inline-block;font-size:11.5px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px;margin-right:4px}
-@media (max-width:560px){.row{grid-template-columns:minmax(0,1fr)}.row .m{grid-row:auto;grid-column:1;order:3}.app{min-width:0}.date{width:auto}.row .s{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.pane{padding:16px 16px 40px}.tl li{grid-template-columns:minmax(0,1fr)}.count{width:100%;margin:0}}
+@media (max-width:560px){.row{grid-template-columns:minmax(0,1fr)}.row .m{grid-row:auto;grid-column:1;order:3}.lv{min-width:0}.date{width:auto}.row .s{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.pane{padding:16px 16px 40px}.tl li{grid-template-columns:minmax(0,1fr)}.count{width:100%;margin:0}}
 </style>
 </head>
 <body>
@@ -373,6 +375,11 @@ const DATA=%DATA%;
 const bySlug=Object.fromEntries(DATA.map(d=>[d.slug,d]));
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const $=id=>document.getElementById(id);
+const LABEL={low:"Low",medium:"Medium",high:"High"};
+function chip(d,key,name){
+  const v=d[key+"_level"],raw=d[key];
+  return `<span class="lv ${key}${v?"":" unset"}" title="${esc(name+": "+(raw||"not set"))}"><b>${name}</b> ${v?LABEL[v]:"Not set"}</span>`;
+}
 function hi(text,q){
   const t=String(text),i=q?t.toLowerCase().indexOf(q):-1;
   return i<0?esc(t):esc(t.slice(0,i))+"<mark>"+esc(t.slice(i,i+q.length))+"</mark>"+esc(t.slice(i+q.length));
@@ -383,7 +390,7 @@ function renderList(){
   $("count").textContent=items.length===DATA.length?`${DATA.length} ideas`:`${items.length} of ${DATA.length}`;
   if(!items.length){$("list").innerHTML=`<div class="list"><div class="empty">No ideas match. Clear the search or pick another appetite.</div></div>`;return}
   $("list").innerHTML=`<div class="list">`+items.map(d=>`<button class="row" data-slug="${esc(d.slug)}"><span class="t">${hi(d.title,q)}</span>`+
-    `<span class="m">${d.appetite?`<span class="app" title="${esc(d.appetite)}">${esc(d.appetite_label)}</span>`:`<span class="app unset">No appetite</span>`}<span class="date" title="${esc(d.date)}">${esc(d.date_label)}</span></span>`+
+    `<span class="m">${chip(d,"impact","Impact")}${chip(d,"effort","Effort")}<span class="date" title="${esc(d.date)}">${esc(d.date_label)}</span></span>`+
     `<span class="s${d.problem?"":" none"}">${d.problem?hi(d.problem,q):"No problem statement"}</span></button>`).join("")+`</div>`;
   $("list").querySelectorAll(".row").forEach(r=>r.onclick=()=>{location.hash=r.dataset.slug});
 }
@@ -392,7 +399,7 @@ function openPane(slug){
   const d=bySlug[slug],pane=$("pane");
   if(!d){pane.hidden=true;$("scrim").hidden=true;if(opener){opener.focus();opener=null}return}
   if(pane.hidden)opener=document.activeElement;
-  const facts=[["Appetite",d.appetite||"not set"],["Captured",d.date||"—"],["Review by",d.review_by||"—"],["Requester",d.requester||"—"]];
+  const facts=[["Impact",d.impact||"not set"],["Effort",d.effort||"not set"],["Captured",d.date||"—"],["Review by",d.review_by||"—"],["Requester",d.requester||"—"]];
   pane.innerHTML=`<button class="close" id="close" type="button">Close</button><h2>${esc(d.title)}</h2>
     <div class="facts">${facts.map(([k,v])=>`<span>${k} <b>${esc(v)}</b></span>`).join("")}</div>
     <div class="file">docs/backlog/${esc(d.file)}</div>${d.problem_html?`<div class="lead md">${d.problem_html}</div>`:""}
