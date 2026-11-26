@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+"""A stand-in for `gh` in close.py record-merge tests and the close eval.
+
+GH_PRS names a JSON file: a list of pull requests, each {number, state, headRefName, mergedAt, mergedBy}.
+`pr view <n> --json ...` prints that pull request (exit 1 if unknown). `pr list --state merged ...` prints
+the merged ones. GH_LOG, if set, gets one line of arguments per call. GH_MODE=fail makes every call exit 1.
+"""
+import json
+import os
+import sys
+from pathlib import Path
+
+args = sys.argv[1:]
+if os.environ.get("GH_LOG"):
+    with open(os.environ["GH_LOG"], "a") as f:
+        f.write(" ".join(args) + "\n")
+if os.environ.get("GH_MODE") == "fail":
+    sys.stderr.write("gh: not logged in\n")
+    sys.exit(1)
+prs = json.loads(Path(os.environ["GH_PRS"]).read_text())
+if args[:2] == ["pr", "view"]:
+    match = [p for p in prs if str(p["number"]) == args[2]]
+    if not match:
+        sys.stderr.write(f"no pull requests found for {args[2]}\n")
+        sys.exit(1)
+    print(json.dumps(match[0]))
+elif args[:2] == ["pr", "list"]:
+    print(json.dumps([p for p in prs if p["state"] == "MERGED"]))
+else:
+    sys.stderr.write(f"stub gh: unknown command {args}\n")
+    sys.exit(1)
