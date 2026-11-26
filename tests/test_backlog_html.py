@@ -14,14 +14,15 @@ from backlog_html import PAGE_PATH, render_html
 SCRIPT = PLUGIN / "scripts" / "backlog_html.py"
 
 
-def idea(title="Ship the gates", status="triaged", appetite="big batch", date="2026-11-25",
+def idea(title="Ship the gates", status="triaged", effort="medium", impact="high", date="2026-11-25",
          problem="The gates are repo-only.", extra="", log="- 2026-11-25T05:30:13Z [capture] Created."):
     return f"""---
 title: {title}
 status: {status}
 requester: Jo
 date: {date}
-appetite: {appetite}
+effort: {effort}
+impact: {impact}
 review_by:
 ---
 
@@ -92,15 +93,16 @@ def test_command_runs_the_script_and_reports_the_path():
 
 def test_lists_each_idea_with_its_fields(tmp_path):
     root = make_repo(tmp_path, {
-        "20261125053013-a.md": idea(title="Idea A", appetite="big batch", date="2026-11-25", problem="Problem A."),
-        "20261124053013-b.md": idea(title="Idea B", appetite="small batch", date="2026-11-24", problem="Problem `B`."),
-        "20261123053013-c.md": idea(title="Idea C", appetite="", date="2026-11-23", problem="See [A](20261125053013-a.md)."),
+        "20261125053013-a.md": idea(title="Idea A", effort="low", impact="high", date="2026-11-25", problem="Problem A."),
+        "20261124053013-b.md": idea(title="Idea B", effort="High", impact="medium", date="2026-11-24", problem="Problem `B`."),
+        "20261123053013-c.md": idea(title="Idea C", effort="", impact="", date="2026-11-23", problem="See [A](20261125053013-a.md)."),
     })
     data = page_data(render_html(root))
-    rows = [(d["title"], d["appetite"], d["date"], d["problem"]) for d in data]
-    assert rows == [("Idea A", "big batch", "2026-11-25", "Problem A."),
-                    ("Idea B", "small batch", "2026-11-24", "Problem B."),
-                    ("Idea C", "", "2026-11-23", "See A.")]
+    rows = [(d["title"], d["effort"], d["effort_level"], d["impact"], d["impact_level"], d["date"], d["problem"]) for d in data]
+    assert rows == [("Idea A", "low", "low", "high", "high", "2026-11-25", "Problem A."),
+                    ("Idea B", "High", "high", "medium", "medium", "2026-11-24", "Problem B."),
+                    ("Idea C", "", "", "", "", "2026-11-23", "See A.")]
+    assert all("appetite" not in d for d in data)
 
 
 def test_detail_view_has_front_matter_text_and_log(tmp_path):
@@ -292,7 +294,7 @@ def test_readme_names_the_command():
 
 # ---------- T6: readability (owner's pick, 2026-11-25) ----------
 
-LONG_APPETITE = "small batch (proposed by the steward; owner to confirm)"
+ODD = "Big (proposed by the steward; owner to confirm)"
 
 
 def test_problem_line_is_the_first_sentence(tmp_path):
@@ -303,13 +305,14 @@ def test_problem_line_is_the_first_sentence(tmp_path):
     assert [d["problem"] for d in page_data(render_html(root))] == ["Version 1.2 is out.", "No full stop at all"]
 
 
-@pytest.mark.parametrize("value, label", [
-    ("big batch", "Big batch"), (LONG_APPETITE, "Small batch …"), ("", ""),
+@pytest.mark.parametrize("value, level", [
+    ("low", "low"), ("Medium", "medium"), ("HIGH", "high"), ("high (owner to confirm)", "high"),
+    ("", ""), ("big batch", ""), (ODD, ""), ("lowest", ""),
 ])
-def test_appetite_gets_a_short_label_and_keeps_the_full_text(tmp_path, value, label):
-    root = make_repo(tmp_path, {"20261125053013-a.md": idea(appetite=value)})
+def test_effort_and_impact_get_a_level_and_keep_the_raw_value(tmp_path, value, level):
+    root = make_repo(tmp_path, {"20261125053013-a.md": idea(effort=value, impact=value)})
     d = page_data(render_html(root))[0]
-    assert (d["appetite"], d["appetite_label"]) == (value, label)
+    assert (d["effort"], d["effort_level"], d["impact"], d["impact_level"]) == (value, level, value, level)
 
 
 @pytest.mark.parametrize("value, label", [("2026-11-25", "Nov 25"), ("2026-01-03", "Jan 3"), ("", "—"), ("soon", "soon")])
@@ -387,10 +390,10 @@ def in_browser(tmp_path, page: str, width: int, js: str) -> dict:
 
 def browser_repo(tmp_path):
     return make_repo(tmp_path / "repo", {
-        "20261125053013-a.md": idea(title="An idea with a fairly long title that wraps on a phone", appetite=LONG_APPETITE,
+        "20261125053013-a.md": idea(title="An idea with a fairly long title that wraps on a phone", effort=ODD,
                                     problem="A long problem sentence " + "that goes on and on " * 12 + "."),
-        "20261124053013-b.md": idea(title="Second", appetite="big batch", extra="Unbroken: " + "x" * 120),
-        "20261123053013-c.md": idea(title="Third", appetite="").replace("**Problem (confirmed by Jo, 2026-11-25):**", "**Learning:**"),
+        "20261124053013-b.md": idea(title="Second", effort="low", impact="medium", extra="Unbroken: " + "x" * 120),
+        "20261123053013-c.md": idea(title="Third", effort="", impact="").replace("**Problem (confirmed by Jo, 2026-11-25):**", "**Learning:**"),
     })
 
 
@@ -409,13 +412,13 @@ def test_desktop_rows_are_one_line_summaries_with_aligned_dates(tmp_path):
     js = ("const s=[...d.querySelectorAll('.row .s')].map(e=>e.getBoundingClientRect().height);"
           "const lh=parseFloat(w.getComputedStyle(d.querySelector('.row .s')).lineHeight);"
           "const x=[...d.querySelectorAll('.row .date')].map(e=>Math.round(e.getBoundingClientRect().right));"
-          "const tip=d.querySelector('.row .app').title;"
+          "const tip=d.querySelector('.row .lv.effort').title;"
           "const none=d.querySelectorAll('.row')[2].querySelector('.s').textContent;"
           "return {s, lh, x, tip, none, sw:d.documentElement.scrollWidth}")
     got = in_browser(tmp_path, page, 1280, js)
     assert all(h <= got["lh"] * 1.2 for h in got["s"]), got
     assert len(set(got["x"])) == 1, got
-    assert got["tip"] == LONG_APPETITE and got["none"] == "No problem statement" and got["sw"] <= 1280
+    assert got["tip"] == "Effort: " + ODD and got["none"] == "No problem statement" and got["sw"] <= 1280
 
 
 def test_search_shows_a_count_and_highlights_matches(tmp_path):
@@ -426,3 +429,16 @@ def test_search_shows_a_count_and_highlights_matches(tmp_path):
           "mark:d.querySelector('.row mark')&&d.querySelector('.row mark').textContent}")
     got = in_browser(tmp_path, page, 1280, js)
     assert got == {"focused": "q", "count": "1 of 3", "rows": 1, "mark": "Third"}, got
+
+
+# ---------- effort and impact (2026-11-26-effort-and-impact) ----------
+
+def test_rows_and_pane_show_effort_and_impact(tmp_path):
+    page = render_html(browser_repo(tmp_path))
+    js = ("const rows=[...d.querySelectorAll('.row')].map(r=>[...r.querySelectorAll('.lv')].map(e=>e.textContent));"
+          "w.openPane('a');const facts=d.querySelector('#pane .facts').textContent;"
+          "return {rows, facts}")
+    got = in_browser(tmp_path, page, 1280, js)
+    assert got["rows"] == [["Impact High", "Effort Not set"], ["Impact Medium", "Effort Low"],
+                           ["Impact Not set", "Effort Not set"]], got
+    assert "Impact high" in got["facts"] and "Effort " + ODD in got["facts"], got
