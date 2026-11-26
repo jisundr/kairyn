@@ -104,6 +104,27 @@ def merged_pr(root: Path, number: int) -> dict:
     return pr
 
 
+PR_RE = re.compile(r"\bPR #(\d+)")
+
+
+def find_pr(root: Path, task: str, state_text: str) -> int:
+    """The last `PR #<n>` in STATE.md, else the one merged PR whose branch is the task's (A1, A5)."""
+    named = PR_RE.findall(state_text)
+    if named:
+        return int(named[-1])
+    slug = re.sub(r"^\d{4}-\d\d-\d\d-", "", task)
+    prs = gh_json(root, "pr", "list", "--state", "merged", "--limit", "200", "--json", "number,headRefName")
+    hits = sorted(p["number"] for p in prs if p.get("headRefName") == f"kairyn/{task}"
+                  or str(p.get("headRefName", "")).rsplit("/", 1)[-1] in (task, slug))
+    if not hits:
+        raise Missing(f"no PR #<n> in STATE.md and no merged PR from branch kairyn/{task} or */{slug}: "
+                      "give the number with --pr <n>")
+    if len(hits) > 1:
+        raise Missing(f"more than one merged PR matches the branch: {', '.join(f'#{n}' for n in hits)}: "
+                      "give the number with --pr <n>")
+    return hits[0]
+
+
 def set_front(text: str, key: str, value: str, indent: str = "") -> str:
     """Set `<indent><key>: <value>` in the front matter; add it after `stages:` or at its end if missing."""
     end = text.index("\n---", 3)
@@ -125,7 +146,7 @@ def cmd_record_merge(root: Path, task: str, number: int | None) -> int:
         print(f"OK: {task} is done")
         return 0
     try:
-        pr = merged_pr(root, number)
+        pr = merged_pr(root, number or find_pr(root, task, state.read_text()))
     except Missing as e:
         return fail(str(e))
     by = pr.get("mergedBy") or {}
