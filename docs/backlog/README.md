@@ -13,3 +13,5 @@ Closed ideas are in `CHANGELOG.md`. Inbox: `grep -lx 'status: inbox' docs/backlo
 | [Backlog stage](20261122080759-backlog-stage.md) | big |
 | [Split the design stage](20261124224354-split-design-stage.md) | big |
 | [Ship the review gates](20261125053013-ship-review-gates.md) | big; slices 1-2 (`design`, `commits`, `sessions`) in afk.py |
+| [Upgrade overwrites edited running-stages.md](20261126020136-upgrade-overwrites-running-stages.md) | small |
+| [Close fails on hand-merged tasks](20261126022052-close-fails-on-hand-merged-tasks.md) | small |
