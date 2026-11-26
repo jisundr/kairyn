@@ -26,3 +26,4 @@
 - afk.py builds each slice in two sessions: Opus writes the failing test, Sonnet makes it green; close and retro stay on Sonnet (ADR 0019). (2026-11-26-split-build-routing; closes split-build-routing)
 - close.py adds ' (<task>)' to a changelog line only when the entry does not already name the task. (2026-11-26-close-changelog-double-name; closes close-changelog-double-task-name)
 - Backlog ideas have effort and impact (low, medium, high) in place of appetite; the backlog page filters, sorts and colours by them. (2026-11-26-effort-and-impact; closes effort-and-impact)
+- afk.py runs an evals review gate: the .kairyn/afk.yml evals: command runs when a changed file matches its paths (ADR 0021). (2026-11-26-ship-evals-gate; closes ship-review-gates)
