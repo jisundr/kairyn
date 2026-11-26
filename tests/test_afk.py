@@ -719,7 +719,7 @@ def test_afk_update_mirrors_state_log_line(repo):
         stamp, _, rest = line.partition(f" [{TASK}] ")
         stage, _, text = rest.partition(": ")
         assert f"{stamp} [{stage}] {text}" in state, line
-    assert len(log) == len(re.findall(r"^\S+Z \[(?:build|gates|review)\] ", state, re.M)), "one milestone per afk.py log line"
+    assert len(log) == len(re.findall(r"^- \S+Z \[(?:build|gates|review)\] ", state, re.M)), "one milestone per afk.py log line"
 
 
 def test_afk_writes_no_milestones_without_settings(repo):

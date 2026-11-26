@@ -1,6 +1,7 @@
 """close.py record-merge: a hand-merged task gets STATE.md done and a REVIEW.md Decision line from the merged PR."""
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -154,3 +155,11 @@ def test_close_stage_records_the_merge_before_check():
         assert "record-merge <task>" in step and "--pr" in step and "check <task>" in step, path
         assert step.index("record-merge") < step.index("check <task>"), path
     assert "[PR number]" in (PLUGIN / "skills" / "close" / "SKILL.md").read_text()
+
+
+def test_record_merge_writes_a_bullet_log_entry_and_keeps_old_entries(tmp_path):
+    folder = make(tmp_path, [pr(7)], log="2026-01-05T09:10:00Z [design] Old plain entry.\n")
+    assert run(tmp_path, "record-merge", TASK, "--pr", "7").returncode == 0
+    lines = (folder / "STATE.md").read_text().rstrip("\n").splitlines()
+    assert re.fullmatch(r"- \S+Z \[review\] Merged by hand: PR #7 .*", lines[-1]), lines[-1]
+    assert lines[-2] == "2026-01-05T09:10:00Z [design] Old plain entry.", "old entries stay as they are (R6)"

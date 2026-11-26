@@ -365,7 +365,7 @@ class Run:
                 text = set_front(text, key, value)
         stamp = now()
         text = set_front(text, "updated", stamp)
-        text = text.rstrip("\n") + f"\n{stamp} [{at}] {log}\n"
+        text = text.rstrip("\n") + f"\n- {stamp} [{at}] {log}\n"
         atomic_write.write_text(self.folder / "STATE.md", text)   # a reader in another process never sees it empty
         try:   # F3: milestones only report progress; a bad milestones.yml or log path never stops a run
             milestones.write(self.root, self.task, f"{at}: {log}", stamp)

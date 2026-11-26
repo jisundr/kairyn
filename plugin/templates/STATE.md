@@ -17,4 +17,4 @@ updated: <YYYY-MM-DDTHH:MM:SSZ>
 
 Newest entry last. One entry per stage run or notable event.
 
-<YYYY-MM-DDTHH:MM:SSZ> [requirements] Task created. <one-line summary of the request>
+- <YYYY-MM-DDTHH:MM:SSZ> [requirements] Task created. <one-line summary of the request>

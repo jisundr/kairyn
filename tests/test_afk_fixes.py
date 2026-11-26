@@ -206,3 +206,19 @@ def test_approve_blocks_when_ci_never_finishes(repo, monkeypatch):
     assert result.returncode == 1
     assert _polls_then_merge(repo)[1] == []
     assert re.search(r"\[review\] Blocked: CI did not finish on [0-9a-f]{7}", task_file(repo, "STATE.md"))
+
+
+# --- logs-as-bullet-lists ---------------------------------------------------------------------
+
+
+def test_update_appends_a_bullet_log_entry_and_keeps_old_entries(repo):
+    r = afk.Run(repo, TASK)
+    r.folder.mkdir(parents=True)
+    old = (repo / "docs" / "tasks" / TASK / "STATE.md").read_text().rstrip("\n") + "\n2026-01-05T09:30:00Z [design] Old plain entry.\n"
+    (r.folder / "STATE.md").write_text(old)
+    r.update("build", "T1 committed.")
+    text = (r.folder / "STATE.md").read_text()
+    lines = text.rstrip("\n").splitlines()
+    assert re.fullmatch(r"- \d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ \[build\] T1 committed\.", lines[-1]), lines[-1]
+    assert lines[-2] == "2026-01-05T09:30:00Z [design] Old plain entry.", "old entries stay as they are (R6)"
+    assert text.startswith(old.split("updated:")[0])
