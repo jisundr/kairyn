@@ -1,18 +1,18 @@
 ---
 task: 2026-11-26-logs-as-bullet-lists
 title: Write log sections as bullet lists
-stage: build
-status: in-progress
+stage: review
+status: blocked
 grill: done
 stages:
   grill: done
   requirements: done
   design: done
-  build: in-progress
-  gates: pending
+  build: done
+  gates: done
   review: pending
 created: 2026-11-26T06:36:53Z
-updated: 2026-11-26T07:01:48Z
+updated: 2026-11-26T07:07:59Z
 ---
 
 # Log
@@ -29,3 +29,5 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-26T07:00:57Z [requirements] Requirements approved by Jayson De los Reyes: "Approve" (covers A1, A2; relayed by the coordinator).
 2026-11-26T07:00:57Z [design] DESIGN.md written: option A, T1-T3. Waiting for owner approval.
 2026-11-26T07:01:48Z [design] Design approved by Jayson De los Reyes: "Approve" (relayed by the coordinator). Build by hand on branch jisundr/logs-as-bullet-lists.
+- 2026-11-26T07:07:59Z [build] T1-T3 built by hand, tests first. Also evals/checks.py accepts bullet log lines (needed by the stage evals). pytest 813 pass, plugin validate, budgets and harness docs OK.
+- 2026-11-26T07:07:59Z [review] Waiting for eval approval (D3) and the pull request review.
