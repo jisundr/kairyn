@@ -195,8 +195,8 @@ def test_page_has_search_and_effort_and_impact_filters(tmp_path):
     html = render_html(root)
     assert re.search(r'<input id="q" type="search"', html)
     selects = re.findall(r'<select id="(\w+)" aria-label="([^"]+)">(.*?)</select>', html)
-    assert [(i, label) for i, label, _ in selects] == [("imp", "Impact"), ("eff", "Effort")]
-    for (_, label, body) in selects:
+    assert [(i, label) for i, label, _ in selects] == [("imp", "Impact"), ("eff", "Effort"), ("sort", "Sort")]
+    for (_, label, body) in selects[:2]:
         assert re.findall(r'<option value="([^"]*)">([^<]*)</option>', body) == [
             ("", "Any " + label.lower()), ("low", "Low"), ("medium", "Medium"), ("high", "High"), ("none", "Not set")]
     assert 'id="app"' not in html

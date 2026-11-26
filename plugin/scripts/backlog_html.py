@@ -309,8 +309,9 @@ PAGE = r"""<!doctype html>
 <title>Backlog</title>
 <style>
 :root{--bg:#f6f7f6;--surface:#fff;--fg:#1b1f1e;--muted:#5c6763;--faint:#717c77;--line:#e3e6e4;--hover:#f2f4f3;--accent:#2f6f62;--mark:#fdf0b3;
+--good-bg:#e3f4ea;--good-fg:#1d6b3c;--mid-bg:#fbefd6;--mid-fg:#875200;--bad-bg:#fbe4e2;--bad-fg:#a3261d;--low-bg:#eceeed;--low-fg:#4f5955;
 --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color-scheme:light}
-@media (prefers-color-scheme: dark){:root{--bg:#121615;--surface:#191e1c;--fg:#e6eae8;--muted:#9da8a3;--faint:#8a958f;--line:#29302d;--hover:#202624;--accent:#6fc2ad;--mark:#5a4b12;color-scheme:dark}}
+@media (prefers-color-scheme: dark){:root{--bg:#121615;--surface:#191e1c;--fg:#e6eae8;--muted:#9da8a3;--faint:#8a958f;--line:#29302d;--hover:#202624;--accent:#6fc2ad;--mark:#5a4b12;--good-bg:#173626;--good-fg:#8fe0b0;--mid-bg:#3b2d10;--mid-fg:#f2c46d;--bad-bg:#40191a;--bad-fg:#f5a39c;--low-bg:#262c2a;--low-fg:#b4bdb9;color-scheme:dark}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
 .wrap{max-width:880px;margin:0 auto;padding:32px 16px 64px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
@@ -331,7 +332,10 @@ details.notes summary{cursor:pointer;color:var(--muted);font-weight:500}
 .row .s.none{color:var(--faint);font-style:italic}
 .row .m{grid-row:1/3;grid-column:2;display:flex;gap:10px;align-items:center;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .lv{display:inline-block;min-width:104px;text-align:center;border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-size:12px}
-.lv b{font-weight:500;color:var(--faint)}
+.lv b{font-weight:400;color:inherit}
+.lv.good,.lv.mid,.lv.bad,.lv.low{border-color:transparent;font-weight:600}
+.lv.good{background:var(--good-bg);color:var(--good-fg)}.lv.mid{background:var(--mid-bg);color:var(--mid-fg)}
+.lv.bad{background:var(--bad-bg);color:var(--bad-fg)}.lv.low{background:var(--low-bg);color:var(--low-fg)}
 .lv.unset{border-style:dashed;color:var(--faint)}
 .date{width:48px;text-align:right}
 mark{background:var(--mark);color:inherit;border-radius:2px}
@@ -364,11 +368,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 </head>
 <body>
 <div class="wrap">
-  <header><h1>Backlog</h1><p>%COUNT% ideas in docs/backlog/, by impact (high first), then effort (low first), then newest. View only.</p></header>
+  <header><h1>Backlog</h1><p>%COUNT% ideas in docs/backlog/, <span id="order">by impact (high first), then effort (low first), then newest</span>. View only.</p></header>
   <div class="tools">
     <input id="q" type="search" placeholder="Search titles and text  ( / )" aria-label="Search">
     <select id="imp" aria-label="Impact"><option value="">Any impact</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="none">Not set</option></select>
     <select id="eff" aria-label="Effort"><option value="">Any effort</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="none">Not set</option></select>
+    <select id="sort" aria-label="Sort"><option value="best">Sort: Best value</option><option value="impact">Sort: Impact</option><option value="effort">Sort: Effort</option><option value="newest">Sort: Newest</option></select>
     <span class="count" id="count" aria-live="polite"></span>
   </div>
   %NOTES%
@@ -382,9 +387,16 @@ const bySlug=Object.fromEntries(DATA.map(d=>[d.slug,d]));
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const $=id=>document.getElementById(id);
 const LABEL={low:"Low",medium:"Medium",high:"High"};
+const TONE={impact:{high:"good",medium:"mid",low:"low"},effort:{low:"good",medium:"mid",high:"bad"}};
+const RANK={impact:{high:0,medium:1,low:2,"":3},effort:{low:0,medium:1,high:2,"":3}};
+const newest=(a,b)=>a.file<b.file?1:a.file>b.file?-1:0;
+const by=key=>(a,b)=>RANK[key][a[key+"_level"]]-RANK[key][b[key+"_level"]]||newest(a,b);
+const SORTS={best:null,impact:by("impact"),effort:by("effort"),newest};  // best: DATA's own order
+const ORDER={best:"by impact (high first), then effort (low first), then newest",impact:"by impact (high first), then newest",
+  effort:"by effort (low first), then newest",newest:"newest first"};
 function chip(d,key,name){
   const v=d[key+"_level"],raw=d[key];
-  return `<span class="lv ${key}${v?"":" unset"}" title="${esc(name+": "+(raw||"not set"))}"><b>${name}</b> ${v?LABEL[v]:"Not set"}</span>`;
+  return `<span class="lv ${key} ${v?TONE[key][v]:"unset"}" title="${esc(name+": "+(raw||"not set"))}"><b>${name}</b> ${v?LABEL[v]:"Not set"}</span>`;
 }
 function hi(text,q){
   const t=String(text),i=q?t.toLowerCase().indexOf(q):-1;
@@ -393,7 +405,9 @@ function hi(text,q){
 function renderList(){
   const q=$("q").value.trim().toLowerCase(),im=$("imp").value,ef=$("eff").value;
   const is=(v,pick)=>!pick||(pick==="none"?!v:v===pick);
-  const items=DATA.filter(d=>is(d.impact_level,im)&&is(d.effort_level,ef)&&(!q||(d.title+" "+d.slug).toLowerCase().includes(q)||d.text.includes(q)));
+  const sk=$("sort").value;$("order").textContent=ORDER[sk];
+  let items=DATA.filter(d=>is(d.impact_level,im)&&is(d.effort_level,ef)&&(!q||(d.title+" "+d.slug).toLowerCase().includes(q)||d.text.includes(q)));
+  if(SORTS[sk])items=[...items].sort(SORTS[sk]);
   $("count").textContent=items.length===DATA.length?`${DATA.length} ideas`:`${items.length} of ${DATA.length}`;
   if(!items.length){$("list").innerHTML=`<div class="list"><div class="empty">No ideas match. Clear the search or change the filters.</div></div>`;return}
   $("list").innerHTML=`<div class="list">`+items.map(d=>`<button class="row" data-slug="${esc(d.slug)}"><span class="t">${hi(d.title,q)}</span>`+
@@ -421,7 +435,7 @@ document.addEventListener("keydown",e=>{
   else if(e.key==="/"&&$("pane").hidden&&document.activeElement!==$("q")){e.preventDefault();$("q").focus()}
 });
 window.addEventListener("hashchange",()=>openPane(decodeURIComponent(location.hash.slice(1))));
-$("q").oninput=renderList;$("imp").onchange=renderList;$("eff").onchange=renderList;
+$("q").oninput=renderList;$("imp").onchange=renderList;$("eff").onchange=renderList;$("sort").onchange=renderList;
 renderList();
 if(location.hash)openPane(decodeURIComponent(location.hash.slice(1)));
 </script>
