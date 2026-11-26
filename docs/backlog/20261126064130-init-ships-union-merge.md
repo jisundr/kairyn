@@ -1,11 +1,11 @@
 ---
 title: Init ships the learnings.md union merge
-status: inbox
+status: triaged
 requester: Jayson De los Reyes
 date: 2026-11-26
 effort: medium
 impact: medium
-review_by:
+review_by: 2027-02-23
 ---
 
 # Init ships the learnings.md union merge
@@ -23,3 +23,5 @@ review_by:
 # Log
 
 - 2026-11-26T06:41:30Z [capture] Created from the owner's grill answer Q4 in task 2026-11-26-upgrade-overwrites-running-stages. Status inbox, waiting for triage. Effort medium, impact medium proposed by the AI.
+- 2026-11-26T07:33:12Z [triage] Kept, problem not confirmed yet. Not Next. Status triaged. Decided by Jayson De los Reyes.
+- 2026-11-26T07:33:12Z [triage] Effort medium, impact medium confirmed by Jayson De los Reyes.

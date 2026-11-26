@@ -12,3 +12,6 @@ Closed ideas are in `CHANGELOG.md`. Inbox: `grep -lx 'status: inbox' docs/backlo
 | [Grill in rounds](20261122105739-grill-rounds.md) | high | high | |
 | [Backlog stage](20261122080759-backlog-stage.md) | high | high | |
 | [Split the design stage](20261124224354-split-design-stage.md) | high | medium | |
+| [Init ships the learnings.md union merge](20261126064130-init-ships-union-merge.md) | medium | medium | problem not confirmed |
+| [close.py misses ideas that name the task in plain text](20261126071901-close-matches-plain-task-name.md) | low | medium | Next |
+| [upgrade.py --help runs the upgrade](20261126071901-upgrade-help-runs-upgrade.md) | low | medium | Next |
