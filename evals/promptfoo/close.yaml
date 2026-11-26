@@ -23,3 +23,9 @@ tests:
       min_pass_rate: {close_starts_retro: 0.9}
     assert:
       - {type: python, value: "file://asserts.py:close_starts_retro", metric: close_starts_retro}
+  - description: Close a task merged by hand records the merge from the merged PR, then closes
+    vars: {scenario: close_hand_merged}
+    metadata:
+      min_pass_rate: {closes: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:closes_hand_merged", metric: closes}

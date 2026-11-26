@@ -374,6 +374,16 @@ def closes_without_adr(output, context):
     return _result(close_problems(json.loads(output), expect_adr=False))
 
 
+def closes_hand_merged(output, context):
+    """A hand-merged task: record-merge reads the merged PR through gh (found by branch), then close runs as usual."""
+    d = json.loads(output)
+    problems = close_problems(d, expect_adr=False)
+    calls = d.get("gh_calls", [])
+    if not any(c.startswith("pr list") for c in calls) or not any(c.startswith("pr view 4 ") for c in calls):
+        problems.append(f"record-merge did not find PR #4 through gh: calls {calls}")
+    return _result(problems)
+
+
 # --- design stage: scenario 1 = one run on an approved task; 2 = stage, non-approval, "go with option X", approval -----
 def _design_run(d: dict) -> dict:
     return {**_run(d), "task": Path(d["task_path"]) if d["task_path"] else None}

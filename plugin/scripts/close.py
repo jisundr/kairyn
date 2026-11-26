@@ -5,6 +5,7 @@
     python3 close.py adr-path <slug>               # next free docs/adr/<NNNN>-<slug>.md
     python3 close.py close <task> --entry "<text>" # changelog entry, then delete the task and its backlog files
     python3 close.py release <version>             # ## Unreleased -> ## <version>, local tag v<version>
+    python3 close.py record-merge <task> [--pr <n>] # a hand merge: STATE.md done, REVIEW.md Decision from gh
 
 All take --root (default: the current directory). A task is done when its STATE.md has
 `status: done` and the output of its last stage (`stage:` in STATE.md, e.g. RETRO.md) has an
@@ -17,12 +18,17 @@ with no git, close first copies each one to .kairyn/archive/ (tasks/<task>/, bac
 Its last line is `RETRO: learnings.md <used>/<budget>` when learnings.md is past half its
 budget (retro.py): the close stage then runs the retro stage.
 release never pushes: it prints the push command for the user.
+record-merge reads the merged pull request (--pr, else the last `PR #<n>` in STATE.md, else a merged PR
+from branch kairyn/<task> or */<task or slug>) through gh (KAIRYN_GH, else gh on PATH). It prints OK for a done
+task and FAIL: <cause> with no file change when it cannot find a merged pull request.
 
 Standard library only: consumers run this with a plain python3 (3.9 on macOS).
 """
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import re
 import shutil
 import subprocess
@@ -30,6 +36,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+import atomic_write
 from retro import learnings_size
 
 CHANGELOG = "CHANGELOG.md"
@@ -75,6 +82,99 @@ def cmd_check(root: Path, task: str) -> int:
 
 def slugify(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-") or "decision"
+
+
+class Missing(Exception):
+    """record-merge cannot find or read the merged pull request: FAIL, no file changes."""
+
+
+def gh_json(root: Path, *args: str):
+    gh = os.environ.get("KAIRYN_GH") or shutil.which("gh")
+    if not gh or not Path(gh).is_file():
+        raise Missing("no gh command: install GitHub CLI or give KAIRYN_GH")
+    result = subprocess.run([gh, *args], cwd=root, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise Missing(f"gh {' '.join(args[:2])} failed: {(result.stderr or result.stdout).strip()[:200]}")
+    try:
+        return json.loads(result.stdout)
+    except ValueError:
+        raise Missing(f"gh {' '.join(args[:2])} printed no JSON")
+
+
+def merged_pr(root: Path, number: int) -> dict:
+    pr = gh_json(root, "pr", "view", str(number), "--json", "number,state,mergedAt,mergedBy")
+    if pr.get("state") != "MERGED":
+        raise Missing(f"PR #{number} is {str(pr.get('state', 'unknown')).lower()}, not merged")
+    return pr
+
+
+PR_RE = re.compile(r"\bPR #(\d+)")
+
+
+def find_pr(root: Path, task: str, state_text: str) -> int:
+    """The last `PR #<n>` in STATE.md, else the one merged PR whose branch is the task's (A1, A5)."""
+    named = PR_RE.findall(state_text)
+    if named:
+        return int(named[-1])
+    slug = re.sub(r"^\d{4}-\d\d-\d\d-", "", task)
+    prs = gh_json(root, "pr", "list", "--state", "merged", "--limit", "200", "--json", "number,headRefName")
+    hits = sorted(p["number"] for p in prs if p.get("headRefName") == f"kairyn/{task}"
+                  or str(p.get("headRefName", "")).rsplit("/", 1)[-1] in (task, slug))
+    if not hits:
+        raise Missing(f"no PR #<n> in STATE.md and no merged PR from branch kairyn/{task} or */{slug}: "
+                      "give the number with --pr <n>")
+    if len(hits) > 1:
+        raise Missing(f"more than one merged PR matches the branch: {', '.join(f'#{n}' for n in hits)}: "
+                      "give the number with --pr <n>")
+    return hits[0]
+
+
+def set_front(text: str, key: str, value: str, indent: str = "") -> str:
+    """Set `<indent><key>: <value>` in the front matter; add it after `stages:` or at its end if missing."""
+    end = text.index("\n---", 3)
+    head, rest = text[:end], text[end:]
+    line = re.compile(rf"^{indent}{key}:.*$", re.M)
+    if line.search(head):
+        return line.sub(f"{indent}{key}: {value}", head, count=1) + rest
+    if indent and re.search(r"^stages:\s*$", head, re.M):
+        return re.sub(r"^stages:\s*$", f"stages:\n{indent}{key}: {value}", head, count=1, flags=re.M) + rest
+    return f"{head}\n{indent}{key}: {value}" + rest
+
+
+def cmd_record_merge(root: Path, task: str, number: int | None) -> int:
+    folder = root / "docs" / "tasks" / task
+    state = folder / "STATE.md"
+    if not task or "/" in task or not state.is_file():
+        return fail(f"no task STATE.md docs/tasks/{task}/STATE.md")
+    if status_of(state) == "done":
+        print(f"OK: {task} is done")
+        return 0
+    try:
+        pr = merged_pr(root, number or find_pr(root, task, state.read_text()))
+    except Missing as e:
+        return fail(str(e))
+    by = pr.get("mergedBy") or {}
+    name, at, n = by.get("name") or by.get("login") or "unknown", pr["mergedAt"], pr["number"]
+    review = folder / "REVIEW.md"
+    decision = f'Decision: {name}, {at}, "merged PR #{n}"'
+    if review.is_file():
+        old = review.read_text()
+        text = re.sub(r"^Decision: pending\s*$", decision.replace("\\", "\\\\"), old, count=1, flags=re.M)
+        if text == old and not APPROVED_RE.search(old):
+            text = old.rstrip("\n") + f"\n\n{decision}\n"
+    else:
+        text = (f"---\ntask: {task}\nstage: review\nsummary: \"Merged by hand in PR #{n}.\"\n---\n\n"
+                f"# Review: {task}\n\nNo AFK review ran: the pull request was merged by hand.\n\n{decision}\n")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    s = state.read_text()
+    for key, value, indent in (("status", "done", ""), ("stage", "review", ""), ("review", "done", "  "),
+                               ("updated", now, "")):
+        s = set_front(s, key, value, indent)
+    s = s.rstrip("\n") + f"\n{now} [review] Merged by hand: PR #{n} merged by {name} at {at}. Recorded by close.py record-merge.\n"
+    atomic_write.write_text(review, text)
+    atomic_write.write_text(state, s)
+    print(f"RECORDED: PR #{n} merged by {name} at {at}")
+    return 0
 
 
 def cmd_adr_path(root: Path, slug: str) -> int:
@@ -219,12 +319,17 @@ def main(argv: list[str] | None = None) -> int:
     close.add_argument("task")
     close.add_argument("--entry", required=True)
     sub.add_parser("release", parents=[common]).add_argument("version")
+    record = sub.add_parser("record-merge", parents=[common])
+    record.add_argument("task")
+    record.add_argument("--pr", type=int)
     a = ap.parse_args(argv)
     root = a.root.resolve()
     if a.cmd == "check":
         return cmd_check(root, a.task)
     if a.cmd == "adr-path":
         return cmd_adr_path(root, a.slug)
+    if a.cmd == "record-merge":
+        return cmd_record_merge(root, a.task, a.pr)
     if a.cmd == "close":
         return cmd_close(root, a.task, a.entry)
     return cmd_release(root, a.version)

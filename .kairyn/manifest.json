@@ -18,7 +18,7 @@
     },
     ".kairyn/stages/CLOSE.md": {
       "owner": "repo",
-      "sha256": "2f092da7debc2a83fab3d81f00e8952d2b41fbd5a60b48380f4cd47a648ddaee"
+      "sha256": "45156ad6a49d5e8dac6d431aadc605fa5bb32d68375921179ed63fa6d32203d0"
     },
     ".kairyn/stages/DESIGN.md": {
       "owner": "repo",
@@ -97,5 +97,5 @@
       "sha256": "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
     }
   },
-  "version": "0.19.0"
+  "version": "0.20.0"
 }

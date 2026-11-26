@@ -540,6 +540,49 @@ def make_close_repo(repo: Path, task: str) -> Path:
     return repo
 
 
+# A task built and merged by hand: in progress at build, no REVIEW.md, no PR #<n> in STATE.md. The stub gh
+# (tests/stubs/gh_prs, set in the repo's .claude/settings.json) reports PR #4 merged from branch jisundr/csv-export.
+CLOSE_HAND_TASK = "2026-01-09-csv-export"
+CLOSE_HAND_PRS = [
+    {"number": 3, "state": "MERGED", "headRefName": "jisundr/readme-typo", "mergedAt": "2026-01-08T11:00:00Z",
+     "mergedBy": {"login": "evaluser", "name": "Eval User"}},
+    {"number": 4, "state": "MERGED", "headRefName": "jisundr/csv-export", "mergedAt": "2026-01-09T15:30:00Z",
+     "mergedBy": {"login": "evaluser", "name": "Eval User"}},
+]
+
+
+def make_hand_merged_close_repo(repo: Path) -> Path:
+    folder = repo / "docs" / "tasks" / CLOSE_HAND_TASK
+    folder.mkdir(parents=True)
+    request = "Add a --csv flag that writes the report as CSV."
+    (folder / "STATE.md").write_text(
+        f"---\ntask: {CLOSE_HAND_TASK}\ntitle: {request}\nstage: build\nstatus: in-progress\nstages:\n"
+        "  requirements: done\n  design: done\n  build: pending\n  gates: pending\n  review: pending\n"
+        "created: 2026-01-09T09:00:00Z\nupdated: 2026-01-09T14:00:00Z\n---\n\n# Log\n\n"
+        f"2026-01-09T09:00:00Z [requirements] Task created. {request}\n"
+        "2026-01-09T14:00:00Z [build] Built by hand. Waiting for the pull request review.\n")
+    (folder / "REQUIREMENTS.md").write_text(
+        f"---\ntask: {CLOSE_HAND_TASK}\nstage: requirements\nsummary: \"{request}\"\n---\n\n# Requirements\n\n"
+        f"## Problem statement\n{request}\n\n## Requirements\n- R1: When the user gives --csv, the CLI shall write "
+        "the report as CSV. (request)\n\n## Acceptance criteria\n- [ ] R1 holds. (R1)\n\n"
+        "## Open questions and answers\nNone.\n\nApproval: Eval User, 2026-01-09T09:30:00Z, \"Approved\"\n")
+    backlog = repo / "docs" / "backlog"
+    backlog.mkdir(parents=True)
+    item = "---\ntitle: {t}\nstatus: {s}\n---\n\n# {t}\n\n{b}\n\n# Log\n"
+    (backlog / "1-linked.md").write_text(item.format(t="Linked", s="committed",
+                                                     b=f"Task [{CLOSE_HAND_TASK}](../tasks/{CLOSE_HAND_TASK}/REQUIREMENTS.md)."))
+    (backlog / "2-parked.md").write_text(item.format(t="Parked", s="parked", b="Later."))
+    (repo.parent / "prs.json").write_text(json.dumps(CLOSE_HAND_PRS))
+    (repo / ".claude").mkdir(exist_ok=True)
+    (repo / ".claude" / "settings.json").write_text(json.dumps({"env": {
+        "KAIRYN_GH": str(ROOT / "tests" / "stubs" / "gh_prs"), "GH_PRS": str(repo.parent / "prs.json"),
+        "GH_LOG": str(repo.parent / "gh.log")}}, indent=2))
+    subprocess.run(["git", "add", "-A"], cwd=repo, check=True)
+    subprocess.run(["git", "-c", "user.name=Eval User", "-c", "user.email=eval@example.com", "commit", "-qm", "fixture"],
+                   cwd=repo, check=True)
+    return repo
+
+
 def run_close(repo: Path, task: str) -> dict:
     claude(f"/kairyn:close {task}", repo, plugin=True, model=MODEL)
     adr_dir = repo / "docs" / "adr"
