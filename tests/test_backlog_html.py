@@ -189,19 +189,21 @@ def test_no_triage_file_means_no_notes(tmp_path):
     assert "<details" not in render_html(make_repo(tmp_path, {"20261125053013-a.md": idea()}))
 
 
-def test_page_has_search_and_an_appetite_filter(tmp_path):
-    root = make_repo(tmp_path, {"20261125053013-a.md": idea(appetite="big batch"),
-                                "20261124053013-b.md": idea(appetite="small batch"),
-                                "20261123053013-c.md": idea(appetite="")})
+def test_page_has_search_and_effort_and_impact_filters(tmp_path):
+    root = make_repo(tmp_path, {"20261125053013-a.md": idea(effort="big batch", impact="")})
     html = render_html(root)
     assert re.search(r'<input id="q" type="search"', html)
-    options = re.findall(r'<option value="([^"]*)">([^<]*)</option>', html)
-    assert options == [("", "Any appetite"), ("big batch", "Big batch"), ("small batch", "Small batch"), ("none", "Not set")]
+    selects = re.findall(r'<select id="(\w+)" aria-label="([^"]+)">(.*?)</select>', html)
+    assert [(i, label) for i, label, _ in selects] == [("imp", "Impact"), ("eff", "Effort")]
+    for (_, label, body) in selects:
+        assert re.findall(r'<option value="([^"]*)">([^<]*)</option>', body) == [
+            ("", "Any " + label.lower()), ("low", "Low"), ("medium", "Medium"), ("high", "High"), ("none", "Not set")]
+    assert "appetite" not in html.lower()
 
 
 def test_page_has_no_edit_controls(tmp_path):
     html = render_html(make_repo(tmp_path, {"20261125053013-a.md": idea()}, triage=TRIAGE))
-    assert len(re.findall(r"<input\b", html)) == 1 and len(re.findall(r"<select\b", html)) == 1
+    assert len(re.findall(r"<input\b", html)) == 1 and len(re.findall(r"<select\b", html)) == 2
     assert set(re.findall(r'<button class="(\w+)"', html)) == {"row", "close"}
     assert len(re.findall(r"<button\b", html)) == 2
     for marker in ("<textarea", "<form", "contenteditable", "localstorage", "fetch("):
@@ -442,3 +444,17 @@ def test_rows_and_pane_show_effort_and_impact(tmp_path):
     assert got["rows"] == [["Impact High", "Effort Not set"], ["Impact Medium", "Effort Low"],
                            ["Impact Not set", "Effort Not set"]], got
     assert "Impact high" in got["facts"] and "Effort " + ODD in got["facts"], got
+
+
+def test_filters_pick_ideas_by_level(tmp_path):
+    page = render_html(browser_repo(tmp_path))
+    js = ("const pick=(id,v)=>{const s=d.getElementById(id);s.value=v;s.dispatchEvent(new w.Event('change'))};"
+          "const titles=()=>[...d.querySelectorAll('.row .t')].map(e=>e.textContent);"
+          "pick('imp','medium');const medium=titles();pick('imp','');pick('eff','none');const unset=titles();"
+          "pick('imp','high');const both=titles();pick('imp','low');"
+          "return {medium, unset, both, empty:d.querySelector('.empty').textContent}")
+    got = in_browser(tmp_path, page, 1280, js)
+    assert got["medium"] == ["Second"], got
+    assert got["unset"] == ["An idea with a fairly long title that wraps on a phone", "Third"], got
+    assert got["both"] == ["An idea with a fairly long title that wraps on a phone"], got
+    assert "filters" in got["empty"] and "appetite" not in got["empty"], got
