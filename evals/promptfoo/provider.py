@@ -14,7 +14,7 @@ HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
 from helpers import PLUGIN, ROOT, make_good_repo, run_verify
-from runner import (RETRO_ENTRIES, make_retro_repo, run_retro, run_retro_approval, DESIGN_REQUEST, DESIGN_REQUIREMENTS, make_design_repo, run_design, run_design_approval, DESIGN_CHILD_REQUIREMENTS, make_design_child_repo, run_design_child, CLOSE_DECISION_TASK, CLOSE_PLAIN_TASK, make_close_repo, run_close, APPROVAL_WORDS, APPROVER, CONCEPT_DECISIONS, CONCEPT_TASK, CONCEPT_VALUE, GRILL_APP, GRILL_README, GRILL_REQUEST, MODEL, REQUEST, RESULTS, ROUTING_REQUEST,
+from runner import (RETRO_ENTRIES, make_retro_repo, run_retro, run_retro_approval, DESIGN_REQUEST, DESIGN_REQUIREMENTS, make_design_repo, run_design, run_design_approval, DESIGN_CHILD_REQUIREMENTS, make_design_child_repo, run_design_child, CLOSE_DECISION_TASK, CLOSE_HAND_TASK, CLOSE_PLAIN_TASK, make_close_repo, make_hand_merged_close_repo, run_close, APPROVAL_WORDS, APPROVER, CONCEPT_DECISIONS, CONCEPT_TASK, CONCEPT_VALUE, GRILL_APP, GRILL_README, GRILL_REQUEST, MODEL, REQUEST, RESULTS, ROUTING_REQUEST,
                     claude, make_concept_repo, make_grill_repo, make_routing_repo, new_repo, run_grill, run_model_routing,
                     run_requirements, run_requirements_approval, run_requirements_with_concept, set_cost_dir, tree_hash)
 
@@ -222,6 +222,16 @@ def close_plain(work: Path, scenario: str, run_id: str) -> dict:
     return _close(work, scenario, run_id, CLOSE_PLAIN_TASK)
 
 
+def close_hand_merged(work: Path, scenario: str, run_id: str) -> dict:
+    """A task merged by hand (in progress, no REVIEW.md): close records the merge from the stub gh, then closes."""
+    repo = make_hand_merged_close_repo(make_good_repo(new_repo(work, "repo")))
+    out = run_close(repo, CLOSE_HAND_TASK)
+    log = work / "gh.log"
+    out["gh_calls"] = log.read_text().splitlines() if log.is_file() else []
+    _save(scenario, run_id, "evidence.json", json.dumps(out, indent=2))
+    return out
+
+
 def _times(d: dict) -> dict:
     return {**d, "start": d["start"].strftime(TS), "end": d["end"].strftime(TS)}
 
@@ -366,7 +376,7 @@ def milestones_catchup(work: Path, scenario: str, run_id: str) -> dict:
 
 SCENARIOS = {f.__name__: f for f in (afk_build, afk_gates_pass, afk_gates_fail, afk_review, init_fresh, init_keeps_edits, init_keeps_claude_md, check_broken_doc, backlog_page, requirements,
                                      model_routing, grill, requirements_with_concept, requirements_approval,
-                                     upgrade_conflict, close_decision, close_plain, design, design_approval, design_child_repo,
+                                     upgrade_conflict, close_decision, close_plain, close_hand_merged, design, design_approval, design_child_repo,
                                      retro, retro_approval, close_retro, milestones_catchup)}
 
 

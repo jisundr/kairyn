@@ -1,0 +1,13 @@
+# depends: plugin/skills/close/SKILL.md, plugin/stages/CLOSE.md, plugin/stages/_template.md, plugin/scripts/close.py, plugin/scripts/retro.py, plugin/scripts/init.sh
+description: close stage on a hand-merged task (watch-it-fail file; merged into close.yaml after)
+prompts: ["{{scenario}}"]
+providers:
+  - id: file://provider.py
+    config: {timeout: 600000}
+tests:
+  - description: Close a task merged by hand records the merge from the merged PR, then closes
+    vars: {scenario: close_hand_merged}
+    metadata:
+      min_pass_rate: {closes: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:closes_hand_merged", metric: closes}
