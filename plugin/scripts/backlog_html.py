@@ -245,11 +245,10 @@ def triage_notes(root: Path) -> str:
 
 def render_html(root: Path) -> str:
     ideas = load_ideas(root)
-    options = ""  # T2 replaces the appetite filter
     notes = triage_notes(root)
     if notes:
         notes = f'<details class="notes"><summary>Triage notes: Next and Parked, from TRIAGE.md</summary><div class="md">{notes}</div></details>'
-    return (PAGE.replace("%APPETITES%", options).replace("%NOTES%", notes)
+    return (PAGE.replace("%NOTES%", notes)
             .replace("%COUNT%", str(len(ideas))).replace("%DATA%", _script_json(ideas)))
 
 
@@ -362,7 +361,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <header><h1>Backlog</h1><p>%COUNT% ideas in docs/backlog/, newest first. View only.</p></header>
   <div class="tools">
     <input id="q" type="search" placeholder="Search titles and text  ( / )" aria-label="Search">
-    <select id="app" aria-label="Appetite"><option value="">Any appetite</option>%APPETITES%<option value="none">Not set</option></select>
+    <select id="imp" aria-label="Impact"><option value="">Any impact</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="none">Not set</option></select>
+    <select id="eff" aria-label="Effort"><option value="">Any effort</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="none">Not set</option></select>
     <span class="count" id="count" aria-live="polite"></span>
   </div>
   %NOTES%
@@ -385,10 +385,11 @@ function hi(text,q){
   return i<0?esc(t):esc(t.slice(0,i))+"<mark>"+esc(t.slice(i,i+q.length))+"</mark>"+esc(t.slice(i+q.length));
 }
 function renderList(){
-  const q=$("q").value.trim().toLowerCase(),ap=$("app").value;
-  const items=DATA.filter(d=>(!ap||(ap==="none"?!d.appetite:d.appetite===ap))&&(!q||(d.title+" "+d.slug).toLowerCase().includes(q)||d.text.includes(q)));
+  const q=$("q").value.trim().toLowerCase(),im=$("imp").value,ef=$("eff").value;
+  const is=(v,pick)=>!pick||(pick==="none"?!v:v===pick);
+  const items=DATA.filter(d=>is(d.impact_level,im)&&is(d.effort_level,ef)&&(!q||(d.title+" "+d.slug).toLowerCase().includes(q)||d.text.includes(q)));
   $("count").textContent=items.length===DATA.length?`${DATA.length} ideas`:`${items.length} of ${DATA.length}`;
-  if(!items.length){$("list").innerHTML=`<div class="list"><div class="empty">No ideas match. Clear the search or pick another appetite.</div></div>`;return}
+  if(!items.length){$("list").innerHTML=`<div class="list"><div class="empty">No ideas match. Clear the search or change the filters.</div></div>`;return}
   $("list").innerHTML=`<div class="list">`+items.map(d=>`<button class="row" data-slug="${esc(d.slug)}"><span class="t">${hi(d.title,q)}</span>`+
     `<span class="m">${chip(d,"impact","Impact")}${chip(d,"effort","Effort")}<span class="date" title="${esc(d.date)}">${esc(d.date_label)}</span></span>`+
     `<span class="s${d.problem?"":" none"}">${d.problem?hi(d.problem,q):"No problem statement"}</span></button>`).join("")+`</div>`;
@@ -414,7 +415,7 @@ document.addEventListener("keydown",e=>{
   else if(e.key==="/"&&$("pane").hidden&&document.activeElement!==$("q")){e.preventDefault();$("q").focus()}
 });
 window.addEventListener("hashchange",()=>openPane(decodeURIComponent(location.hash.slice(1))));
-$("q").oninput=renderList;$("app").onchange=renderList;
+$("q").oninput=renderList;$("imp").onchange=renderList;$("eff").onchange=renderList;
 renderList();
 if(location.hash)openPane(decodeURIComponent(location.hash.slice(1)));
 </script>
