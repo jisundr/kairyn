@@ -5,6 +5,7 @@
     python3 close.py adr-path <slug>               # next free docs/adr/<NNNN>-<slug>.md
     python3 close.py close <task> --entry "<text>" # changelog entry, then delete the task and its backlog files
     python3 close.py release <version>             # ## Unreleased -> ## <version>, local tag v<version>
+    python3 close.py record-merge <task> [--pr <n>] # a hand merge: STATE.md done, REVIEW.md Decision from gh
 
 All take --root (default: the current directory). A task is done when its STATE.md has
 `status: done` and the output of its last stage (`stage:` in STATE.md, e.g. RETRO.md) has an
@@ -17,6 +18,9 @@ with no git, close first copies each one to .kairyn/archive/ (tasks/<task>/, bac
 Its last line is `RETRO: learnings.md <used>/<budget>` when learnings.md is past half its
 budget (retro.py): the close stage then runs the retro stage.
 release never pushes: it prints the push command for the user.
+record-merge reads the merged pull request (--pr, else the last `PR #<n>` in STATE.md, else a merged PR
+from branch kairyn/<task> or */<task or slug>) through gh (KAIRYN_GH, else gh on PATH). It prints OK for a done
+task and FAIL: <cause> with no file change when it cannot find a merged pull request.
 
 Standard library only: consumers run this with a plain python3 (3.9 on macOS).
 """
