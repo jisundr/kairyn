@@ -28,6 +28,7 @@ Lessons already learned, so you do not repeat them:
 - A line in `_template.md` Writing changes every stage. Run all its dependent evals at 10 runs.
 - Give every stage output a template. Read the failure reasons before you blame the model.
 - A stage at its token budget takes a new rule only with cuts. Name each cut in the task's DESIGN.md, or the reviewer reads it as out of scope.
+- Move a skill to a cheaper model only after its eval passes there at 10 runs: retro failed on Haiku (5/10, 7/10).
 
 ## Stage file format
 

@@ -46,3 +46,4 @@ On `CONFLICT` the local file stays and the merge goes to `<file>.kairyn-new`. Th
 - AFK gates do not run CI's `version-bump`: bump the version and run `release_hashes.py --write` before review.
 - Upgrade tests that cover a removed shipped file install from a plugin copy that still ships it.
 - This repo installs its own plugin: a new shipped harness doc lands in `.harness/workflows/` and needs index rows in `CLAUDE.md` and `.harness/README.md`. Plan the cuts in design.
+- Do not edit a plugin-owned file in this repo (`.harness/workflows/` docs from `plugin/harness/`, templates, the CLAUDE.md block): each upgrade replaces it and prints `SAVED <file>.kairyn-old`. Put the note in a file the repo owns.
