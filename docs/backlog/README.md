@@ -15,4 +15,3 @@ Closed ideas are in `CHANGELOG.md`. Inbox: `grep -lx 'status: inbox' docs/backlo
 | [Ship the review gates](20261125053013-ship-review-gates.md) | medium | high | slices 1-2 (`design`, `commits`, `sessions`) in afk.py |
 | [Upgrade overwrites edited running-stages.md](20261126020136-upgrade-overwrites-running-stages.md) | low | medium | |
 | [Close fails on hand-merged tasks](20261126022052-close-fails-on-hand-merged-tasks.md) | medium | high | |
-| [Effort and impact on ideas](20261126024130-effort-and-impact.md) | medium | medium | committed to task 2026-11-26-effort-and-impact |
