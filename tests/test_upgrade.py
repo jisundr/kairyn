@@ -369,3 +369,39 @@ def test_an_unrecorded_file_at_a_path_no_longer_shipped_stays(tmp_path):
     result, lines = upgrade(repo, plugin)
     assert result.returncode == 0 and GONE not in lines
     assert (repo / GONE).read_bytes() == before
+
+
+# --- arguments ---------------------------------------------------------------------
+
+@pytest.mark.parametrize("flag", ["--help", "-h"])
+def test_help_prints_usage_and_changes_nothing(tmp_path, repo, flag):
+    plugin, before = new_plugin(tmp_path, edit={"templates/STATE.md": lambda t: t + "\nnew line\n"}), tree(repo)
+    result = subprocess.run(["python3", str(UPGRADE), flag, "--plugin", str(plugin)], cwd=repo,
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert "usage:" in result.stdout and "--root" in result.stdout
+    assert tree(repo) == before
+
+
+@pytest.mark.parametrize("args", [["--dry-run"], ["--root"]])
+def test_a_bad_argument_exits_2_and_changes_nothing(tmp_path, repo, args):
+    plugin, before = new_plugin(tmp_path, edit={"templates/STATE.md": lambda t: t + "\nnew line\n"}), tree(repo)
+    result = subprocess.run(["python3", str(UPGRADE), "--plugin", str(plugin), *args], cwd=repo,
+                            capture_output=True, text=True)
+    assert result.returncode == 2
+    assert "usage:" in result.stderr and "error:" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert tree(repo) == before
+
+
+def test_root_dot_from_the_repo_upgrades(tmp_path, repo):
+    """The /kairyn:upgrade command runs `upgrade.py --root .` from the repo root."""
+    plugin = new_plugin(tmp_path)
+    result = subprocess.run(["python3", str(UPGRADE), "--root", ".", "--plugin", str(plugin)],
+                            cwd=repo, capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert read_manifest(repo)["version"] == "9.9.9"
+
+
+def test_upgrade_parses_with_argparse():
+    assert "argparse.ArgumentParser(" in UPGRADE.read_text()
