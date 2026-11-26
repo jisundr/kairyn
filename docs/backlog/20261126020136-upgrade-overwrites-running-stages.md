@@ -1,9 +1,9 @@
 ---
 title: Upgrade overwrites this repo's edited running-stages.md
-status: inbox
+status: triaged
 requester: Jayson De los Reyes
 date: 2026-11-26
-appetite:
+appetite: small batch
 review_by:
 ---
 
@@ -11,7 +11,7 @@ review_by:
 
 **Raw request:** capture the running-stages.md overwrite on upgrade as a backlog idea (owner, 2026-11-26, through Orca).
 
-**Problem (AI draft, needs a human to confirm):** Each upgrade of this repo's `.kairyn/` replaces `.harness/workflows/running-stages.md` with the shipped copy and drops this repo's one-line edit. Workers restored it by hand three times: PR #48 (0.16.0), PR #50 (0.17.0) and PR #54 (0.17.1).
+**Problem (confirmed by Jayson De los Reyes, 2026-11-26):** Each upgrade of this repo's `.kairyn/` replaces `.harness/workflows/running-stages.md` with the shipped copy and drops this repo's one-line edit. Workers restored it by hand three times: PR #48 (0.16.0), PR #50 (0.17.0) and PR #54 (0.17.1).
 
 **Evidence:**
 - The edit is step 3's note that `.gitattributes` merges `.kairyn/learnings.md` by `union` (added in cb1f43f with that `.gitattributes` line). The shipped copy in `plugin/harness/` lacks it: the repo copy hashes `77841f5a…`, the shipped one and the manifest `079eae0f…`.
@@ -25,3 +25,5 @@ review_by:
 # Log
 
 - 2026-11-26T02:01:36Z [capture] Created from the owner's request through Orca. Status inbox, waiting for triage.
+- 2026-11-26T02:38:49Z [triage] Kept. Status triaged. Problem confirmed. Not Next. Decided by Jayson De los Reyes.
+- 2026-11-26T02:38:49Z [appetite] Set to small batch. Decided by Jayson De los Reyes.
