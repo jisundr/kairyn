@@ -4,6 +4,8 @@ import os
 import subprocess
 import sys
 
+import pytest
+
 from helpers import PLUGIN
 
 CLOSE = PLUGIN / "scripts" / "close.py"
@@ -75,3 +77,51 @@ def test_record_merge_with_a_pr_argument_marks_the_task_done_and_check_passes(tm
     assert f"task: {TASK}\nstage: review\n" in review
     assert 'Decision: Octo Cat, 2026-01-06T10:11:12Z, "merged PR #7"' in review
     assert run(tmp_path, "check", TASK).stdout.strip() == "OK"
+
+
+def test_record_merge_uses_the_last_pr_named_in_state(tmp_path):
+    log = "2026-01-05T10:00:00Z [design] Rebased after PR #3 merged.\n2026-01-06T09:00:00Z [build] Waiting for PR #12.\n"
+    folder = make(tmp_path, [pr(3), pr(12)], log=log)
+    r = run(tmp_path, "record-merge", TASK)
+    assert r.returncode == 0 and "RECORDED: PR #12" in r.stdout, r.stdout
+    assert '"merged PR #12"' in (folder / "REVIEW.md").read_text()
+
+
+def test_record_merge_pr_argument_wins(tmp_path):
+    folder = make(tmp_path, [pr(7), pr(12)], log="2026-01-06T09:00:00Z [build] Waiting for PR #12.\n")
+    assert run(tmp_path, "record-merge", TASK, "--pr", "7").returncode == 0
+    assert '"merged PR #7"' in (folder / "REVIEW.md").read_text()
+    assert "pr list" not in (tmp_path / "gh.log").read_text()
+
+
+@pytest.mark.parametrize("head", [f"kairyn/{TASK}", "jisundr/dry-run", f"feat/{TASK}"])
+def test_record_merge_finds_the_pr_by_branch(tmp_path, head):
+    folder = make(tmp_path, [pr(4, head=head), pr(5, head="jisundr/dry-run-idea"), pr(6, head="other", state="OPEN")])
+    r = run(tmp_path, "record-merge", TASK)
+    assert r.returncode == 0 and "RECORDED: PR #4" in r.stdout, r.stdout
+    assert '"merged PR #4"' in (folder / "REVIEW.md").read_text()
+
+
+def test_record_merge_replaces_a_pending_decision(tmp_path):
+    review = f"---\ntask: {TASK}\nstage: review\nsummary: \"x\"\n---\n\n# Review\n\n## Findings\n- F1: none\n\nDecision: pending\n"
+    folder = make(tmp_path, [pr(7)], review=review)
+    assert run(tmp_path, "record-merge", TASK, "--pr", "7").returncode == 0
+    text = (folder / "REVIEW.md").read_text()
+    assert "Decision: pending" not in text and "- F1: none" in text
+    assert text.rstrip().endswith('Decision: Octo Cat, 2026-01-06T10:11:12Z, "merged PR #7"')
+
+
+def test_record_merge_uses_the_login_when_the_name_is_empty(tmp_path):
+    folder = make(tmp_path, [pr(7, merged_by={"login": "octo", "name": ""})])
+    assert run(tmp_path, "record-merge", TASK, "--pr", "7").returncode == 0
+    assert 'Decision: octo, 2026-01-06T10:11:12Z, "merged PR #7"' in (folder / "REVIEW.md").read_text()
+
+
+def test_record_merge_leaves_a_done_task(tmp_path):
+    folder = make(tmp_path, [pr(7)])
+    state = (folder / "STATE.md").read_text().replace("status: in-progress", "status: done")
+    (folder / "STATE.md").write_text(state)
+    r = run(tmp_path, "record-merge", TASK)
+    assert r.returncode == 0 and r.stdout.strip() == f"OK: {TASK} is done", r.stdout
+    assert (folder / "STATE.md").read_text() == state and not (folder / "REVIEW.md").exists()
+    assert not (tmp_path / "gh.log").exists(), "a done task needs no gh call"
