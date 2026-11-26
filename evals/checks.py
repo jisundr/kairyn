@@ -10,7 +10,7 @@ from helpers import split_front_matter
 TASK_DIR_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(-[a-z0-9]+)*$")
 TS_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 def log_line_re(stage: str) -> re.Pattern:
-    return re.compile(rf"^(\d{{4}}-\d{{2}}-\d{{2}}T\d{{2}}:\d{{2}}:\d{{2}}Z) \[{re.escape(stage)}\] \S")
+    return re.compile(rf"^(?:- )?(\d{{4}}-\d{{2}}-\d{{2}}T\d{{2}}:\d{{2}}:\d{{2}}Z) \[{re.escape(stage)}\] \S")
 
 
 LOG_LINE_RE = log_line_re("requirements")

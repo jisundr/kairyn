@@ -64,3 +64,14 @@ def test_yaml_parsed_placeholder_still_rejected():
     parsed = yaml.safe_load("created: 2026-11-17T00:00:00Z\nupdated: 2026-11-17T00:00:00Z\n")
     t = stamp(START + timedelta(seconds=30))
     assert any("placeholder" in p for p in timestamp_problems(parsed, body(t), START, END))
+
+
+def test_bullet_log_lines_are_checked_like_plain_ones():
+    """logs-as-bullet-lists: a stage writes `- <timestamp> [<stage>] ...`; old plain lines still count."""
+    from checks import LOG_LINE_RE
+    t = stamp(START + timedelta(seconds=30))
+    assert LOG_LINE_RE.match(f"- {t} [requirements] did a thing")
+    assert LOG_LINE_RE.match(f"{t} [requirements] did a thing")
+    late = stamp(END + timedelta(hours=1))
+    bullets = f"# Log\n\n- {late} [requirements] did a thing\n"
+    assert any("outside run window" in p for p in timestamp_problems(data(t, t), bullets, START, END))
