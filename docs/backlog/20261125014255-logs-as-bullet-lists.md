@@ -1,6 +1,6 @@
 ---
 title: Write log sections as bullet lists
-status: parked
+status: committed
 requester: Jayson De los Reyes
 date: 2026-11-25
 effort: low
@@ -12,15 +12,15 @@ review_by: 2027-02-23
 
 **Raw request:** "make logs bullet list" (Jayson De los Reyes, 2026-11-25, Claude Code session)
 
-**Problem (confirmed by Jayson De los Reyes, 2026-11-25):** `STATE.md` and backlog files keep their `# Log` as plain lines, one per entry, with no blank line between them. Markdown joins such lines into one paragraph, so a rendered log (GitHub, VS Code preview, a pull request) is one long block of text.
+**Problem (confirmed by Jayson De los Reyes, 2026-11-25):** `STATE.md` keeps its `# Log` as plain lines with no blank line between them. Markdown joins them into one paragraph, so a rendered log is one block of text.
 
 **Evidence:**
-- `afk.py` `update()` appends `\n{stamp} [{at}] {log}\n`; `.kairyn/templates/STATE.md` and `plugin/templates/STATE.md` show the same form.
-- Stages that write log lines by hand (grill, requirements, design, close) and backlog captures follow it.
+- `afk.py` `update()` appends `\n{stamp} [{at}] {log}\n`; the `STATE.md` templates and the `_template.md` rule show the same form.
+- No script reads `STATE.md` log lines; only test regexes do. Backlog files already use bullets.
 
-- No script reads `STATE.md` log lines: not afk.py, not close.py. The writer is `afk.py` `update()` (one f-string). The rule is `_template.md` "Log". Only tests read lines (`tests/test_afk.py` regex). Backlog files already use bullets.
+**Decided (2026-11-26, grill):** New `STATE.md` log entries are bullets: `afk.py` `update()`, the `_template.md` rule and the `STATE.md` template (plugin and `.kairyn/`). Old entries and the milestones log stay. Details: the task's `CONCEPT.md`.
 
-**Notes:** Write each entry as `- <timestamp> [<stage>] <text>`. Readers accept both forms (`^(- )?<timestamp>`), so old task folders work. The diff is small, but `_template.md` is a `# depends:` of 7 eval suites. Parked: ride along the next change that edits `_template.md` for another reason. An afk.py and template-only slice mixes two forms in one log.
+**Task:** [docs/tasks/2026-11-26-logs-as-bullet-lists/](../tasks/2026-11-26-logs-as-bullet-lists/)
 
 # Log
 
@@ -29,3 +29,5 @@ review_by: 2027-02-23
 - 2026-11-25T04:18:32Z [appetite] Set to small batch. Decided by Jayson De los Reyes.
 - 2026-11-25T08:49:41Z [triage] Parked until 2027-02-23: 7 evals for a rendering fix; ride along the next `_template.md` change. Decided by Jayson De los Reyes.
 - 2026-11-26T03:01:29Z [triage] Effort low, impact medium confirmed by Jayson De los Reyes.
+- 2026-11-26T06:45:30Z [grill] Grilled on 2026-11-26: D1-D3 in the task's CONCEPT.md. Decided by Jayson De los Reyes.
+- 2026-11-26T06:45:30Z [commit] Committed to task 2026-11-26-logs-as-bullet-lists. Decided by Jayson De los Reyes.
