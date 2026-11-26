@@ -1,4 +1,5 @@
 """close.py: the scripted half of the close stage (checks, changelog, deletion, release tag)."""
+import re
 import subprocess
 import sys
 
@@ -279,3 +280,11 @@ def test_close_without_git_keeps_a_copy_of_what_it_deletes(tmp_path):
 def test_close_in_git_keeps_no_archive(repo):
     assert run(repo, "close", TASK, "--entry", "Added dry runs").returncode == 0
     assert not (repo / ".kairyn" / "archive").exists()
+
+
+def test_changelog_names_each_task_once():
+    """This repo's CHANGELOG.md: no line names a task folder twice (close used to add a second one)."""
+    log = PLUGIN.parent / "CHANGELOG.md"
+    doubled = [l for l in log.read_text().splitlines()
+               for t in set(re.findall(r"\d{4}-\d{2}-\d{2}-[a-z0-9-]*[a-z0-9]", l)) if l.count(t) > 1]
+    assert not doubled, doubled
