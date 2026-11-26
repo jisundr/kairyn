@@ -145,3 +145,12 @@ def test_record_merge_fails_and_changes_nothing(tmp_path, prs, args, gh, env, ca
 def test_record_merge_refuses_an_unknown_task(tmp_path):
     r = run(tmp_path, "record-merge", "2026-01-09-none")
     assert r.returncode == 1 and "no task" in r.stdout, r.stdout
+
+
+def test_close_stage_records_the_merge_before_check():
+    """R8: step 1 of CLOSE.md (shipped and this repo's copy) runs record-merge, then check."""
+    for path in (PLUGIN / "stages" / "CLOSE.md", PLUGIN.parent / ".kairyn" / "stages" / "CLOSE.md"):
+        step = next(l for l in path.read_text().splitlines() if l.startswith("1. "))
+        assert "record-merge <task>" in step and "--pr" in step and "check <task>" in step, path
+        assert step.index("record-merge") < step.index("check <task>"), path
+    assert "[PR number]" in (PLUGIN / "skills" / "close" / "SKILL.md").read_text()
