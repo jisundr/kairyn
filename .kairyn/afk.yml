@@ -13,12 +13,17 @@ limits:
 gates:
   testing: uv run pytest
   contract: claude plugin validate plugin
-  # This repo's review gate (scripts/gates.py). afk.py runs design, commits and sessions itself.
-  evals: python3 scripts/gates.py evals
   accessibility:
   performance:
   observability:
   security:
+
+# The evals review gate, built in: `command` runs when a changed file matches a glob in `paths`, with
+# KAIRYN_BASE set to the base commit. Exit 0 passes. This repo's check: a pass in evals/results/passed.json.
+evals:
+  command: python3 scripts/evals_gate.py
+  paths:
+    - 'plugin/**'
 
 # Optional AI checks, one per gate, for what no command can judge. One runs only after its gate command passes.
 # Example: observability: Each new code path writes a log line with the request id.

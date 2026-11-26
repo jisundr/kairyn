@@ -7,7 +7,7 @@ load: on-demand
 
 # AFK run
 
-After you approve `DESIGN.md`, `/kairyn:build <task>` runs `afk.py`. It works in a worktree on `kairyn/<task>` with no user turns. Exit codes decide each step, not what the agent says.
+After you approve `DESIGN.md`, `/kairyn:build <task>` runs `afk.py` in a worktree on `kairyn/<task>`, no user turns. Exit codes decide each step, not what the agent says.
 
 ## Set up `.kairyn/afk.yml` first
 - `gates:` in order, security last. Exit 0 passes. An empty command is `not set`: never a pass. The `testing` gate needs a command.
@@ -19,7 +19,7 @@ After you approve `DESIGN.md`, `/kairyn:build <task>` runs `afk.py`. It works in
 ## What the run does
 1. Readiness: `testing` has a command (`security` too, for a security need); set gates pass on the base, nothing uncommitted.
 2. Build, per slice `T<n>` in `after:` order: a tests part on Opus makes a `test(T<n>)` commit where the done command fails; then a code part on Sonnet makes a `feat(T<n>)` commit where it passes.
-3. A read-only reviewer (Opus) reads the diff and the flags (edited tests, escape hatches). Its findings get one fix round (Sonnet).
+3. A read-only reviewer (Opus) reads the diff and the flags (edited tests, escape hatches); one fix round (Sonnet).
 4. Push and one pull request, given an `origin` remote and `gh`.
 5. Gates, then a `REVIEW.md` session. `REVIEW.md` goes on the pull request.
 
@@ -28,8 +28,9 @@ Before `gates:`, afk.py checks the code commits after the base:
 - `design`: `DESIGN.md` names each changed file (a backticked path, `dir/` or glob) and each new hook event.
 - `commits`: a `feat` commit changes no test or fixture. A later test edit is a `test(...)` commit where `testing` fails.
 - `sessions`: a person runs each `Manual` test plan row and adds `Run AC<n>: <who>, <time>, "<what it showed>"` to a task file but `DESIGN.md`.
+- `evals`: runs `evals: command:` (env `KAIRYN_BASE`) when a changed file matches `evals: paths:`. No command: a note.
 
-`scripts/gates.py` adds `evals` to this repo's `.kairyn/afk.yml`: after a `plugin/` change, also in a fix round, each eval that depends on a changed file has a pass at the current hash. Run `/run-evals`, then resume.
+This repo's command `scripts/evals_gate.py` wants a pass at the current hash for each eval on a changed file: run `/run-evals`, then resume.
 
 ## Where it stops
 Each stop sets `status: blocked` and logs why in `STATE.md`:
