@@ -6,12 +6,13 @@ Options, not commitments. They follow the playbook `03 Playbooks/SDLC/00 Managin
 
 Closed ideas are in `CHANGELOG.md`. Inbox: `grep -lx 'status: inbox' docs/backlog/*.md`.
 
-| Idea | Appetite |
-|---|---|
-| [Approval gates hand off](20261123004258-approval-handoff.md) | big; shipped in #46, delete at release |
-| [Grill in rounds](20261122105739-grill-rounds.md) | big |
-| [Backlog stage](20261122080759-backlog-stage.md) | big |
-| [Split the design stage](20261124224354-split-design-stage.md) | big |
-| [Ship the review gates](20261125053013-ship-review-gates.md) | big; slices 1-2 (`design`, `commits`, `sessions`) in afk.py |
-| [Upgrade overwrites edited running-stages.md](20261126020136-upgrade-overwrites-running-stages.md) | small |
-| [Close fails on hand-merged tasks](20261126022052-close-fails-on-hand-merged-tasks.md) | small |
+| Idea | Effort | Impact | Notes |
+|---|---|---|---|
+| [Approval gates hand off](20261123004258-approval-handoff.md) | high | high | shipped in #46, delete at release |
+| [Grill in rounds](20261122105739-grill-rounds.md) | high | high | |
+| [Backlog stage](20261122080759-backlog-stage.md) | high | high | |
+| [Split the design stage](20261124224354-split-design-stage.md) | high | medium | |
+| [Ship the review gates](20261125053013-ship-review-gates.md) | medium | high | slices 1-2 (`design`, `commits`, `sessions`) in afk.py |
+| [Upgrade overwrites edited running-stages.md](20261126020136-upgrade-overwrites-running-stages.md) | low | medium | |
+| [Close fails on hand-merged tasks](20261126022052-close-fails-on-hand-merged-tasks.md) | medium | high | |
+| [Effort and impact on ideas](20261126024130-effort-and-impact.md) | medium | medium | committed to task 2026-11-26-effort-and-impact |

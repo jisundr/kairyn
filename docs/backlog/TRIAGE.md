@@ -1,14 +1,16 @@
 # Triage
 
-Each file is one idea, named `<YYYYMMDDHHMMSS>-<slug>.md` from its capture time (UTC). Status: `inbox` → `triaged` → `shaping` → `shaped` → `committed`, or `parked` / `dropped`. Agents capture and draft; a human triages, sets the appetite and commits.
+Each file is one idea, named `<YYYYMMDDHHMMSS>-<slug>.md` from its capture time (UTC). Status: `inbox` → `triaged` → `shaping` → `shaped` → `committed`, or `parked` / `dropped`. Agents capture and draft, and propose `effort` (the work, eval runs included) and `impact` (the value to kairyn users), each `low`, `medium` or `high`. A human triages, confirms both and commits.
+
+At capture, log `[capture] ... Effort <e>, impact <i> proposed by the AI.` At triage, log `[triage] Effort <e>, impact <i> confirmed by <owner>.` `/kairyn:backlog` lists ideas by impact, then effort.
 
 The index of triaged ideas is [README.md](README.md). Next and Parked were decided by Jayson De los Reyes, 2026-11-25.
 
 ## Next
 
-approval-handoff (big; spike answered; owner, 2026-11-25): shipped in #46. The rest of split-design-stage and grill-rounds are big and not Next (2026-11-25 triage). tldr-for-long-docs and instruction-file-checks were dropped.
+approval-handoff (effort high; spike answered; owner, 2026-11-25): shipped in #46. The rest of split-design-stage and grill-rounds are high effort and not Next (2026-11-25 triage). tldr-for-long-docs and instruction-file-checks were dropped.
 
-The earlier batches shipped: the `_approval.md` slice of split-design-stage, atomic-state-md, the afk.py fixes in #31, the gates and lint rules in #30. ship-review-gates is big: its first slice (`design` and `commits` built into afk.py) is in #45, its second (`sessions`) in #47; `evals` is left.
+The earlier batches shipped: the `_approval.md` slice of split-design-stage, atomic-state-md, the afk.py fixes in #31, the gates and lint rules in #30. ship-review-gates (effort medium): its first slice (`design` and `commits` built into afk.py) is in #45, its second (`sessions`) in #47; `evals` is left.
 
 ## Parked
 

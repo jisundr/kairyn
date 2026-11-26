@@ -3,7 +3,8 @@ title: Stages do not gate on approval and hand off to the next stage
 status: committed
 requester: Jayson
 date: 2026-11-23
-appetite: big batch
+effort: high
+impact: high
 review_by: 2027-02-23
 ---
 
@@ -31,3 +32,4 @@ review_by: 2027-02-23
 - 2026-11-25T09:07:16Z [spike] Chained skill runs on the caller's model. Run by Claude.
 - 2026-11-25T10:05:30Z [next] Moved to Next, spike answered. Decided by Jayson De los Reyes.
 - 2026-11-25T10:05:30Z [close] Shipped in #46: grill approval gate, `_approval.md` names the next command, ADR 0002 and 0004 updated, 0.14.0. Delete at release. From an Orca coordinator dispatch.
+- 2026-11-26T03:01:29Z [triage] Effort high, impact high confirmed by Jayson De los Reyes.

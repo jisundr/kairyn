@@ -2,7 +2,8 @@
 title: Grill reads another repo's session transcript
 status: parked
 date: 2026-11-25
-appetite:
+effort: medium
+impact: low
 requester: Jayson De los Reyes
 review_by: 2027-02-23
 ---
@@ -17,3 +18,4 @@ review_by: 2027-02-23
 
 - 2026-11-25T04:03:34Z [capture] Created by retro 2026-11-25-retro-2 from a learning. Status inbox, waiting for triage.
 - 2026-11-25T04:18:32Z [triage] Parked: it needs an eval first and reads private transcripts. It goes with the parked grill-reads-private-notes. Decided by Jayson De los Reyes.
+- 2026-11-26T03:01:29Z [triage] Effort medium, impact low confirmed by Jayson De los Reyes.

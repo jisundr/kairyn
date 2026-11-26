@@ -1,9 +1,10 @@
 ---
 title: Effort and impact on backlog ideas, in place of appetite
-status: inbox
+status: committed
 requester: Jayson De los Reyes
 date: 2026-11-26
-appetite:
+effort: medium
+impact: medium
 review_by:
 ---
 
@@ -25,3 +26,5 @@ review_by:
 
 - 2026-11-26T02:41:30Z [capture] Created from the owner's request through Orca. Status inbox, waiting for triage.
 - 2026-11-26T02:41:30Z [grill] Grilled on 2026-11-26: six decisions, D1-D6 in the task's CONCEPT.md. Decided by Jayson De los Reyes.
+- 2026-11-26T03:01:29Z [triage] Effort medium, impact medium confirmed by Jayson De los Reyes.
+- 2026-11-26T03:01:29Z [commit] Committed to task 2026-11-26-effort-and-impact. Decided by Jayson De los Reyes.
