@@ -1,6 +1,9 @@
 """The human-readable budget report is generated from budgets.yml and current file sizes."""
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
+
+import pytest
 
 from budgets import Budget
 from budgets_html import render_html, write_html
@@ -102,3 +105,36 @@ def test_real_repo_renders_without_errors():
     from budgets import load_budgets
     html = render_html(ROOT, load_budgets(ROOT / ".harness" / "budgets.yml"), generated=NOW)
     assert "CLAUDE.md" in html and "plugin/stages/REQUIREMENTS.md" in html
+
+
+# --- arguments ---------------------------------------------------------------------
+
+BUDGETS_HTML = ROOT / "plugin" / "scripts" / "budgets_html.py"
+
+
+def run_budgets_html(root, *args):
+    """Run in a copy of this repo's budgets.yml, so the default --out lands under root."""
+    write(root, ".harness/budgets.yml", (ROOT / ".harness" / "budgets.yml").read_text())
+    return subprocess.run(["python3", str(BUDGETS_HTML), "--root", str(root), *args], cwd=root,
+                          capture_output=True, text=True)
+
+
+@pytest.mark.parametrize("flag", ["--help", "-h"])
+def test_help_prints_usage_and_writes_nothing(tmp_path, flag):
+    result = run_budgets_html(tmp_path, flag)
+    assert result.returncode == 0, result.stderr
+    assert "usage:" in result.stdout and "--out" in result.stdout
+    assert not list(tmp_path.rglob("*.html"))
+
+
+@pytest.mark.parametrize("args", [["--dry-run"], ["--out"]])
+def test_a_bad_argument_exits_2_and_writes_nothing(tmp_path, args):
+    result = run_budgets_html(tmp_path, *args)
+    assert result.returncode == 2
+    assert "usage:" in result.stderr and "error:" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert not list(tmp_path.rglob("*.html"))
+
+
+def test_budgets_html_parses_with_argparse():
+    assert "argparse.ArgumentParser(" in BUDGETS_HTML.read_text()
