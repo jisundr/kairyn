@@ -64,7 +64,8 @@ def check_broken_doc(work: Path, scenario: str, run_id: str) -> dict:
 
 BACKLOG_IDEA = """---
 title: Search is slow
-appetite: small batch
+effort: low
+impact: high
 date: 2026-11-25
 ---
 

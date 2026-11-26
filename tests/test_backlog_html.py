@@ -102,7 +102,8 @@ def test_lists_each_idea_with_its_fields(tmp_path):
     assert rows == [("Idea A", "low", "low", "high", "high", "2026-11-25", "Problem A."),
                     ("Idea B", "High", "high", "medium", "medium", "2026-11-24", "Problem B."),
                     ("Idea C", "", "", "", "", "2026-11-23", "See A.")]
-    assert all("appetite" not in d for d in data)
+    assert set(data[0]) == {"title", "effort", "impact", "date", "review_by", "requester", "file", "slug", "problem",
+                            "effort_level", "impact_level", "date_label", "text", "problem_html", "body_html", "log_html"}
 
 
 def test_detail_view_has_front_matter_text_and_log(tmp_path):
@@ -198,7 +199,7 @@ def test_page_has_search_and_effort_and_impact_filters(tmp_path):
     for (_, label, body) in selects:
         assert re.findall(r'<option value="([^"]*)">([^<]*)</option>', body) == [
             ("", "Any " + label.lower()), ("low", "Low"), ("medium", "Medium"), ("high", "High"), ("none", "Not set")]
-    assert "appetite" not in html.lower()
+    assert 'id="app"' not in html
 
 
 def test_page_has_no_edit_controls(tmp_path):
@@ -457,7 +458,7 @@ def test_filters_pick_ideas_by_level(tmp_path):
     assert got["medium"] == ["Second"], got
     assert got["unset"] == ["An idea with a fairly long title that wraps on a phone", "Third"], got
     assert got["both"] == ["An idea with a fairly long title that wraps on a phone"], got
-    assert "filters" in got["empty"] and "appetite" not in got["empty"], got
+    assert got["empty"] == "No ideas match. Clear the search or change the filters.", got
 
 
 def test_ideas_sort_by_impact_then_effort_then_newest(tmp_path):
