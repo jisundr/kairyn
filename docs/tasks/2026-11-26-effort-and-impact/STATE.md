@@ -7,11 +7,11 @@ stages:
   grill: done
   requirements: done
   design: done
-  build: in-progress
+  build: done
   gates: pending
   review: pending
 created: 2026-11-26T02:41:30Z
-updated: 2026-11-26T02:56:10Z
+updated: 2026-11-26T03:09:15Z
 ---
 
 # Log
@@ -26,3 +26,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-26T02:53:24Z [design] Wrote DESIGN.md: option A, T1-T5, AC1-AC10, eval plan backlog, check, init, upgrade (about $0.30 at 10 runs). Waiting for user approval.
 2026-11-26T02:56:10Z [design] Approved by Jayson De los Reyes, relayed by an Orca coordinator. Next stage: build.
 2026-11-26T02:56:10Z [build] Build started by hand from an Orca coordinator dispatch, slices T1-T5 test-first.
+2026-11-26T03:09:15Z [build] T1-T5 green by hand, test-first; uv run pytest 785 passed; budgets and harness docs OK. Evals run 20261126T030522Z PASS: backlog, check, init, upgrade 10/10 each metric, cost $0.41. Waiting for the pull request review.
