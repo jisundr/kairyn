@@ -11,7 +11,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-26T04:10:11Z
-updated: 2026-11-26T04:28:22Z
+updated: 2026-11-26T04:37:23Z
 ---
 
 # Log
@@ -26,3 +26,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-26T04:18:15Z [design] Approved by Jayson De los Reyes ("Approve as written", through Orca). Next stage: build.
 2026-11-26T04:18:15Z [build] Build started by hand from an Orca coordinator dispatch, slices T1-T4 test-first.
 2026-11-26T04:28:22Z [build] T1-T4 green test-first; uv run pytest 794 passed; claude plugin validate passes. Evals not run yet: the selector picks build, review, gates, check, init, upgrade, design, requirements, retro; waiting for the coordinator's pick.
+2026-11-26T04:37:23Z [build] Evals run 20261126T042841Z PASS, cost $13.75 at 10 runs: build, review, gates, check, init, upgrade (picked by the coordinator; cap $22). design, requirements, retro skipped by the coordinator: only the shipped afk-run.md and an empty template section touch them; scripts/evals_gate.py names them.
