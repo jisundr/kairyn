@@ -50,4 +50,4 @@ Eval plan, 10 runs each, as the selector picks them (`# depends:`). Costs: run 2
 
 The watch-it-fail run (`close_hand_merged`, 2 runs) adds about $0.40.
 
-Approval: pending
+Approval: Jayson De los Reyes, 2026-11-26T04:24:04Z, "Approve as written"
