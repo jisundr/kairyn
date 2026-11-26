@@ -1,18 +1,18 @@
 ---
 task: 2026-11-26-upgrade-overwrites-running-stages
 title: Upgrade overwrites this repo's edited running-stages.md
-stage: requirements
+stage: design
 status: blocked   # in-progress | blocked | done
 grill: done
 stages:
   grill: done
   requirements: done   # pending | in-progress | done
-  design: pending
+  design: done
   build: pending
   gates: pending
   review: pending
 created: 2026-11-26T06:37:19Z
-updated: 2026-11-26T06:44:29Z
+updated: 2026-11-26T07:00:31Z
 ---
 
 # Log
@@ -25,3 +25,5 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-26T06:41:30Z [grill] Concept restated. grill: done. Waiting for the owner's approval.
 2026-11-26T06:44:29Z [grill] Concept approved by Jayson De los Reyes: "Approve". Backlog idea committed.
 2026-11-26T06:44:29Z [requirements] REQUIREMENTS.md written: R1-R6. Waiting for the owner's approval.
+2026-11-26T07:00:31Z [requirements] Approved by Jayson De los Reyes: "Approve" (covers A1-A3: no instruction change, no evals).
+2026-11-26T07:00:31Z [design] DESIGN.md written: option A, T1-T3. Waiting for the owner's approval.
