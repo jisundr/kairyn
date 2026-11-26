@@ -13,7 +13,9 @@ approval line. close deletes:
   - docs/tasks/<task>/
   - docs/backlog files with `status: committed` that link the task
   - docs/backlog files with `status: dropped` that link no task folder that still exists
-and removes their rows from docs/backlog/README.md. Git history keeps every deleted file. In a repo
+and removes their rows from docs/backlog/README.md. An idea links a task when it has `tasks/<task>/`,
+or when its file slug (`<YYYYMMDDHHMMSS>-<slug>.md`) is the task slug. A committed idea that names the
+task in plain text but does not link it is kept: close prints `UNLINKED: <file> names <task> ...`. Git history keeps every deleted file. In a repo
 with no git, close first copies each one to .kairyn/archive/ (tasks/<task>/, backlog/<file>).
 Its last line is `RETRO: learnings.md <used>/<budget>` when learnings.md is past half its
 budget (retro.py): the close stage then runs the retro stage.
@@ -202,17 +204,35 @@ def add_entry(text: str, line: str) -> str:
     return "\n".join(lines).rstrip("\n") + "\n"
 
 
-def closed_backlog(root: Path, task: str) -> list[Path]:
-    out = []
+def slug_of(name: str) -> str:
+    """The slug of an idea file stem (`<14 digits>-<slug>`) or a task name (`YYYY-MM-DD-<slug>`)."""
+    return re.sub(r"^(?:\d{14}|\d{4}-\d\d-\d\d)-", "", name)
+
+
+def tasks_of(root: Path, path: Path, text: str, task: str) -> set[str]:
+    """Tasks an idea belongs to: each linked tasks/<task>/, and the task whose slug is the file slug."""
+    linked = set(TASK_LINK_RE.findall(text))
+    slug = slug_of(path.stem)
+    tasks = root / "docs" / "tasks"
+    names = [task] + ([d.name for d in tasks.iterdir() if d.is_dir()] if tasks.is_dir() else [])
+    return linked | {t for t in names if slug_of(t) == slug and slug != path.stem}
+
+
+def backlog_ideas(root: Path, task: str) -> tuple[list[Path], list[Path]]:
+    """(ideas close deletes, committed ideas that name the task in plain text but are kept)."""
+    out, unlinked = [], []
+    plain = re.compile(rf"(?<![\w-]){re.escape(task)}(?![\w-])")
     for path in sorted((root / "docs" / "backlog").glob("*.md")):
         if path.name == "README.md":
             continue
         text, status = path.read_text(), status_of(path)
-        linked = set(TASK_LINK_RE.findall(text))
+        linked = tasks_of(root, path, text, task)
         live = {t for t in linked if t != task and (root / "docs" / "tasks" / t).is_dir()}
         if (status == "committed" and task in linked) or (status == "dropped" and not live):
             out.append(path)
-    return out
+        elif status == "committed" and plain.search(text):
+            unlinked.append(path)
+    return out, unlinked
 
 
 def links_to(root: Path, targets: list[str]) -> list[tuple[str, str]]:
@@ -251,7 +271,7 @@ def cmd_close(root: Path, task: str, entry: str) -> int:
     log = root / CHANGELOG
     log.write_text(add_entry(log.read_text() if log.is_file() else "", line))
     print(f"WROTE {CHANGELOG}")
-    gone = closed_backlog(root, task)
+    gone, unlinked = backlog_ideas(root, task)
     index = root / "docs" / "backlog" / "README.md"
     if gone and index.is_file():
         old = index.read_text()
@@ -273,6 +293,8 @@ def cmd_close(root: Path, task: str, entry: str) -> int:
     print(f"DELETED docs/tasks/{task}/")
     for rel, target in links_to(root, [f"tasks/{task}/"] + [p.name for p in gone]):
         print(f"LINK: {rel} still links {target}")
+    for path in unlinked:
+        print(f"UNLINKED: {path.relative_to(root).as_posix()} names {task} but does not link it; not deleted")
     used, budget = learnings_size(root)
     if budget and used * 2 > budget:
         print(f"RETRO: learnings.md {used}/{budget}")
