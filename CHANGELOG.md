@@ -24,3 +24,4 @@
 - afk.py runs the sessions review gate too: each `Manual` test plan row needs a `Run AC<n>: <who>, <time>, "<what it showed>"` line from the person who ran it; a block says what to run and how to resume. The design stage marks a row `Manual` when only a person can show it. (ship-review-gates, second slice)
 - /kairyn:backlog writes .kairyn/backlog.html: one offline, view-only page of every backlog idea, with search, an appetite filter and the Next and Parked notes. (2026-11-25-backlog-page; closes backlog-page)
 - afk.py builds each slice in two sessions: Opus writes the failing test, Sonnet makes it green; close and retro stay on Sonnet (ADR 0019). (2026-11-26-split-build-routing; closes split-build-routing)
+- close.py adds ' (<task>)' to a changelog line only when the entry does not already name the task. (2026-11-26-close-changelog-double-name; closes close-changelog-double-task-name)
