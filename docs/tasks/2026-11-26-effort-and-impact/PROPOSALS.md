@@ -31,4 +31,4 @@ One row per idea file in `docs/backlog/`, oldest first. Proposed by the AI; the 
 | close-fails-on-hand-merged-tasks | — | medium | high | A close.py command and tests; it broke the last 3 closes. |
 | effort-and-impact (this task) | — | medium | medium | One script, its tests, one eval and 20 idea files; better triage order. |
 
-Approval: pending
+Approval: Jayson De los Reyes, 2026-11-26T02:52:58Z, "confirmed PROPOSALS.md with all 20 rows as proposed"

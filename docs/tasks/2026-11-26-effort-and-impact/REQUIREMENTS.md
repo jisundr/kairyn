@@ -58,4 +58,4 @@ Out: other changes to the page; `RETRO.md` backlog entries (A5); old `[appetite]
 ## Open questions and answers
 - Q1: How do ties sort? A: Newest capture first, as A4. The owner confirms. (coordinator, 2026-11-26)
 
-Approval: pending
+Approval: Jayson De los Reyes, 2026-11-26T02:52:58Z, "approved REQUIREMENTS.md with A1-A5 as written"
