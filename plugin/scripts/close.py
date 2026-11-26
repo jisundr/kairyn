@@ -146,8 +146,10 @@ def cmd_close(root: Path, task: str, entry: str) -> int:
         return fail(problem)
     if not entry.strip():
         return fail("empty --entry")
+    entry = entry.strip()
+    line = f"- {entry}" if task in entry else f"- {entry} ({task})"
     log = root / CHANGELOG
-    log.write_text(add_entry(log.read_text() if log.is_file() else "", f"- {entry.strip()} ({task})"))
+    log.write_text(add_entry(log.read_text() if log.is_file() else "", line))
     print(f"WROTE {CHANGELOG}")
     gone = closed_backlog(root, task)
     index = root / "docs" / "backlog" / "README.md"
