@@ -44,4 +44,4 @@ Eval plan (10 runs; costs from run 20261125T115929Z, PR #48, $0.05 per scenario)
 - upgrade: the bump rewrites `release-hashes.json`. 1 scenario, about $0.05.
 Total about $0.30. The selector names the final list before the run.
 
-Approval: pending
+Approval: Jayson De los Reyes, 2026-11-26T02:56:10Z, "approved DESIGN.md as written"
