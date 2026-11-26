@@ -32,3 +32,4 @@
 - Retro emptied learnings.md: two rules moved to change-a-stage.md and upgrade.md; five ideas went to the backlog inbox. (2026-11-26-retro)
 - Stage logs in STATE.md write each new entry as a markdown bullet, so a rendered log shows one line per entry; old entries stay. (2026-11-26-logs-as-bullet-lists; closes logs-as-bullet-lists)
 - Retro emptied learnings.md again: the merge of #66 had restored eight removed lines; one idea went to the backlog inbox. (2026-11-26-retro-2)
+- upgrade.py and budgets_html.py: --help prints the usage and exits 0; a bad flag exits 2; neither changes a file (ADR 0025). (2026-11-26-upgrade-help-runs-upgrade; closes upgrade-help-runs-upgrade)

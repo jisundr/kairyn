@@ -8,7 +8,7 @@ The index of triaged ideas is [README.md](README.md). Next and Parked were decid
 
 ## Next
 
-upgrade-help-runs-upgrade and close-matches-plain-task-name (effort low; owner, 2026-11-26), grilled in parallel.
+close-matches-plain-task-name (effort low; owner, 2026-11-26). upgrade-help-runs-upgrade (effort low; owner, 2026-11-26): shipped in #69; closed.
 
 approval-handoff (effort high; spike answered; owner, 2026-11-25): shipped in #46. The rest of split-design-stage and grill-rounds are high effort and not Next (2026-11-25 triage). tldr-for-long-docs and instruction-file-checks were dropped.
 
