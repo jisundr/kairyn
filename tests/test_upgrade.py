@@ -65,6 +65,34 @@ def test_edited_plugin_owned_file_is_replaced_and_the_edit_saved_aside(tmp_path,
     assert (repo / (TEMPLATE + ".kairyn-old")).read_text() == "my template\n"
 
 
+def test_edited_plugin_owned_file_prints_a_saved_line(tmp_path, repo):
+    (repo / TEMPLATE).write_text("my template\n")
+    plugin = new_plugin(tmp_path, edit={"templates/STATE.md": lambda t: t + "\nnew line\n"})
+    result, _ = upgrade(repo, plugin)
+    assert result.returncode == 0, result.stdout
+    saved = [line for line in result.stdout.splitlines() if line.startswith("SAVED ")]
+    assert len(saved) == 1, result.stdout
+    assert saved[0].startswith(f"SAVED {TEMPLATE}.kairyn-old: ")
+    assert "file you own" in saved[0] and "delete" in saved[0]
+
+
+def test_edited_kairyn_block_names_claude_md_kairyn_old(tmp_path, repo):
+    claude = repo / "CLAUDE.md"
+    claude.write_text(claude.read_text().replace("## kairyn", "## kairyn\n\nmy edit", 1))
+    plugin = new_plugin(tmp_path, edit={"harness/CLAUDE.block.md": lambda t: t.replace("## kairyn", "## kairyn\n\nnew", 1)})
+    result, _ = upgrade(repo, plugin)
+    assert result.returncode == 0, result.stdout
+    assert "SAVED CLAUDE.md.kairyn-old: " in result.stdout
+    assert (repo / "CLAUDE.md.kairyn-old").is_file()
+
+
+def test_an_unedited_replace_prints_no_saved_line(tmp_path, repo):
+    plugin = new_plugin(tmp_path, edit={"templates/STATE.md": lambda t: t + "\nnew line\n"})
+    result, lines = upgrade(repo, plugin)
+    assert lines[TEMPLATE] == "REPLACED"
+    assert "SAVED" not in result.stdout
+
+
 def test_only_the_kairyn_block_of_claude_md_is_replaced(tmp_path, repo):
     claude = repo / "CLAUDE.md"
     claude.write_text("# Mine\n\nkeep this\n\n" + claude.read_text() + "\nand this\n")

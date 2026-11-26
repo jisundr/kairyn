@@ -22,7 +22,7 @@ A consumer repo keeps the kairyn files it installed. `/kairyn:upgrade` (`plugin/
 |---|---|
 | Missing | `ADDED` |
 | Same as the new version | `KEPT` |
-| Plugin-owned (templates, kairyn harness docs, the block) | `REPLACED`; an edited copy goes to `<file>.kairyn-old` |
+| Plugin-owned (templates, kairyn harness docs, the block) | `REPLACED`; an edited copy goes to `<file>.kairyn-old`, and a `SAVED` line names it |
 | Repo-owned (stages, harness README, budgets) and unedited | `REPLACED` |
 | Repo-owned and edited | `git merge-file`: `MERGED` or `CONFLICT` |
 | No manifest and no release matches | `CONFLICT` |
