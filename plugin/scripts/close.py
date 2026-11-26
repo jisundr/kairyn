@@ -170,7 +170,7 @@ def cmd_record_merge(root: Path, task: str, number: int | None) -> int:
     for key, value, indent in (("status", "done", ""), ("stage", "review", ""), ("review", "done", "  "),
                                ("updated", now, "")):
         s = set_front(s, key, value, indent)
-    s = s.rstrip("\n") + f"\n{now} [review] Merged by hand: PR #{n} merged by {name} at {at}. Recorded by close.py record-merge.\n"
+    s = s.rstrip("\n") + f"\n- {now} [review] Merged by hand: PR #{n} merged by {name} at {at}. Recorded by close.py record-merge.\n"
     atomic_write.write_text(review, text)
     atomic_write.write_text(state, s)
     print(f"RECORDED: PR #{n} merged by {name} at {at}")
