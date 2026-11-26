@@ -23,6 +23,7 @@ Usage: python3 upgrade.py [--root DIR] [--plugin DIR]
 """
 from __future__ import annotations   # macOS ships python3 3.9
 
+import argparse
 import json
 import shutil
 import subprocess
@@ -180,8 +181,12 @@ def upgrade(repo: Path, plugin: Path) -> tuple[list[tuple[str, str]], bool]:
 
 
 def main(argv: list[str]) -> int:
-    root = Path(argv[argv.index("--root") + 1]) if "--root" in argv else Path.cwd()
-    plugin = Path(argv[argv.index("--plugin") + 1]) if "--plugin" in argv else Path(__file__).resolve().parent.parent
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--root", type=Path, default=Path.cwd(), help="the repo to upgrade (default: this folder)")
+    ap.add_argument("--plugin", type=Path, default=Path(__file__).resolve().parent.parent,
+                    help="the plugin to upgrade to (default: the plugin this script is in)")
+    a = ap.parse_args(argv)   # before any file access: --help or a bad flag changes nothing
+    root, plugin = a.root, a.plugin
     if not (root / ".kairyn").is_dir():
         print("FAIL: no .kairyn/ here: run /kairyn:init first")
         return 2
