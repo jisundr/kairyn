@@ -31,4 +31,4 @@ Option A. In `plugin/scripts/upgrade.py`, the branch that writes `<file>.kairyn-
 
 No evals: no instruction text changes (A1, approved).
 
-Approval: pending
+Approval: Jayson De los Reyes, 2026-11-26T07:01:53Z, "Approve"
