@@ -125,3 +125,23 @@ def test_record_merge_leaves_a_done_task(tmp_path):
     assert r.returncode == 0 and r.stdout.strip() == f"OK: {TASK} is done", r.stdout
     assert (folder / "STATE.md").read_text() == state and not (folder / "REVIEW.md").exists()
     assert not (tmp_path / "gh.log").exists(), "a done task needs no gh call"
+
+
+@pytest.mark.parametrize("prs, args, gh, env, cause", [
+    ([pr(7)], ["--pr", "7"], "missing", {}, "no gh command"),
+    ([pr(7)], ["--pr", "7"], None, {"GH_MODE": "fail"}, "gh pr view failed: gh: not logged in"),
+    ([pr(7, state="OPEN")], ["--pr", "7"], None, {}, "PR #7 is open, not merged"),
+    ([pr(9, head="other")], [], None, {}, "no PR #<n> in STATE.md and no merged PR from branch"),
+    ([pr(4, head="a/dry-run"), pr(5, head=f"kairyn/{TASK}")], [], None, {}, "more than one merged PR matches the branch: #4, #5"),
+])
+def test_record_merge_fails_and_changes_nothing(tmp_path, prs, args, gh, env, cause):
+    folder = make(tmp_path, prs)
+    before = (folder / "STATE.md").read_text()
+    r = run(tmp_path, "record-merge", TASK, *args, gh=tmp_path / gh if gh else STUB, **env)
+    assert r.returncode == 1 and r.stdout.startswith("FAIL: ") and cause in r.stdout, r.stdout
+    assert (folder / "STATE.md").read_text() == before and not (folder / "REVIEW.md").exists()
+
+
+def test_record_merge_refuses_an_unknown_task(tmp_path):
+    r = run(tmp_path, "record-merge", "2026-01-09-none")
+    assert r.returncode == 1 and "no task" in r.stdout, r.stdout
