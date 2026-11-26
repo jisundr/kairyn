@@ -32,4 +32,4 @@ Option A. It changes one function in `close.py` and one line in `CLOSE.md`, and 
 | AC5 dropped ideas keep a live slug, delete the rest | T2 | `test_close_keeps_a_dropped_idea_named_by_a_live_slug` |
 | AC6 `CLOSE.md` names `UNLINKED:`, close eval passes | T4, T5 | `/run-evals close` |
 
-Approval: pending
+Approval: Jayson De los Reyes, 2026-11-26T07:49:59Z, "Approve"
