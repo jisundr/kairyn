@@ -19,7 +19,7 @@ Optional: run it after a task's change merges. `/kairyn:close <task>` runs it. C
 3. For each one, get a path from `adr-path <slug>`. Write the ADR there (Nygard form): `# <n>. <title>`, `Date: <date>`, then `## Status` (Accepted), `## Context`, `## Decision`, `## Consequences`. Name the task in Context. Write only what the task outputs state.
 4. Append each durable rule the task taught to `.kairyn/learnings.md`: `- <date> [close] <rule>`. Skip rules already there.
 5. Write one changelog line: what changed for a user of the repo, at most 25 words.
-6. Run `close <task> --entry "<line>"`. Report every line it prints. Report each `LINK:` as a link to fix.
+6. Run `close <task> --entry "<line>"`. Report every line it prints. Report each `LINK:` as a link to fix, and each `UNLINKED:` as an idea to delete by hand.
 7. On a `RETRO:` line, follow `.kairyn/stages/RETRO.md` in this turn.
 
 ## Output
