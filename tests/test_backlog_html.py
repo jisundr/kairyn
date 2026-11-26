@@ -458,3 +458,20 @@ def test_filters_pick_ideas_by_level(tmp_path):
     assert got["unset"] == ["An idea with a fairly long title that wraps on a phone", "Third"], got
     assert got["both"] == ["An idea with a fairly long title that wraps on a phone"], got
     assert "filters" in got["empty"] and "appetite" not in got["empty"], got
+
+
+def test_ideas_sort_by_impact_then_effort_then_newest(tmp_path):
+    spec = [  # file time, impact, effort
+        ("20261120000000", "high", "high"), ("20261121000000", "low", "low"), ("20261122000000", "", "low"),
+        ("20261123000000", "high", "low"), ("20261124000000", "medium", ""), ("20261125000000", "medium", "medium"),
+        ("20261126000000", "High", "Low"), ("20261127000000", "big", "medium"), ("20261128000000", "medium", "medium"),
+    ]
+    ideas = {f"{t}-i{n}.md": idea(title=f"I{n}", impact=i, effort=e) for n, (t, i, e) in enumerate(spec)}
+    data = page_data(render_html(make_repo(tmp_path, ideas)))
+    assert [d["title"] for d in data] == ["I6", "I3", "I0", "I8", "I5", "I4", "I1", "I2", "I7"]
+
+
+def test_header_names_the_order(tmp_path):
+    html = render_html(make_repo(tmp_path, {"20261125053013-a.md": idea()}))
+    assert "by impact (high first), then effort (low first), then newest" in html
+    assert "newest first." not in html
