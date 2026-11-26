@@ -226,7 +226,7 @@ def escape_patterns(config: dict) -> list:
 
 
 _GREEN_PAIR = re.compile(r"(test|feat)\(T\d+\)")
-REVIEW_GATES = ("design", "commits", "sessions")
+REVIEW_GATES = ("design", "commits", "sessions", "evals")
 DESIGN_ALLOW = (".kairyn/learnings.md",)
 
 
@@ -464,11 +464,11 @@ class Run:
             raise Blocked(f"claude exited {result.returncode}: {(errors or result.stderr or text).strip()[-300:]}")
         return text.strip()
 
-    def command(self, command: str, cwd: Path, label: str) -> int:
+    def command(self, command: str, cwd: Path, label: str, env: dict | None = None) -> int:
         """Run a check command; remember it when it fails."""
         try:
             result = subprocess.run(command, shell=True, cwd=cwd, capture_output=True, text=True,
-                                    timeout=self.seconds_left())
+                                    timeout=self.seconds_left(), env={**os.environ, **env} if env else None)
         except subprocess.TimeoutExpired:
             raise Blocked(f"limit stage_minutes {self.limits()['stage_minutes']} reached in {self.stage_name}. "
                           f"Last failed command: `{command}` {label}")
@@ -502,12 +502,16 @@ class Run:
         return any(line.startswith("-") and not line.startswith("---")
                    for line in git(self.code, "show", "-U0", "--format=", sha, "--", path).splitlines())
 
+    def changed_files(self) -> list:
+        """Files changed after the base, without the task folder and DESIGN_ALLOW."""
+        own = f"docs/tasks/{self.task}/"
+        return [p for p in git(self.code, "diff", "--name-only", f"{self.base()}..HEAD").splitlines()
+                if not p.startswith(own) and p not in DESIGN_ALLOW]
+
     def gate_design(self) -> list:
         """Review gate: each changed file and each new hooks.json event is named in DESIGN.md."""
         text = (self.folder / "DESIGN.md").read_text() if (self.folder / "DESIGN.md").is_file() else ""
-        own, base = f"docs/tasks/{self.task}/", self.base()
-        changed = [p for p in git(self.code, "diff", "--name-only", f"{base}..HEAD").splitlines()
-                   if not p.startswith(own) and p not in DESIGN_ALLOW]
+        base, changed = self.base(), self.changed_files()
         problems = [f"`{p}` changed, but DESIGN.md does not name it" for p in changed if not design_names(text, p)]
         for path in (p for p in changed if p.endswith("hooks.json")):
             def events(rev: str) -> set:
@@ -533,6 +537,23 @@ class Run:
         return [f"{ac} needs a person to run `{row}`" for ac, row in missing.items()] + [
             f'run each, add `Run AC<n>: <who>, <time>, "<what it showed>"` (time from `date -u +%Y-%m-%dT%H:%M:%SZ`) to '
             f'docs/tasks/{self.task}/BUILD.md on kairyn/{self.task}, commit, then run /kairyn:build {self.task}']
+
+    def gate_evals(self) -> tuple:
+        """Review gate: afk.yml `evals: command:` runs, with KAIRYN_BASE set, when a changed file matches
+        `evals: paths:` (with no paths, any change). Exit 0 passes. Returns (GATES.md row, problem or '')."""
+        evals = self.config().get("evals")
+        evals = evals if isinstance(evals, dict) else {}
+        command = str(evals.get("command") or "")
+        if not command:
+            return "| evals | not set | - | built in |", ""
+        paths = evals.get("paths") or []
+        paths = [paths] if isinstance(paths, str) else paths
+        if not any(any(path_matches(p, g) for g in paths) for p in self.changed_files()):
+            return "| evals | pass | - | built in |", ""
+        code = self.command(command, self.code, "at gate evals", env={"KAIRYN_BASE": self.base()})
+        if code:
+            return f"| evals | fail | {code} | built in |", f"`{command}` exited {code}"
+        return "| evals | pass | 0 | built in |", ""
 
     def gate_commits(self) -> list:
         """Review gate: a feat commit changes no test or fixture. A later commit that changes a test line is a
@@ -776,6 +797,12 @@ class Run:
         rows = []
         try:
             for name in REVIEW_GATES:   # built in: they read the commits, so they need no command in afk.yml
+                if name == "evals":   # runs the afk.yml `evals:` command, so it has its own row
+                    row, problem = self.gate_evals()
+                    rows.append(row)
+                    if problem:
+                        raise Blocked(f"gate evals failed: {problem}")
+                    continue
                 problems = getattr(self, f"gate_{name}")()
                 rows.append(f"| {name} | {'fail' if problems else 'pass'} | {1 if problems else 0} | built in |")
                 if problems:
