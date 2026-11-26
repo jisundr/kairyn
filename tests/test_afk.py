@@ -511,7 +511,7 @@ def gate_rows(repo, built_in=False):
     """GATES.md rows; without built_in, the rows of the afk.yml gates only (the review gates come first)."""
     rows = [[c.strip() for c in line.strip("|").split("|")] for line in task_file(repo, "GATES.md").splitlines()
             if line.startswith("| ") and not line.startswith("| Gate")]
-    return rows if built_in else [r for r in rows if r[0] not in ("design", "commits", "sessions")]
+    return rows if built_in else [r for r in rows if r[0] not in ("design", "commits", "sessions", "evals")]
 
 
 def test_slice5_gates(repo):
@@ -520,7 +520,7 @@ def test_slice5_gates(repo):
                   "  observability:\n  security: true\n")
     assert run(repo, "run", TASK).returncode == 0
     rows = gate_rows(repo)
-    assert [r[0] for r in gate_rows(repo, built_in=True)] == ["design", "commits", "sessions", *SIX]
+    assert [r[0] for r in gate_rows(repo, built_in=True)] == ["design", "commits", "sessions", "evals", *SIX]
     assert [r[0] for r in rows] == list(SIX)
     assert [r[1] for r in rows] == ["pass", "not set", "not set", "pass", "not set", "pass"]
     assert front(task_file(repo, "STATE.md"), "stage") == "review"
