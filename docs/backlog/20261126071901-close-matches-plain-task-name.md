@@ -1,6 +1,6 @@
 ---
 title: close.py misses ideas that name the task in plain text
-status: triaged
+status: committed
 requester: Jayson De los Reyes
 date: 2026-11-26
 effort: low
@@ -22,3 +22,4 @@ review_by: 2027-02-23
 - 2026-11-26T07:33:12Z [triage] Kept, Next (owner, 2026-11-26). Status triaged. Decided by Jayson De los Reyes.
 - 2026-11-26T07:33:12Z [triage] Effort low, impact medium confirmed by Jayson De los Reyes.
 - 2026-11-26T07:33:54Z [shaping] Grill started in task 2026-11-26-close-matches-plain-task-name. Owner put it in Next.
+- 2026-11-26T07:40:31Z [commit] Concept approved ("Approve"). Status committed. Decided by Jayson De los Reyes.
