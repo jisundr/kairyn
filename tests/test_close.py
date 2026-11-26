@@ -100,6 +100,28 @@ def test_close_appends_under_an_existing_unreleased_section(repo):
     assert log.index("- Older.") < log.index("- Newer.") < log.index("## 0.1.0")
 
 
+def changelog_lines(repo):
+    return [l for l in (repo / "CHANGELOG.md").read_text().splitlines() if l.startswith("- ")]
+
+
+def test_close_keeps_an_entry_that_names_the_task(repo):
+    entry = f"Added a dry run. ({TASK}; closes dry-run)"
+    r = run(repo, "close", TASK, "--entry", entry)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert changelog_lines(repo) == [f"- {entry}"]
+
+
+def test_close_adds_the_task_to_a_plain_entry(repo):
+    run(repo, "close", TASK, "--entry", "  Added a dry run.  ")
+    assert changelog_lines(repo) == [f"- Added a dry run. ({TASK})"]
+
+
+@pytest.mark.parametrize("entry", ["Added a dry-run flag. (dry-run)", f"Added a dry run. ({TASK.upper()})"])
+def test_close_adds_the_task_when_only_the_slug_or_other_case_names_it(repo, entry):
+    run(repo, "close", TASK, "--entry", entry)
+    assert changelog_lines(repo) == [f"- {entry} ({TASK})"]
+
+
 def test_close_deletes_linked_and_dropped_backlog_files_only(repo):
     run(repo, "close", TASK, "--entry", "x")
     left = sorted(p.name for p in (repo / "docs" / "backlog").glob("*.md"))
