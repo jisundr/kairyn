@@ -545,11 +545,13 @@ class Run:
         evals = evals if isinstance(evals, dict) else {}
         command = str(evals.get("command") or "")
         if not command:
+            print("NOTE: evals gate not set: add `evals:` with `command:` and `paths:` to .kairyn/afk.yml "
+                  "to check evals on a change")
             return "| evals | not set | - | built in |", ""
         paths = evals.get("paths") or []
         paths = [paths] if isinstance(paths, str) else paths
-        if not any(any(path_matches(p, g) for g in paths) for p in self.changed_files()):
-            return "| evals | pass | - | built in |", ""
+        if not any(not paths or any(path_matches(p, g) for g in paths) for p in self.changed_files()):
+            return "| evals | pass | - | built in: no path matched |", ""
         code = self.command(command, self.code, "at gate evals", env={"KAIRYN_BASE": self.base()})
         if code:
             return f"| evals | fail | {code} | built in |", f"`{command}` exited {code}"
