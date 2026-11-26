@@ -34,4 +34,4 @@ T1 and T2 are each one layer (a script and its test): the scripts share no layer
 | AC6 milestones unchanged | T3 | `git diff main --stat -- plugin/scripts/milestones.py tests/test_milestones.py` is empty. |
 | AC7 pytest, validate, evals | T3 | `uv run pytest`, `claude plugin validate plugin`; then the selector-picked evals once, after the coordinator approves the list and cost (D3). |
 
-Approval: pending
+Approval: Jayson De los Reyes, 2026-11-26T07:01:48Z, "Approve"

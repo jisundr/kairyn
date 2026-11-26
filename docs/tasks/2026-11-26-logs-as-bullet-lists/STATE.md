@@ -1,18 +1,18 @@
 ---
 task: 2026-11-26-logs-as-bullet-lists
 title: Write log sections as bullet lists
-stage: design
-status: blocked
+stage: build
+status: in-progress
 grill: done
 stages:
   grill: done
   requirements: done
   design: done
-  build: pending
+  build: in-progress
   gates: pending
   review: pending
 created: 2026-11-26T06:36:53Z
-updated: 2026-11-26T07:00:57Z
+updated: 2026-11-26T07:01:48Z
 ---
 
 # Log
@@ -28,3 +28,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-26T06:45:30Z [requirements] REQUIREMENTS.md written: R1-R8, A1-A2. Waiting for owner approval.
 2026-11-26T07:00:57Z [requirements] Requirements approved by Jayson De los Reyes: "Approve" (covers A1, A2; relayed by the coordinator).
 2026-11-26T07:00:57Z [design] DESIGN.md written: option A, T1-T3. Waiting for owner approval.
+2026-11-26T07:01:48Z [design] Design approved by Jayson De los Reyes: "Approve" (relayed by the coordinator). Build by hand on branch jisundr/logs-as-bullet-lists.
