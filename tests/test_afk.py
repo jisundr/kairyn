@@ -427,6 +427,16 @@ def test_slice3_afk_yml_template_parses_with_defaults():
     assert afk.escape_patterns(data) == afk.DEFAULT_ESCAPES
 
 
+def test_template_has_an_empty_evals_section():
+    """ship-evals-gate R6: the template shows the evals gate settings, empty, each with a comment."""
+    sys.path.insert(0, str(PLUGIN / "scripts"))
+    import afk
+    text = (PLUGIN / "templates" / "afk.yml").read_text()
+    assert afk.parse_afk(text)["evals"] == {"command": "", "paths": ""}
+    block = text[:text.index("\nevals:")].rsplit("\n\n", 1)[-1]
+    assert "command" in block and "paths" in block and block.startswith("#"), block
+
+
 def test_slice3_a_session_that_runs_out_of_budget_is_a_limit(repo):
     """The real CLI exits 1 with subtype error_max_budget_usd and an empty result (tracer run 2026-11-23)."""
     run(repo, "run", TASK, mode="budget")
