@@ -1858,8 +1858,7 @@
    "0cf08b9f62f3c6302fa5ae48f05803b5f1162e1e635069c11b8200fb23a68a2d"
   ],
   ".kairyn/stages/CLOSE.md": [
-   "45156ad6a49d5e8dac6d431aadc605fa5bb32d68375921179ed63fa6d32203d0",
-   "ba6b45b3a009e156e95552c023661bee6728a4f23fca95bbfa8fb3f72fae6638"
+   "45156ad6a49d5e8dac6d431aadc605fa5bb32d68375921179ed63fa6d32203d0"
   ],
   ".kairyn/stages/DESIGN.md": [
    "b3a7d043213201a7733d2e12959e82227d83768e3c54dea564fc6c2eca021dc7"
@@ -1946,6 +1945,7 @@
   ],
   ".kairyn/stages/CLOSE.md": [
    "3de2b8d5c8e87c385b394afd2936fc20fa757b005894d7a36e09ecd3c3f3d034",
+   "45156ad6a49d5e8dac6d431aadc605fa5bb32d68375921179ed63fa6d32203d0",
    "ba6b45b3a009e156e95552c023661bee6728a4f23fca95bbfa8fb3f72fae6638"
   ],
   ".kairyn/stages/DESIGN.md": [
@@ -2006,7 +2006,7 @@
    "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
   ]
  },
- "0.21.1": {
+ "0.21.2": {
   ".harness/README.md": [
    "850b01889e56d765cc4b6f658f1e9b84f20264ac839623f13970c946a1fb6c5b"
   ],
@@ -2032,7 +2032,7 @@
    "0cf08b9f62f3c6302fa5ae48f05803b5f1162e1e635069c11b8200fb23a68a2d"
   ],
   ".kairyn/stages/CLOSE.md": [
-   "45156ad6a49d5e8dac6d431aadc605fa5bb32d68375921179ed63fa6d32203d0"
+   "3de2b8d5c8e87c385b394afd2936fc20fa757b005894d7a36e09ecd3c3f3d034"
   ],
   ".kairyn/stages/DESIGN.md": [
    "b3a7d043213201a7733d2e12959e82227d83768e3c54dea564fc6c2eca021dc7"
