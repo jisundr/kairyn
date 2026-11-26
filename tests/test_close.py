@@ -288,3 +288,50 @@ def test_changelog_names_each_task_once():
     doubled = [l for l in log.read_text().splitlines()
                for t in set(re.findall(r"\d{4}-\d{2}-\d{2}-[a-z0-9-]*[a-z0-9]", l)) if l.count(t) > 1]
     assert not doubled, doubled
+
+
+SLUG_IDEA = "20260105090000-dry-run.md"
+
+
+def test_close_deletes_a_committed_idea_named_by_slug(repo):
+    b = repo / "docs" / "backlog"
+    (b / SLUG_IDEA).write_text(backlog("committed", f"Shaped in task `{TASK}`."))
+    (b / "README.md").write_text((b / "README.md").read_text() + f"| [Slug]({SLUG_IDEA}) |\n")
+    r = run(repo, "close", TASK, "--entry", "x")
+    assert not (b / SLUG_IDEA).exists(), r.stdout
+    assert f"DELETED docs/backlog/{SLUG_IDEA}" in r.stdout
+    assert SLUG_IDEA not in (b / "README.md").read_text()
+    assert "UNLINKED" not in r.stdout
+
+
+def test_close_prints_unlinked_for_a_plain_task_name(repo):
+    b = repo / "docs" / "backlog"
+    (b / "20260105090000-other-slug.md").write_text(backlog("committed", f"Shaped in task `{TASK}`."))
+    r = run(repo, "close", TASK, "--entry", "x")
+    assert (b / "20260105090000-other-slug.md").exists()
+    line = f"UNLINKED: docs/backlog/20260105090000-other-slug.md names {TASK} but does not link it; not deleted"
+    assert line in r.stdout.splitlines(), r.stdout
+
+
+def test_close_prints_no_unlinked_for_a_longer_task_name(repo):
+    b = repo / "docs" / "backlog"
+    (b / "20260105090000-longer.md").write_text(backlog("committed", f"From task {TASK}-two and {TASK}x."))
+    r = run(repo, "close", TASK, "--entry", "x")
+    assert (b / "20260105090000-longer.md").exists()
+    assert "UNLINKED" not in r.stdout, r.stdout
+
+
+def test_close_prints_no_unlinked_for_a_dropped_or_parked_plain_name(repo):
+    b = repo / "docs" / "backlog"
+    (b / "20260105090000-parked-x.md").write_text(backlog("parked", f"From task {TASK}."))
+    r = run(repo, "close", TASK, "--entry", "x")
+    assert (b / "20260105090000-parked-x.md").exists() and "UNLINKED" not in r.stdout
+
+
+def test_close_keeps_a_dropped_idea_named_by_a_live_slug(repo):
+    b = repo / "docs" / "backlog"
+    (b / "20260109090000-other.md").write_text(backlog("dropped", "Dropped, but its task still runs."))
+    (b / "20260109090000-gone.md").write_text(backlog("dropped", "No task."))
+    run(repo, "close", TASK, "--entry", "x")
+    assert (b / "20260109090000-other.md").exists()
+    assert not (b / "20260109090000-gone.md").exists()
