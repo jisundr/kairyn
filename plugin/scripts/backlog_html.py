@@ -36,6 +36,8 @@ def split_front_matter(text: str) -> tuple[dict, str]:
 LOG_HEADING = re.compile(r"^# Log\s*$", re.M)
 FIELDS = ["title", "effort", "impact", "date", "review_by", "requester"]
 LEVELS = ("low", "medium", "high")
+IMPACT_RANK = {"high": 0, "medium": 1, "low": 2, "": 3}  # high impact first, not set last
+EFFORT_RANK = {"low": 0, "medium": 1, "high": 2, "": 3}  # low effort first, not set last
 
 
 def plain(text: str) -> str:
@@ -121,9 +123,13 @@ def render_log(text: str, links: dict) -> str:
 
 
 def load_ideas(root: Path) -> list[dict]:
-    """Every idea file, newest capture first (the file name starts with its capture time)."""
+    """Every idea file by impact (high first), then effort (low first), then newest capture.
+
+    The file name starts with its capture time, so a reverse name sort is newest first; the stable sort keeps it for ties.
+    """
     files = sorted((p for p in (root / BACKLOG).glob("*.md") if IDEA_FILE.match(p.name)), reverse=True)
-    ideas = [parse_idea(p) for p in files]
+    ideas = sorted((parse_idea(p) for p in files),
+                   key=lambda i: (IMPACT_RANK[i["impact_level"]], EFFORT_RANK[i["effort_level"]]))
     links = {i["file"]: "#" + i["slug"] for i in ideas}
     for i in ideas:
         i["text"] = plain(i["lead"] + " " + i["body"] + " " + i["log"]).lower()
@@ -358,7 +364,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 </head>
 <body>
 <div class="wrap">
-  <header><h1>Backlog</h1><p>%COUNT% ideas in docs/backlog/, newest first. View only.</p></header>
+  <header><h1>Backlog</h1><p>%COUNT% ideas in docs/backlog/, by impact (high first), then effort (low first), then newest. View only.</p></header>
   <div class="tools">
     <input id="q" type="search" placeholder="Search titles and text  ( / )" aria-label="Search">
     <select id="imp" aria-label="Impact"><option value="">Any impact</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="none">Not set</option></select>
