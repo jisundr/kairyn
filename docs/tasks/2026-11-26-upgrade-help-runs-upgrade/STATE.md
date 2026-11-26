@@ -7,11 +7,11 @@ stages:
   grill: done
   requirements: done   # pending | in-progress | done
   design: done
-  build: pending
+  build: done
   gates: pending
   review: pending
 created: 2026-11-26T07:33:27Z
-updated: 2026-11-26T07:44:14Z
+updated: 2026-11-26T07:49:07Z
 ---
 
 # Log
@@ -25,3 +25,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-26T07:43:03Z [requirements] Requirements approved by owner ("Approve").
 2026-11-26T07:43:03Z [design] DESIGN.md written: option A, T1-T3. Blocked: waiting for approval.
 2026-11-26T07:44:14Z [design] Design approved by owner ("Approve"). Build starts on branch jisundr/upgrade-help-runs-upgrade.
+2026-11-26T07:49:07Z [build] T1-T3 built by hand on the branch: test(T<n>) fails, feat(T<n>) passes. Version 0.20.2. CHANGELOG line left to /kairyn:close. Two design edits: AC4 split into one test per script; T3 drops the CHANGELOG line.

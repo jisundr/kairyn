@@ -21,7 +21,7 @@ Option A. Each `main()` builds its own `argparse.ArgumentParser` before it reads
 ## Tasks
 - T1: `upgrade.py` parses with argparse. Tests first in `tests/test_upgrade.py`: `--help` and `-h` exit 0, print the usage and leave the repo tree byte-equal. `--dry-run` and a bare `--root` exit 2, print the usage and an error to stderr and leave the tree byte-equal. Then change `main()`. Files: `tests/test_upgrade.py`, `plugin/scripts/upgrade.py`. Done: `uv run pytest tests/test_upgrade.py` exits 0.
 - T2: `budgets_html.py` parses with argparse. Tests first in `tests/test_budgets_html.py`: `--help` and `-h` exit 0 and write no `budgets.html`. `--dry-run` and a bare `--out` exit 2 and write no `budgets.html`. Then change `main()`. Files: `tests/test_budgets_html.py`, `plugin/scripts/budgets_html.py`. after: T1. Done: `uv run pytest tests/test_budgets_html.py tests/test_python39.py` exits 0.
-- T3: Release record. Bump `version` in `plugin/.claude-plugin/plugin.json` to the next free patch version (0.20.2 now; after PR #66, 0.21.1). Run `uv run python scripts/release_hashes.py --write`. Add a `CHANGELOG.md` Unreleased line. Files: `plugin/.claude-plugin/plugin.json`, `plugin/release-hashes.json`, `CHANGELOG.md`. after: T2. Done: `uv run pytest && claude plugin validate plugin` exits 0.
+- T3: Release record. Bump `version` in `plugin/.claude-plugin/plugin.json` to the next free patch version (0.20.2 now; after PR #66, 0.21.1). Run `uv run python scripts/release_hashes.py --write`. `/kairyn:close` writes the `CHANGELOG.md` line. Files: `plugin/.claude-plugin/plugin.json`, `plugin/release-hashes.json`. after: T2. Done: `uv run pytest && claude plugin validate plugin` exits 0.
 
 ## Test plan
 | Criterion | Task | Test |
@@ -29,7 +29,7 @@ Option A. Each `main()` builds its own `argparse.ArgumentParser` before it reads
 | AC1 `upgrade.py --help`/`-h`: exit 0, usage, tree unchanged | T1 | `test_upgrade.py::test_help_prints_usage_and_changes_nothing` (parametrized `--help`, `-h`) |
 | AC2 `budgets_html.py --help`/`-h`: exit 0, usage, no `budgets.html` | T2 | `test_budgets_html.py::test_help_prints_usage_and_writes_nothing` (parametrized `--help`, `-h`) |
 | AC3 bad flag or bare flag: exit 2, usage and error on stderr, no change | T1, T2 | `test_upgrade.py::test_a_bad_argument_exits_2_and_changes_nothing` and `test_budgets_html.py::test_a_bad_argument_exits_2_and_writes_nothing` (parametrized `--dry-run`, bare flag) |
-| AC4 both scripts build an `ArgumentParser` | T1, T2 | `test_upgrade.py::test_upgrade_and_budgets_html_parse_with_argparse` reads both sources for `argparse.ArgumentParser(` |
+| AC4 both scripts build an `ArgumentParser` | T1, T2 | `test_upgrade.py::test_upgrade_parses_with_argparse` and `test_budgets_html.py::test_budgets_html_parses_with_argparse` read the source for `argparse.ArgumentParser(` |
 | AC5 existing tests pass unchanged | T1, T2, T3 | `uv run pytest` with no edit to existing tests |
 | AC6 `--root .` and `--root DIR --plugin DIR` act as before | T1 | the existing `test_upgrade.py` tests (they call `--root DIR --plugin DIR`), plus `test_root_dot_from_the_repo_upgrades` that runs `upgrade.py --root .` with `cwd` set to the repo |
 
