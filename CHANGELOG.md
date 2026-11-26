@@ -30,3 +30,4 @@
 - Close records a hand merge itself: close.py record-merge reads the merged pull request through gh and writes STATE.md and the REVIEW.md Decision line. (2026-11-26-close-hand-merged)
 - /kairyn:upgrade prints a SAVED line for each edited kairyn-owned file it moves to .kairyn-old; this repo's running-stages.md is back to the shipped copy. (2026-11-26-upgrade-overwrites-running-stages; closes upgrade-overwrites-running-stages)
 - Retro emptied learnings.md: two rules moved to change-a-stage.md and upgrade.md; five ideas went to the backlog inbox. (2026-11-26-retro)
+- Stage logs in STATE.md write each new entry as a markdown bullet, so a rendered log shows one line per entry; old entries stay. (2026-11-26-logs-as-bullet-lists; closes logs-as-bullet-lists)

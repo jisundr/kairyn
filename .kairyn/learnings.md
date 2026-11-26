@@ -10,6 +10,5 @@ Stages append here.
 - 2026-11-26 [build] plugin/scripts/upgrade.py takes no flags: `--help` runs the upgrade, which replaced the edited running-stages.md (kept as .kairyn-old). Restore it from git (2026-11-26-ship-evals-gate).
 - 2026-11-26 [close] Closing a task merged by hand needs no edits by hand: close step 1 runs close.py record-merge, which writes STATE.md and REVIEW.md from the merged PR. This replaces the 2026-11-26 rule above about a hand-written REVIEW.md (2026-11-26-close-hand-merged).
 - 2026-11-26 [build] An edit to a plugin-owned file in this repo (`.harness/workflows/` docs from `plugin/harness/`, templates, the CLAUDE.md block) is lost on each upgrade. Put the note in a file the repo owns; upgrade now prints `SAVED <file>.kairyn-old` when it moves an edit aside (2026-11-26-upgrade-overwrites-running-stages).
-- 2026-11-26 [build] evals/checks.py log_line_re reads STATE.md log lines; a log format change must update it, though task-lifecycle.md did not list it among readers.
 - 2026-11-26 [build] evals/checks.py log_line_re reads STATE.md log lines; the backlog idea said no reader exists, but task-lifecycle.md names it; check that list before a format change.
 - 2026-11-26 [build] upgrade.py has no --help: any argument runs the upgrade on this repo.
