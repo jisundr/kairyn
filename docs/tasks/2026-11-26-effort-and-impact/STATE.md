@@ -7,11 +7,11 @@ stages:
   grill: done
   requirements: done
   design: done
-  build: done
+  build: in-progress
   gates: pending
   review: pending
 created: 2026-11-26T02:41:30Z
-updated: 2026-11-26T03:09:15Z
+updated: 2026-11-26T03:17:58Z
 ---
 
 # Log
@@ -27,3 +27,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-26T02:56:10Z [design] Approved by Jayson De los Reyes, relayed by an Orca coordinator. Next stage: build.
 2026-11-26T02:56:10Z [build] Build started by hand from an Orca coordinator dispatch, slices T1-T5 test-first.
 2026-11-26T03:09:15Z [build] T1-T5 green by hand, test-first; uv run pytest 785 passed; budgets and harness docs OK. Evals run 20261126T030522Z PASS: backlog, check, init, upgrade 10/10 each metric, cost $0.41. Waiting for the pull request review.
+2026-11-26T03:17:58Z [build] Owner-requested change on PR #59, not approved yet: "Add color and sorting is missing." (Jayson De los Reyes, relayed by an Orca coordinator). New slice T6 in DESIGN.md: chip colours by level and a Sort control. Evals approved up to $3.
