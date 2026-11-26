@@ -18,9 +18,7 @@ review_by: 2027-02-23
 - Closed ideas (deleted in #33, in git history): gate-changes-outside-design and gate-fix-round-test-edits named `plugin/scripts/afk.py` as the place (retro L12, L13); gate-eval-pass-for-plugin-changes named `.kairyn/afk.yml` (L5).
 - `scripts/gates.py`: its `evals` check reads this repo's `evals/results/passed.json`.
 
-**Decided (2026-11-25, slice 2 grill):** A person runs `Manual` checks; design marks the rows. The gate wants `Run AC<n>: <who>, <time>, "<what it showed>"`, all three parts, in a task file but `DESIGN.md`. A block prints the rows, the line format and the resume command. `evals` stays in `scripts/gates.py` until consumer repos record eval passes.
-
-**Left after slice 2:** `evals`.
+**Decided:** slices 1-2 in the log; slice 3 (`evals`, the last) in `docs/tasks/2026-11-26-ship-evals-gate/CONCEPT.md`.
 
 **Notes:** Shaped as built-in gates in afk.py. A `plugin/` change needs evals first.
 
@@ -33,3 +31,4 @@ review_by: 2027-02-23
 - 2026-11-25T10:18:25Z [grill] Slice 2: a person runs Manual checks; design marks the rows; the gate checks who, time and text. Decided by Jayson De los Reyes.
 - 2026-11-25T10:18:25Z [slice] Slice 2: afk.py runs `sessions` built in; the design stage marks `Manual` rows. Next by Jayson De los Reyes, from an Orca coordinator dispatch. `evals` left.
 - 2026-11-26T03:01:29Z [triage] Effort medium, impact high confirmed by Jayson De los Reyes.
+- 2026-11-26T04:10:11Z [grill] Slice 3: the evals gate runs an afk.yml command, guarded by afk.yml paths; no command skips with a note; this repo moves its passed.json check to a script and deletes scripts/gates.py. Decided by Jayson De los Reyes.
