@@ -11,7 +11,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-26T07:33:27Z
-updated: 2026-11-26T07:52:03Z
+updated: 2026-11-26T07:55:59Z
 ---
 
 # Log
@@ -27,3 +27,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-26T07:44:14Z [design] Design approved by owner ("Approve"). Build starts on branch jisundr/upgrade-help-runs-upgrade.
 2026-11-26T07:49:07Z [build] T1-T3 built by hand on the branch: test(T<n>) fails, feat(T<n>) passes. Version 0.20.2. CHANGELOG line left to /kairyn:close. Two design edits: AC4 split into one test per script; T3 drops the CHANGELOG line.
 2026-11-26T07:52:03Z [build] Rebased onto main after PR #66 (0.21.0). Version now 0.21.1. PR #69 opened.
+2026-11-26T07:55:59Z [build] Evals upgrade, check, init at 10 runs, set picked by Kairyn Steward. Run 20261126T075235Z: all PASS, cost $0.25.
