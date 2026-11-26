@@ -1,9 +1,9 @@
 ---
 title: Close writes the task name twice in the changelog line
-status: inbox
+status: triaged
 requester: Jayson De los Reyes
 date: 2026-11-26
-appetite:
+appetite: small batch
 review_by:
 ---
 
@@ -11,7 +11,7 @@ review_by:
 
 **Raw request:** capture the close.py double task name as a backlog idea (owner, 2026-11-26, through Orca).
 
-**Problem (AI draft, needs a human to confirm):** The worker that closed 2026-11-26-split-build-routing (PR #51) had to delete a second `(<task>)` from its CHANGELOG line by hand.
+**Problem (confirmed by Jayson De los Reyes, 2026-11-26):** The worker that closed 2026-11-26-split-build-routing (PR #51) had to delete a second `(<task>)` from its CHANGELOG line by hand.
 
 **Evidence:**
 - `plugin/scripts/close.py:150` (`cmd_close`) always writes `f"- {entry.strip()} ({task})"`. It never checks whether `--entry` already names the task.
@@ -24,3 +24,5 @@ review_by:
 # Log
 
 - 2026-11-25T23:50:10Z [capture] Created from the owner's request through Orca. Status inbox, waiting for triage.
+- 2026-11-26T00:55:43Z [triage] Kept. Status triaged. Problem confirmed. Next. Decided by Jayson De los Reyes.
+- 2026-11-26T00:55:43Z [appetite] Set to small batch. Decided by Jayson De los Reyes.
