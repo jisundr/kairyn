@@ -1,6 +1,6 @@
 ---
 title: Close writes the task name twice in the changelog line
-status: triaged
+status: committed
 requester: Jayson De los Reyes
 date: 2026-11-26
 appetite: small batch
@@ -21,8 +21,14 @@ review_by:
 
 **Notes:** Inference: close.py skips the suffix when the entry names the task, or CLOSE.md says to leave it out. A failing test first.
 
+**Decided (2026-11-26, grill):** The fix goes in `close.py`, not `CLOSE.md`. close.py skips ` (<task>)` when `--entry` already contains the task name. Details: the task's `CONCEPT.md`.
+
+**Task:** [docs/tasks/2026-11-26-close-changelog-double-name/](../tasks/2026-11-26-close-changelog-double-name/)
+
 # Log
 
 - 2026-11-25T23:50:10Z [capture] Created from the owner's request through Orca. Status inbox, waiting for triage.
 - 2026-11-26T00:55:43Z [triage] Kept. Status triaged. Problem confirmed. Next. Decided by Jayson De los Reyes.
 - 2026-11-26T00:55:43Z [appetite] Set to small batch. Decided by Jayson De los Reyes.
+- 2026-11-26T01:15:38Z [grill] Grilled on 2026-11-26: D1-D2 in the task's CONCEPT.md. Decided by Jayson De los Reyes.
+- 2026-11-26T01:15:38Z [commit] Committed to task 2026-11-26-close-changelog-double-name. Decided by Jayson De los Reyes.

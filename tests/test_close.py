@@ -1,4 +1,5 @@
 """close.py: the scripted half of the close stage (checks, changelog, deletion, release tag)."""
+import re
 import subprocess
 import sys
 
@@ -98,6 +99,28 @@ def test_close_appends_under_an_existing_unreleased_section(repo):
     run(repo, "close", TASK, "--entry", "Newer.")
     log = (repo / "CHANGELOG.md").read_text()
     assert log.index("- Older.") < log.index("- Newer.") < log.index("## 0.1.0")
+
+
+def changelog_lines(repo):
+    return [l for l in (repo / "CHANGELOG.md").read_text().splitlines() if l.startswith("- ")]
+
+
+def test_close_keeps_an_entry_that_names_the_task(repo):
+    entry = f"Added a dry run. ({TASK}; closes dry-run)"
+    r = run(repo, "close", TASK, "--entry", entry)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert changelog_lines(repo) == [f"- {entry}"]
+
+
+def test_close_adds_the_task_to_a_plain_entry(repo):
+    run(repo, "close", TASK, "--entry", "  Added a dry run.  ")
+    assert changelog_lines(repo) == [f"- Added a dry run. ({TASK})"]
+
+
+@pytest.mark.parametrize("entry", ["Added a dry-run flag. (dry-run)", f"Added a dry run. ({TASK.upper()})"])
+def test_close_adds_the_task_when_only_the_slug_or_other_case_names_it(repo, entry):
+    run(repo, "close", TASK, "--entry", entry)
+    assert changelog_lines(repo) == [f"- {entry} ({TASK})"]
 
 
 def test_close_deletes_linked_and_dropped_backlog_files_only(repo):
@@ -257,3 +280,11 @@ def test_close_without_git_keeps_a_copy_of_what_it_deletes(tmp_path):
 def test_close_in_git_keeps_no_archive(repo):
     assert run(repo, "close", TASK, "--entry", "Added dry runs").returncode == 0
     assert not (repo / ".kairyn" / "archive").exists()
+
+
+def test_changelog_names_each_task_once():
+    """This repo's CHANGELOG.md: no line names a task folder twice (close used to add a second one)."""
+    log = PLUGIN.parent / "CHANGELOG.md"
+    doubled = [l for l in log.read_text().splitlines()
+               for t in set(re.findall(r"\d{4}-\d{2}-\d{2}-[a-z0-9-]*[a-z0-9]", l)) if l.count(t) > 1]
+    assert not doubled, doubled
