@@ -7,11 +7,11 @@ stages:
   grill: done
   requirements: done
   design: done
-  build: pending
+  build: done
   gates: pending
   review: pending
 created: 2026-11-26T04:07:06Z
-updated: 2026-11-26T04:24:04Z
+updated: 2026-11-26T04:38:54Z
 ---
 
 # Log
@@ -25,3 +25,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-26T04:16:23Z [design] Wrote DESIGN.md: option A (close.py record-merge), T1-T5, AC1-AC9, eval plan close, check, init, upgrade (about $8.25 at 10 runs). Waiting for user approval.
 2026-11-26T04:24:04Z [design] Approved by Jayson De los Reyes, relayed by an Orca coordinator (item 62). Evals approved: watch-it-fail close_hand_merged at 2 runs, then close, check, init, upgrade at 10 runs, cap $12. Next stage: build.
 2026-11-26T04:24:04Z [build] Build started by hand from an Orca coordinator dispatch, slices T1-T5 test-first.
+2026-11-26T04:38:54Z [build] T1-T5 green by hand, test-first; uv run pytest 804 passed; budgets and harness docs OK. Watch-it-fail run 20261126T043009Z: close_hand_merged 0/2 on the old CLOSE.md, $0.27. Evals run 20261126T043036Z PASS: close (4 scenarios), check, init, upgrade 10/10 each metric, cost $8.11. Waiting for the pull request review.
