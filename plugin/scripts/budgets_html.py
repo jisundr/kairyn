@@ -8,12 +8,13 @@ Usage:
 """
 from __future__ import annotations
 
+import argparse
 import sys
 from datetime import datetime, timezone
 from html import escape
 from pathlib import Path
 
-from budgets import Budget, budget_for, estimate_tokens, find_docs, load_config, root_from_args, with_fallbacks
+from budgets import Budget, budget_for, estimate_tokens, find_docs, load_config, with_fallbacks
 
 CLASS_LABELS = {
     "always": ("Always loaded", "in every session"),
@@ -121,8 +122,12 @@ def write_html(root: Path, budgets: list[Budget], out: Path, generated: datetime
 
 
 def main(argv: list[str]) -> int:
-    root = root_from_args(argv)
-    out = Path(argv[argv.index("--out") + 1]) if "--out" in argv else root / ".harness" / "budgets.html"
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--root", type=Path, default=Path.cwd(), help="the repo (default: this folder)")
+    ap.add_argument("--out", type=Path, help="the page to write (default: ROOT/.harness/budgets.html)")
+    a = ap.parse_args(argv)   # before any file access: --help or a bad flag writes nothing
+    root = a.root.resolve()
+    out = a.out or root / ".harness" / "budgets.html"
     budgets, strict = load_config(root / ".harness" / "budgets.yml")
     budgets = with_fallbacks(budgets)
     write_html(root, budgets, out, strict=strict)
