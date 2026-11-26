@@ -232,3 +232,29 @@ def test_evals_gate_blocks_on_a_failing_command(repo):
     assert "gate evals failed: `exit 3` exited 3" in state.splitlines()[-1], state
     assert "| fail | 3 |" in rows(repo)["evals"] and "testing" not in rows(repo)
 
+
+
+def test_evals_gate_not_set_prints_one_note(repo):
+    branch(repo, PAIR)
+    result = run(repo, "run", TASK)
+    assert result.returncode == 0 and front(task_file(repo, "STATE.md"), "stage") == "review"
+    notes = [line for line in result.stdout.splitlines() if line.startswith("NOTE: evals")]
+    assert len(notes) == 1 and ".kairyn/afk.yml" in notes[0], result.stdout
+    assert "| not set |" in rows(repo)["evals"]
+
+
+def test_evals_gate_skips_when_no_path_matches(repo):
+    marker, command = marker_command(repo)
+    set_evals(repo, f"evals:\n  command: {command}\n  paths:\n    - 'plugin/**'\n")
+    branch(repo, PAIR)
+    assert run(repo, "run", TASK).returncode == 0
+    assert not marker.exists()
+    assert "| pass |" in rows(repo)["evals"] and "no path matched" in rows(repo)["evals"]
+
+
+def test_evals_gate_with_no_paths_runs_on_any_change(repo):
+    marker, command = marker_command(repo)
+    set_evals(repo, f"evals:\n  command: {command}\n")
+    branch(repo, PAIR)
+    assert run(repo, "run", TASK).returncode == 0
+    assert marker.exists() and "| pass | 0 |" in rows(repo)["evals"]
