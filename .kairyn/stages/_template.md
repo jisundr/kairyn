@@ -50,7 +50,7 @@ Then:
   - if another stage follows, set `stage` to it and keep `status: in-progress`;
   - if this was the last stage, leave `stage` and set `status: done`;
   - if waiting on the user, set `status: blocked` and log why.
-- Log: append one line `<timestamp> [<stage-name>] <summary of what happened>`.
+- Log: append one bullet `- <timestamp> [<stage-name>] <summary of what happened>`.
 
 ## Learnings
 Append what this run taught about the repo to `.kairyn/learnings.md`.

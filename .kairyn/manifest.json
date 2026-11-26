@@ -54,7 +54,7 @@
     },
     ".kairyn/stages/_template.md": {
       "owner": "repo",
-      "sha256": "158ad5956fe090568017cf9402ec22cec2755e7d51da5fa2909d4979a08723e2"
+      "sha256": "d4e0acf67fc85d8e91a2390eaa8c10950ac361be1166094a671efc1d9e89a9c8"
     },
     ".kairyn/templates/BUILD.md": {
       "owner": "plugin",
@@ -86,7 +86,7 @@
     },
     ".kairyn/templates/STATE.md": {
       "owner": "plugin",
-      "sha256": "65ee20834f7cb19b9890a2a6febe603147fe2fbfe74ca3816d432c60752a1d26"
+      "sha256": "ddb5d3b587ce08498586e08c0f93d7023d3da9bb433c41ea2f705aaff2d19cb3"
     },
     ".kairyn/templates/afk.yml": {
       "owner": "plugin",
@@ -97,5 +97,5 @@
       "sha256": "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
     }
   },
-  "version": "0.20.1"
+  "version": "0.21.0"
 }

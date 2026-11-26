@@ -23,7 +23,7 @@ Front matter is the source of truth. Read it, not the log, to see where a task i
 | `stages` | Each stage: `pending`, `in-progress` or `done` |
 | `created`, `updated` | UTC timestamps |
 
-The body is a `# Log`, newest last, one line per event: `<timestamp> [<stage>] <summary>`.
+The body is a `# Log`, newest last, one bullet per event: `- <timestamp> [<stage>] <summary>`.
 
 When a stage finishes: set it `done`, update `updated`, then
 - another stage follows: set `stage` to it

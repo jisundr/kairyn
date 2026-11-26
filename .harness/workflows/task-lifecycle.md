@@ -32,10 +32,10 @@ Front matter is the source of truth. Read it, not the log, to find where a task 
 | `stages` | Map of each stage to `pending`, `in-progress` or `done` |
 | `created`, `updated` | UTC timestamps |
 
-The body is a `# Log`, newest entry last, one line per event:
+The body is a `# Log`, newest entry last, one bullet per event (older logs: plain lines):
 
 ```
-<timestamp> [<stage>] <summary of what happened>
+- <timestamp> [<stage>] <summary of what happened>
 ```
 
 When a stage finishes it sets its own stage to `done`, updates `updated`, then:
