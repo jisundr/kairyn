@@ -30,3 +30,4 @@ Newest entry last. One entry per stage run or notable event.
 2026-11-26T07:01:53Z [design] Approved by Jayson De los Reyes: "Approve".
 2026-11-26T07:01:53Z [build] Started: T1 tests first.
 2026-11-26T07:05:40Z [build] T1-T3 done by hand: 3 new upgrade tests, SAVED line, running-stages.md back to the shipped copy, 0.20.1. This repo upgraded with all KEPT, no SAVED line. uv run pytest: 813 passed. claude plugin validate: passed. No evals (A1).
+2026-11-26T07:05:59Z [build] PR #65 opened.
