@@ -57,4 +57,4 @@ Out: a new way to record eval passes; evals settings per child repo under `repos
 ## Open questions and answers
 - Q1: Where do the settings live? A: `.kairyn/afk.yml` (D1, D3). Design picks the keys.
 
-Approval: pending
+Approval: Jayson De los Reyes, 2026-11-26T04:14:20Z, "Approve as written"
