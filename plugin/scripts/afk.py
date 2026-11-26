@@ -19,7 +19,9 @@ slice `T<n>` and per stage, each with a fresh context.
     the diff. Findings get one fix round. If a finding stays or a done command fails, the run blocks.
   - gates: first the built-in review gates, which read the commits after the base: `design` (each changed
     file and each new hooks.json event is named in DESIGN.md) and `commits` (a feat commit changes no test
-    or fixture; a later commit that changes a test line is a test(...) commit where the testing gate fails).
+    or fixture; a later commit that changes a test line is a test(...) commit where the testing gate fails),
+    `sessions` (each Manual test plan row has a `Run AC<n>:` line) and `evals` (afk.yml `evals: command:`
+    runs, with KAIRYN_BASE, when a changed file matches `evals: paths:`; no command is `not set`, with a note).
     Then each command in .kairyn/afk.yml `gates:`, in order, security last. The exit code decides.
     An empty command is `not set`, never a pass. A gate with a `checks:` entry then gets a read-only
     session that prints PASS or FAIL: <why>. GATES.md gets one row per gate.
