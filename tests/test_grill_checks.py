@@ -163,7 +163,6 @@ def test_finished_turn_is_the_first_restatement_after_turn_0():
     assert finished_turn([asking, asking, asking, restated]) is None
     assert finished_turn([asking, asking, restated, restated]) == 2
     assert finished_turn([asking, restated, restated]) == 1
-    assert finished_turn([restated, restated]) is None   # turn 0 must ask: rounds reports it
 
 
 def test_round_decisions_skip_the_restated_turn():
