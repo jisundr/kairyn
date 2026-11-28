@@ -38,3 +38,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T11:21:23Z [build] Build started.
 - 2026-11-28T11:33:32Z [build] All 5 tasks green. Cost $1.95. Next: gates.
 - 2026-11-28T11:33:39Z [build] Blocked: gh pr create failed: st create failed: GraphQL: Head sha can't be blank, Base sha can't be blank, No commits between jisundr/backlog-stage and kairyn/2026-11-28-backlog-stage, Base ref must be a branch (createPullRequest)
+- 2026-11-28T11:38:17Z [build] PR #82 opened by hand against main (afk.py used the home branch as base). Branch merged with main at 0.21.4; version 0.21.5.
