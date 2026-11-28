@@ -8,6 +8,7 @@ A Claude Code plugin: an agentic SDLC that grows with the user's repo. Shipped c
 uv run pytest                  # fast, no LLM, always safe
 claude plugin validate plugin  # manifest and component validation
 /run-evals <evals>             # evals in a subagent, costs tokens
+uv run python scripts/merge_learnings.py --install  # once per clone: learnings.md merge driver
 ```
 
 ## Rules that always apply
@@ -17,7 +18,6 @@ claude plugin validate plugin  # manifest and component validation
 - **Script what must always work.** Reliable steps go in `plugin/scripts/`, not model instructions.
 - **Init never overwrites** a user's `.kairyn/`.
 - **Report evidence, not claims.** Quote numbers from its `summary.md`.
-- Stage files are upper case (`REQUIREMENTS.md`); stage names and `STATE.md` values lower case.
 - **Keep files lean.** Each markdown file has a token budget in `.harness/budgets.yml`. Over it: cut or split, never raise it.
 
 Change a workflow: update its `.harness` doc in the same commit, then run `uv run python plugin/scripts/harness_docs.py --write`.

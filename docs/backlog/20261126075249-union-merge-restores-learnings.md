@@ -1,6 +1,6 @@
 ---
 title: A union merge restores learnings a retro removed
-status: inbox
+status: committed
 requester: Jayson De los Reyes
 date: 2026-11-26
 effort: low
@@ -23,3 +23,5 @@ review_by:
 # Log
 
 - 2026-11-26T07:52:49Z [capture] From the 2026-11-26 second retro, approved by Jayson De los Reyes. Status inbox, waiting for triage. Effort low, impact medium proposed by the AI.
+- 2026-11-28T10:52:54Z [triage] Effort low, impact medium confirmed by Jayson De los Reyes (relayed by Kairyn Steward). Status triaged.
+- 2026-11-28T10:52:54Z [commit] Task docs/tasks/2026-11-28-union-merge-restores-learnings/ started with grill. Status committed.

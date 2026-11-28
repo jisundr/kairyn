@@ -1,2 +1,4 @@
-# Stages append to learnings.md: parallel task branches keep both sides on a local merge or rebase.
-.kairyn/learnings.md merge=union
+# Stages append to learnings.md and retros remove lines from it. scripts/merge_learnings.py keeps
+# both on a merge or rebase; union restored lines a retro removed. Set it up once per clone:
+# python3 scripts/merge_learnings.py --install (without it, git merges as text and conflicts).
+.kairyn/learnings.md merge=learnings
