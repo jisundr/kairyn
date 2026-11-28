@@ -12,3 +12,4 @@ Stages append here.
 - 2026-11-28 [close] A fix-round test edit fails the commits gate. Fold it into the red `test(T<n>)` commit with a scripted rebase.
 - 2026-11-28 [close] Close deletes only an idea with `status: committed`. Set it when the owner approves the task's work, or the idea stays after close.
 - 2026-11-28 [close] A clone without `scripts/merge_learnings.py --install` gets a conflict on `learnings.md`: keep both sides' new lines, and drop the lines a retro removed.
+- 2026-11-28 [review] Ban changes to a released entry of `plugin/release-hashes.json` with a contract gate check, because a regenerate after a rebase put back extra 0.21.3 hashes that review 1 removed, and no review saw it.
