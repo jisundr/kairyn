@@ -2,7 +2,7 @@
 task: 2026-11-28-backlog-stage
 title: Backlog stage
 stage: gates
-status: blocked
+status: in-progress
 grill: done
 stages:
   grill: done
@@ -12,7 +12,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-28T01:26:30Z
-updated: 2026-11-28T12:24:16Z
+updated: 2026-11-28T12:24:45Z
 ---
 
 # Log
@@ -44,3 +44,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T12:24:07Z [build] Commits gate: fold by script (tree unchanged). The test edits of fix 4fd6cd2 went into test(T2) and fix b0028ba; test(evals) became fix(evals). Red at test(T2) exit 1, green at feat(T2) exit 0. BUILD.md SHAs remapped.
 - 2026-11-28T12:24:16Z [gates] Resumed after a block.
 - 2026-11-28T12:24:16Z [gates] Blocked: gate design failed: `docs/backlog/20261122080759-backlog-stage.md` changed, but DESIGN.md does not name it
+- 2026-11-28T12:24:45Z [gates] Resumed after a block.
