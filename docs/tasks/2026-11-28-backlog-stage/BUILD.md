@@ -10,11 +10,11 @@ summary: "Red and green evidence for each T<n>, written by afk.py."
 
 | Task | Test commit | Red exit | Feat commit | Green exit |
 |---|---|---|---|---|
-| T1 | 3a8caaf | 1 | 4a11423 | 0 |
-| T2 | 266e2bd | 1 | f94439d | 0 |
-| T3 | cdd7e2a | 1 | 0cde169 | 0 |
-| T4 | 378c5db | 2 | 3080de0 | 0 |
-| T5 | 4eff076 | 1 | e03bc9f | 0 |
+| T1 | 2f89da0 | 1 | 91eae3e | 0 |
+| T2 | 3b1bf11 | 1 | 745d95e | 0 |
+| T3 | be138af | 1 | a017d78 | 0 |
+| T4 | 46ad85d | 2 | fea6420 | 0 |
+| T5 | 3f9b9e8 | 1 | 750f1ec | 0 |
 
 ## Flags
 - test edit: `tests/test_skills.py` in fix

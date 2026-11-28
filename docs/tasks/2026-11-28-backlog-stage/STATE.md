@@ -40,3 +40,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T11:33:39Z [build] Blocked: gh pr create failed: st create failed: GraphQL: Head sha can't be blank, Base sha can't be blank, No commits between jisundr/backlog-stage and kairyn/2026-11-28-backlog-stage, Base ref must be a branch (createPullRequest)
 - 2026-11-28T11:38:17Z [build] PR #82 opened by hand against main (afk.py used the home branch as base). Branch merged with main at 0.21.4; version 0.21.5.
 - 2026-11-28T11:40:20Z [build] Owner chose eval set (b): the running-stages.md line and its T5 test line are dropped, so design, build, gates, review and retro evals are not selected. Next: the remaining evals at 10 runs.
+- 2026-11-28T12:18:50Z [build] Evals 20261128T114315Z and 20261128T121248Z (triage rerun): all pass, $35.83 in total. Rebased onto main 46249f8; the tree equals the evaluated tree merged with main. BUILD.md SHAs mapped to the rebased commits.
