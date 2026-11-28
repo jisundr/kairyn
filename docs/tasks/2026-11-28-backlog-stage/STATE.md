@@ -3,16 +3,16 @@ task: 2026-11-28-backlog-stage
 title: Backlog stage
 stage: grill
 status: blocked
-grill: in-progress
+grill: done
 stages:
-  grill: in-progress
+  grill: done
   requirements: pending
   design: pending
   build: pending
   gates: pending
   review: pending
 created: 2026-11-28T01:26:30Z
-updated: 2026-11-28T01:34:32Z
+updated: 2026-11-28T01:35:26Z
 ---
 
 # Log
@@ -24,3 +24,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T01:31:02Z [grill] D2: owner chose capture, triage digest, prune and commit; no pitch step. Q3 asked: entry points.
 - 2026-11-28T01:33:42Z [grill] D3: owner chose BACKLOG.md with /kairyn:idea and /kairyn:triage. Q4 asked: where rules live, how a repo gets docs/backlog/.
 - 2026-11-28T01:34:32Z [grill] D4: rules move into BACKLOG.md; capture creates docs/backlog/; init unchanged. Q5 asked: how a committed idea starts a task.
+- 2026-11-28T01:35:26Z [grill] D5: commit in triage creates the task folder. No branch open. Concept restated; grill: done. Waiting for owner approval.
