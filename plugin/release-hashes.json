@@ -2035,6 +2035,7 @@
    "3de2b8d5c8e87c385b394afd2936fc20fa757b005894d7a36e09ecd3c3f3d034"
   ],
   ".kairyn/stages/DESIGN.md": [
+   "79ea380f8161b2eb98d4d157cd54d13197342722072bd4bab5a1f477761fd9ae",
    "b3a7d043213201a7733d2e12959e82227d83768e3c54dea564fc6c2eca021dc7"
   ],
   ".kairyn/stages/GATES.md": [
@@ -2057,6 +2058,9 @@
   ],
   ".kairyn/stages/_approval.md": [
    "c1a126fd942788eb1dedbda76aab83544e2dc3e9ddb5bfa4c7e9e595e6fcefa4"
+  ],
+  ".kairyn/stages/_slices.md": [
+   "e1484f7b5da778b6b007dc8cdb6aff15861943702aa82cdb1a506663adbc6b26"
   ],
   ".kairyn/stages/_template.md": [
    "d4e0acf67fc85d8e91a2390eaa8c10950ac361be1166094a671efc1d9e89a9c8"
