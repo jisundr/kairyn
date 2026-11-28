@@ -218,3 +218,24 @@ def test_no_noqa_in_promptfoo_evals():
     files = sorted(p for p in (ROOT / "evals" / "promptfoo").rglob("*") if p.suffix in (".py", ".yaml"))
     hits = [f"{p.name}:{i}" for p in files for i, line in enumerate(p.read_text().splitlines(), 1) if "noqa" in line]
     assert hits == [], f"remove `# noqa` from {hits}"
+
+
+def test_triage_keeps_next_and_parked():
+    """AC7, R16: TRIAGE.md keeps only Next and Parked; the rules live in BACKLOG.md."""
+    text = (ROOT / "docs" / "backlog" / "TRIAGE.md").read_text()
+    headings = [line for line in text.splitlines() if line.startswith("## ")]
+    assert headings == ["## Next", "## Parked"]
+    assert "BACKLOG.md" in text
+    for rule in ("[capture]", "[triage]", "`inbox`", "`low`, `medium` or `high`"):
+        assert rule not in text, rule
+
+
+def test_docs_name_the_backlog_stage():
+    """T5: the docs name the backlog stage and its skills."""
+    workflow = PLUGIN / "harness" / ".harness" / "workflows" / "running-stages.md"
+    for doc in (ROOT / "README.md", workflow):
+        text = doc.read_text()
+        for name in ("BACKLOG", "/kairyn:idea", "/kairyn:triage"):
+            assert name in text, (doc, name)
+    assert "BACKLOG.md" in workflow.read_text()
+    assert "BACKLOG" in (ROOT / ".harness" / "README.md").read_text()
