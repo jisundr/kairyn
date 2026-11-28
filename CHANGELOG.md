@@ -37,4 +37,4 @@
 - Grill asks rounds of at most 3 numbered questions, each with a recommended answer; a reply with no numbers accepts them all. (2026-11-28-grill-rounds)
 - The design stage's slice and test-plan rules moved to _slices.md; DESIGN.md is 346 tokens, with room for new rules. (2026-11-28-split-design-stage; closes split-design-stage)
 - This repo merges learnings.md with scripts/merge_learnings.py, not union, so a retro's removals hold; run it with --install once per clone (ADR 0029). (2026-11-28-union-merge-restores-learnings)
-- New optional backlog stage: /kairyn:idea captures an idea, /kairyn:triage records the owner's decisions, and a commit starts its task. (2026-11-28-backlog-stage; closes backlog-stage)
+- Backlog stage: /kairyn:idea captures an idea; /kairyn:triage records owner decisions and commits one into a task. (closes backlog-stage)
