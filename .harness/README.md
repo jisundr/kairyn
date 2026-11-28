@@ -24,6 +24,8 @@ The workflows for developing kairyn itself, not for using it (see the README). R
 | [Upgrade](workflows/upgrade.md) | changing upgrades or the plugin version |
 <!-- harness-docs:end -->
 
+Ideas: `docs/backlog/`, stage `BACKLOG`.
+
 ## Principles
 
 1. **Deterministic first.** If a step can be a script, make it a script (`init.sh`, `verify-init.sh`). Leave the model only what needs judgment. A command that had the model copy files by hand failed 10 of 10 headless runs.
@@ -56,7 +58,7 @@ load: on-demand
 
 Classes are set per file pattern in `budgets.yml` and must match each doc's header. Only `on-demand` docs appear in the index tables.
 
-Read only those first lines (`head -6 <file>`) to decide whether a doc matters. The tables above and in `CLAUDE.md` are generated from these headers:
+The tables above and in `CLAUDE.md` are generated from these headers:
 
 ```bash
 uv run python plugin/scripts/harness_docs.py --write   # regenerate the index tables

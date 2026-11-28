@@ -2132,14 +2132,12 @@
    "683224ed2ef73f475a6b9c28e47ea4774dd61c92b466b9b16d7977499f554c0d"
   ],
   ".kairyn/stages/GRILL.md": [
-   "67f72f8dfafd639089cf15e5c3f87db6bff9143fbd703ddd472e047142791ecc",
    "e4d44dfc73fe26a6559d4820909bbd25e2f43702e305d088e53dccacb33924aa"
   ],
   ".kairyn/stages/MODEL-ROUTING.md": [
    "97d2fb57693d76e0769f0b03c23d9cdd6b764856a5e9597f549809e2882fd0fb"
   ],
   ".kairyn/stages/REQUIREMENTS.md": [
-   "87261b0545acd538e55b7579eeac828499fbb075a7408027fbdb8d6452e9ea4e",
    "e7308c76f92930b9afb6740805432a87f7d7a512f34096deeb1a45d763c5199f"
   ],
   ".kairyn/stages/RETRO.md": [
@@ -2202,7 +2200,8 @@
    "2181d24c27c3e721eb199b8d8f5c5ef5653da12cb07c1cb8c806874c9f41caab"
   ],
   ".harness/workflows/running-stages.md": [
-   "079eae0fb23418d02579fb4396c14d1b2b2fdedd4bb521e127ade10f554e6def"
+   "079eae0fb23418d02579fb4396c14d1b2b2fdedd4bb521e127ade10f554e6def",
+   "a761158114c3c601c56650ad96a404b5de6d5e9ab197455a23fcaa1b044b4253"
   ],
   ".harness/workflows/task-lifecycle.md": [
    "ab9c15d2542e283ac2c7c50d9da44c004bdba865368b7b50aa00af107008c780"
