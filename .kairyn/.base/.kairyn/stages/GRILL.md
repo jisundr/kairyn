@@ -2,12 +2,10 @@
 name: grill
 order: 40
 optional: true
-purpose: Interview the user one question at a time until user and agent hold the same concept.
+purpose: Interview the user in rounds of numbered questions until user and agent hold the same concept.
 ---
 
 # Stage: grill
-
-Optional: run it before `requirements` on a vague or solution-first request. `/kairyn:grill` runs it.
 
 ## Inputs
 - A topic (new task) or a task folder (continue it).
@@ -17,11 +15,11 @@ Optional: run it before `requirements` on a vague or solution-first request. `/k
 1. Get timestamps from `date` (see `_template.md`, Time). For a topic, create the task folder and `STATE.md` as `requirements` step 1 does.
 2. Read the repo before each question. Never ask what a file answers.
 3. Ask for the problem before any solution. A named solution ("a cache") is a guess: ask if it fits the problem better than other fixes. Challenge each vague term: "faster" asks how fast, for whom.
-4. Ask one question per message, then wait: `grill: in-progress`, `stage: grill`, `status: blocked`. Follow each branch of the decision tree. End each message with:
+4. Ask in rounds, then wait: `grill: in-progress`, `stage: grill`, `status: blocked`. A round asks the open questions whose prerequisites are settled: at most 3, those that unblock most first. Keep the rest under `## Open branches`. Numbers continue across rounds. End each message with, per question:
    `**Q<n>:** <one question>`
    `**Recommended:** <answer>, because <reason>.`
-   Give one answer, based on the repo or earlier answers. Mark a guessed number `(guess)`.
-5. After each answer, write it to `CONCEPT.md` as `D<n>`. Then ask about a new open branch.
+   Base each answer on the repo or earlier answers. Mark a guessed number `(guess)`.
+5. Write each answer to `CONCEPT.md` as `D<n>`. A reply with no numbers accepts each recommendation. A question the reply skips stays open. Then ask the next round.
 6. When no branch is open or the user says stop, restate the concept in at most 5 sentences and set `grill: done`. Ask the user to approve it. A stop is not approval.
 
 ## Output

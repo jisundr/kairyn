@@ -30,7 +30,7 @@
     },
     ".kairyn/stages/GRILL.md": {
       "owner": "repo",
-      "sha256": "16dafdcd9b40891f0d4d31f7b736b4e8e0e78c8fb8e8bb3ab8a2faaff64e1833"
+      "sha256": "e4d44dfc73fe26a6559d4820909bbd25e2f43702e305d088e53dccacb33924aa"
     },
     ".kairyn/stages/MODEL-ROUTING.md": {
       "owner": "repo",
@@ -97,5 +97,5 @@
       "sha256": "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
     }
   },
-  "version": "0.21.2"
+  "version": "0.21.3"
 }
