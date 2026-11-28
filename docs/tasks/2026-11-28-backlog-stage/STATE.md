@@ -1,7 +1,7 @@
 ---
 task: 2026-11-28-backlog-stage
 title: Backlog stage
-stage: gates
+stage: review
 status: in-progress
 grill: done
 stages:
@@ -9,10 +9,10 @@ stages:
   requirements: done
   design: done
   build: done
-  gates: pending
+  gates: done
   review: pending
 created: 2026-11-28T01:26:30Z
-updated: 2026-11-28T12:24:45Z
+updated: 2026-11-28T12:27:29Z
 ---
 
 # Log
@@ -45,3 +45,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T12:24:16Z [gates] Resumed after a block.
 - 2026-11-28T12:24:16Z [gates] Blocked: gate design failed: `docs/backlog/20261122080759-backlog-stage.md` changed, but DESIGN.md does not name it
 - 2026-11-28T12:24:45Z [gates] Resumed after a block.
+- 2026-11-28T12:27:29Z [gates] 2 pass, 4 not set: accessibility, performance, observability, security. Cost $0.00. Next: review.
