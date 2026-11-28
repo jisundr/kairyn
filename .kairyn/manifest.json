@@ -12,10 +12,6 @@
       "owner": "plugin",
       "sha256": "079eae0fb23418d02579fb4396c14d1b2b2fdedd4bb521e127ade10f554e6def"
     },
-    ".kairyn/stages/BACKLOG.md": {
-      "owner": "repo",
-      "sha256": "0913db011b86ec556fd66b2a1a14bebfbf373b7244ac1835bc30af8e8f5cf62d"
-    },
     ".kairyn/stages/BUILD.md": {
       "owner": "repo",
       "sha256": "0cf08b9f62f3c6302fa5ae48f05803b5f1162e1e635069c11b8200fb23a68a2d"
