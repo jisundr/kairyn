@@ -7,11 +7,11 @@ stages:
   grill: done
   requirements: done   # pending | in-progress | done
   design: done
-  build: pending
+  build: in-progress
   gates: pending
   review: pending
 created: 2026-11-28T01:26:43Z
-updated: 2026-11-28T01:40:41Z
+updated: 2026-11-28T01:43:53Z
 ---
 
 # Log
@@ -26,3 +26,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T01:38:42Z [requirements] Requirements approved by Jayson De los Reyes ("Approve", relayed by the Steward). Eval set: design only (Steward). Next: design.
 - 2026-11-28T01:39:54Z [design] Wrote DESIGN.md: option A (move steps 6-7 to _slices.md), T1 move, T2 release. Blocked: waiting for approval.
 - 2026-11-28T01:40:41Z [design] Design approved by Jayson De los Reyes ("Approve", option A, relayed by the Steward). Evals approved: design, init, upgrade at 10 runs. Next: build.
+- 2026-11-28T01:43:53Z [build] Build started.
