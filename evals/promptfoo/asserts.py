@@ -11,7 +11,7 @@ sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
 from checks import (build_row_problems, flags_problems, gate_row, new_constraint_lines, output_header_problems, review_gap_problems, split_build_problems,
                     retro_applied_problems, retro_proposal_problems, retro_scope_problems, chosen_option, design_run_problems, design_test_plan_problems, grounded_problems, options_problems,
-                    close_problems, TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_reply_problems, handoff_problems, next_routing_stage,
+                    close_problems, TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_round_problems, round_decision_problems, handoff_problems, next_routing_stage,
                     open_decisions, routing_problems, state_fields, ste_problems, ste_rate, structural_problems,
                     traceability_problems, repo_line_problems)
 from runner import JUDGE_MODEL, NO_QUESTIONS, claude
@@ -218,24 +218,18 @@ def grill_well_formed(output, context):
     return _result(grill_problems(_run(json.loads(output)), stopped=True))
 
 
-def one_question(output, context):
-    """Every message before the stop asks one question and recommends an answer."""
+def rounds(output, context):
+    """Every message before the stop asks a round of 1 to 3 numbered questions, each with a recommended answer.
+    The first round asks at least 2: the request leaves the problem and "faster" open."""
     turns = json.loads(output)["turns"]
     problems = [f"turn {i}: {p}" for i in QUESTION_TURNS if i < len(turns)
-                for p in grill_reply_problems(turns[i]["reply"])]
+                for p in grill_round_problems(turns[i]["reply"], min_questions=2 if i == 0 else 1)]
     return _result(problems if len(turns) == GRILL_TURNS else problems + [f"{len(turns)} turns, expected {GRILL_TURNS}"])
 
 
 def records_answers(output, context):
-    """After each accepted answer, CONCEPT.md holds one more decision."""
-    turns = json.loads(output)["turns"]
-    if len(turns) < 3:
-        return _result([f"only {len(turns)} turns"])
-    counts = [len(decision_labels(t["concept"])) for t in turns[:3]]
-    problems = [f"after answer {n}: {counts[n]} decisions, expected at least {n}" for n in (1, 2) if counts[n] < n]
-    if counts[2] <= counts[1]:
-        problems.append(f"answer 2 added no decision ({counts[1]} -> {counts[2]})")
-    return _result(problems)
+    """Each accepted round adds one decision to CONCEPT.md per question it asked."""
+    return _result(round_decision_problems(json.loads(output)["turns"]))
 
 
 def waits_for_answer(output, context):
@@ -315,7 +309,7 @@ Score 1-5 on each criterion, then reply with a JSON object first:
 After the JSON, list each question the repo already answers, and each vague term left unchallenged, one per line.
 - grounded: no question asks what the repo already answers (language, data source, file size, export schedule)
 - challenges: it asks for the problem behind "a cache" before any cache design, and pins down vague words such as "faster"
-- recommends: each question comes with one recommended answer and a reason grounded in the repo or earlier answers
+- recommends: each question in a round comes with its own recommended answer and a reason grounded in the repo or earlier answers
 """
 
 
