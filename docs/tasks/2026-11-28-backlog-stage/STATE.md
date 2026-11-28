@@ -48,3 +48,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T12:27:29Z [gates] 2 pass, 4 not set: accessibility, performance, observability, security. Cost $0.00. Next: review.
 - 2026-11-28T12:27:32Z [review] Review started.
 - 2026-11-28T12:31:50Z [review] Cost $0.99. Waiting for the merge decision: /kairyn:review 2026-11-28-backlog-stage approve or reject.
+- 2026-11-28T12:35:07Z [review] F1 fixed after review in 20c2ed0: release-hashes.json keeps main's released entries, 0.21.5 has only shipped hashes. uv run pytest 917 passed. The upgrade eval depends on release-hashes.json and needs a new pass at this hash.
