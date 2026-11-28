@@ -3,6 +3,8 @@ branch from before a retro does not restore the lines the retro removed (union d
 import subprocess
 import sys
 
+import pytest
+
 from helpers import ROOT
 
 DRIVER = ROOT / "scripts" / "merge_learnings.py"
@@ -82,3 +84,34 @@ def test_driver_keeps_current_order_then_new_lines(tmp_path):
                             capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     assert ours.read_text() == "h\nx\nours\ntheirs1\ntheirs2\n"
+
+
+def test_install_is_idempotent(tmp_path):
+    repo, _ = make_repo(tmp_path, driver=False)
+    for _ in range(2):
+        result = subprocess.run([sys.executable, "scripts/merge_learnings.py", "--install"],
+                                cwd=repo, capture_output=True, text=True)
+        assert result.returncode == 0, result.stderr
+        assert "merge.learnings.driver" in result.stdout
+    entries = git(repo, "config", "--get-all", "merge.learnings.driver").stdout.splitlines()
+    assert entries == ["python3 scripts/merge_learnings.py %O %A %B"]
+    assert git(repo, "config", "--get", "merge.learnings.name").returncode == 0
+
+
+def test_without_driver_config_a_retro_case_conflicts(tmp_path):
+    repo, learnings, rebase = retro_case(tmp_path, driver=False)
+    assert rebase.returncode != 0
+    assert "<<<<<<<" in learnings.read_text()
+
+
+def test_driver_runs_on_python39(tmp_path):
+    from test_python39 import PY39
+    if PY39 is None:
+        pytest.skip("no Python 3.9 interpreter installed")
+    base, ours, theirs = (tmp_path / n for n in ("o", "a", "b"))
+    base.write_text("h\nold\n")
+    ours.write_text("h\n")
+    theirs.write_text("h\nold\nnew\n")
+    result = subprocess.run([PY39, str(DRIVER), str(base), str(ours), str(theirs)], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert ours.read_text() == "h\nnew\n"
