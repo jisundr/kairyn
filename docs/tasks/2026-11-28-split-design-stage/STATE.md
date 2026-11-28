@@ -11,7 +11,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-28T01:26:43Z
-updated: 2026-11-28T11:06:52Z
+updated: 2026-11-28T11:07:26Z
 ---
 
 # Log
@@ -41,3 +41,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T11:02:31Z [gates] Blocked: gate commits failed: 4095181 fix edits the test file `tests/test_dev_harness.py` in the fix round: edit it in a test commit that is red
 - 2026-11-28T11:06:52Z [gates] Resumed after a block.
 - 2026-11-28T11:06:52Z [gates] Blocked: gate sessions failed: AC7 needs a person to run `| AC7 after close, idea gone and an ADR names the rejected split | T2 | Manual: after `/kairyn:close`, check `docs/backlog/` and `docs/adr/` |`; run each, add `Run AC<n>: <who>, <time>, "<what it showed>"` (time from `date -u +%Y-%m-%dT%H:%M:%SZ`) to docs/tasks/2026-11-28-split-design-stage/BUILD.md on kairyn/2026-11-28-split-design-stage, commit, then run /kairyn:build 2026-11-28-split-design-stage
+- 2026-11-28T11:07:26Z [gates] Steward approved: DESIGN.md AC7 test row amended to "Checked by /kairyn:close after merge" (no Manual: prefix); close cannot run before merge. AC7 stays in REQUIREMENTS.md and is checked at close. Resume.

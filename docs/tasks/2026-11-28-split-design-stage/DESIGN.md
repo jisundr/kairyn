@@ -29,6 +29,6 @@ Option A. Steps 6 and 7 of `plugin/stages/DESIGN.md` move word for word to a new
 | AC4 3 design scenarios meet `min_pass_rate` at 10 runs | T1 | The evals review gate: `python3 scripts/evals_gate.py` after `/run-evals design` |
 | AC5 `design.yaml` depends and `change-a-stage.md` name `_slices.md` | T1 | `grep -q _slices.md evals/promptfoo/design.yaml && grep -q _slices.md .harness/workflows/change-a-stage.md` |
 | AC6 newer version, pytest and plugin validate pass | T2 | `uv run pytest && claude plugin validate plugin` |
-| AC7 after close, idea gone and an ADR names the rejected split | T2 | Manual: after `/kairyn:close`, check `docs/backlog/` and `docs/adr/` |
+| AC7 after close, idea gone and an ADR names the rejected split | T2 | Checked by `/kairyn:close` after merge: `close.py` deletes the idea, the stage writes the ADR |
 
 Approval: Jayson De los Reyes, 2026-11-28T01:40:41Z, "Approve"
