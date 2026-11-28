@@ -10,11 +10,11 @@ purpose: Interview the user in rounds of numbered questions until user and agent
 ## Inputs
 - A topic (new task) or a task folder (continue it).
 - The task's `STATE.md` and `CONCEPT.md`, if present.
-- The idea `STATE.md` names, if any: its raw request and problem.
+- Any idea `STATE.md` names: its raw request and problem.
 
 ## Steps
 1. Get timestamps from `date` (`_template.md`, Time). For a topic, create the task folder and `STATE.md` as `requirements` step 1 does.
-2. Read the repo first. Never ask what a file answers.
+2. Read the repo before each question. Never ask what a file answers.
 3. Ask for the problem before any solution. A named solution ("a cache") is a guess: ask if it fits the problem better than other fixes. Challenge each vague term: "faster" asks how fast, for whom.
 4. Ask in rounds, then wait: `grill: in-progress`, `stage: grill`, `status: blocked`. A round asks the open questions whose prerequisites are settled: at most 3, those that unblock most first. Keep the rest under `## Open branches`. Numbers continue across rounds. End each message with, per question:
    `**Q<n>:** <one question>`

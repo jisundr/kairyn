@@ -7,7 +7,7 @@ load: on-demand
 
 # .harness
 
-The workflows for developing kairyn itself, not for using it (see the README). Read them before you change the plugin, tests or evals.
+The workflows for developing kairyn itself, not for using it (see the README). Read them before you change the plugin, tests or evals. Ideas: `BACKLOG`.
 
 <!-- harness-docs:start -->
 | Workflow | Use it when |
@@ -23,8 +23,6 @@ The workflows for developing kairyn itself, not for using it (see the README). R
 | [Testing and evals](workflows/testing-and-evals.md) | running, writing or interpreting tests or evals, or touching evals/ |
 | [Upgrade](workflows/upgrade.md) | changing upgrades or the plugin version |
 <!-- harness-docs:end -->
-
-Ideas: `docs/backlog/`, stage `BACKLOG`.
 
 ## Principles
 
@@ -50,15 +48,15 @@ load: on-demand
 
 `load` says when a file is read:
 
-| Class | Meaning |
+|Class|Meaning|
 |---|---|
-| `always` | loaded every session, so keep it tiny (`CLAUDE.md`) |
-| `on-demand` | read only when the task matches `read_when` (these docs) |
-| `runtime` | shipped in the plugin, read when a command or stage runs |
+|`always`|loaded every session, so keep it tiny (`CLAUDE.md`)|
+|`on-demand`|read only when the task matches `read_when` (these docs)|
+|`runtime`|shipped in the plugin, read when a command or stage runs|
 
 Classes are set per file pattern in `budgets.yml` and must match each doc's header. Only `on-demand` docs appear in the index tables.
 
-The tables above and in `CLAUDE.md` are generated from these headers:
+Read only those first lines (`head -6 <file>`) to decide whether a doc matters. The tables above and in `CLAUDE.md` are generated from these headers:
 
 ```bash
 uv run python plugin/scripts/harness_docs.py --write   # regenerate the index tables

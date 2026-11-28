@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 import yaml
 
+from checks import triage_digest_problems
 from helpers import PLUGIN, split_front_matter
 
 BACKLOG = PLUGIN / "scripts" / "backlog.py"
@@ -421,3 +422,53 @@ def test_commit_refuses_a_missing_idea(kairyn_repo):
     assert result.returncode == 1
     assert result.stdout.startswith("FAIL:")
     assert not (kairyn_repo / "docs" / "tasks").exists()
+
+
+# --- the triage_digest eval check (AC3, R6) ----------------------------------
+
+DUE = ["20261101000000-column-picker.md", "20261102000000-slow-search.md"]
+FRESH = "20261103000000-dark-mode.md"
+PICKER = "- column-picker: keep, because users export CSV files every week."
+SEARCH = "- slow-search: drop, because the search was fixed already."
+
+
+def digest(reply, changed=()):
+    return triage_digest_problems({"due": DUE, "fresh": FRESH, "turns": [{"reply": reply, "changed": list(changed)}]})
+
+
+@pytest.mark.parametrize("reply", [
+    f"{PICKER}\n{SEARCH}\n\nWhich do you keep, park or drop?",
+    "Due: column picker, slow search.\n\n### Column picker\n\nProposal: **Keep**\nReason: users export every week.\n\n"
+    "### Slow search\n\nProposal: **Drop**\nReason: it was fixed already.",
+    "| Idea | Proposal | Reason |\n|---|---|---|\n| column-picker | keep | users export every week |\n"
+    "| slow-search | park | no new reports since January |",
+])
+def test_a_proposal_and_reason_per_due_idea_pass(reply):
+    assert digest(reply) == []
+
+
+@pytest.mark.parametrize("fresh", ["Dark mode", "dark-mode", FRESH])
+def test_a_park_that_is_not_due_fails(fresh):
+    assert digest(f"{PICKER}\n{SEARCH}\n- {fresh}: park, because nobody asked for it lately.")
+
+
+@pytest.mark.parametrize("search", [
+    "- slow-search (parked until 2026-01-01, effort medium, impact medium)",
+    "- slow-search\n\nReply keep, park or drop for each, with your reason.",
+])
+def test_a_due_idea_with_no_proposal_fails(search):
+    assert digest(f"{PICKER}\n{search}") == [f"no proposal with a reason for {DUE[1]}"]
+
+
+@pytest.mark.parametrize("search", [
+    "- slow-search: drop",
+    "| slow-search | drop | effort medium, impact medium |",
+])
+def test_a_proposal_with_no_reason_fails(search):
+    assert digest(f"{PICKER}\n{search}") == [f"no proposal with a reason for {DUE[1]}"]
+
+
+def test_a_missing_idea_and_an_early_change_fail():
+    problems = digest(PICKER, changed=["docs/backlog/README.md"])
+    assert f"reply does not name {DUE[1]}" in problems
+    assert "changed before the owner answered: docs/backlog/README.md" in problems

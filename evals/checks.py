@@ -902,18 +902,54 @@ def idea_problems(d: dict) -> list[str]:
     return problems
 
 
+TRIAGE_MENU = re.compile(r"keep\W+(?:or\W+)?park\W+(?:or\W+)?(?:renew\W+(?:or\W+)?)?drop")
+TRIAGE_LABELS = {"keep", "park", "drop", "proposal", "proposed", "propose", "reason", "effort", "impact", "low",
+                 "medium", "high", "inbox", "parked", "status", "idea", "until", "review_by", "md"}
+
+
+def _names(name: str) -> tuple[str, str]:
+    """An idea's slug as the file has it and with spaces."""
+    slug = name.split("-", 1)[1][:-3]
+    return slug, slug.replace("-", " ")
+
+
+def _idea_blocks(reply: str, due: list[str]) -> dict[str, list[str]]:
+    """The text about each idea: from a line that names it to the next line that names one. A table row stands alone."""
+    blocks: dict[str, list[list[str]]] = {name: [] for name in due}
+    current: list[str] = []
+    for line in reply.splitlines():
+        named = [name for name in due if any(n in line for n in _names(name))]
+        if named:
+            current = named
+            for name in named:
+                blocks[name].append([])
+        if TRIAGE_MENU.search(line):
+            continue   # "keep, park or drop?" asks the owner; it proposes nothing
+        for name in current:
+            blocks[name][-1].append(line)
+        if line.lstrip().startswith("|"):
+            current = []
+    return {name: ["\n".join(lines) for lines in found] for name, found in blocks.items()}
+
+
+def _proposes_with_reason(block: str, name: str) -> bool:
+    for text in (name, *_names(name)):
+        block = block.replace(text, " ")
+    words = re.findall(r"[a-z_']{2,}", block)
+    return bool(re.search(r"\b(keep|park|drop)\b", block)) and len([w for w in words if w not in TRIAGE_LABELS]) >= 3
+
+
 def triage_digest_problems(d: dict) -> list[str]:
-    """Each due idea named with a proposal; the fresh park not proposed; no file changed."""
+    """Each due idea named with a proposal and a reason; the fresh park left out; no file changed."""
     first = d["turns"][0]
     problems = [f"changed before the owner answered: {p}" for p in first["changed"]]
     reply = first["reply"].lower()
-    for name in d["due"]:
-        slug = name.split("-", 1)[1][:-3]
-        if slug not in reply and slug.replace("-", " ") not in reply:
+    for name, blocks in _idea_blocks(reply, d["due"]).items():
+        if not any(n in reply for n in _names(name)):
             problems.append(f"reply does not name {name}")
-    if not re.search(r"\b(keep|park|drop)", reply):
-        problems.append("reply proposes no keep, park or drop")
-    if d["fresh"] in reply:
+        elif not any(_proposes_with_reason(block, name) for block in blocks):
+            problems.append(f"no proposal with a reason for {name}")
+    if any(n in reply for n in _names(d["fresh"])):
         problems.append("reply lists a park that is not due")
     return problems
 
