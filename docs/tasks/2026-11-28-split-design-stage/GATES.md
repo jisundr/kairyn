@@ -11,4 +11,5 @@ summary: "One row per gate, written by afk.py: the review gates, then .kairyn/af
 | Gate | Result | Exit | Check |
 |---|---|---|---|
 | design | pass | 0 | built in |
-| commits | fail | 1 | built in |
+| commits | pass | 0 | built in |
+| sessions | fail | 1 | built in |
