@@ -1,7 +1,7 @@
 """Pure checks for the grill stage (evals/checks.py)."""
 from datetime import datetime, timedelta, timezone
 
-from checks import (TS_FORMAT, concept_use_problems, decision_labels, grill_problems, grill_round_problems, handoff_problems, round_decision_problems, section_items, state_fields)
+from checks import (TS_FORMAT, concept_use_problems, decision_labels, finished_turn, grill_problems, grill_round_problems, handoff_problems, round_decision_problems, section_items, state_fields)
 
 TASK = "2026-11-22-report-cache"
 NOW = datetime.now(timezone.utc).replace(microsecond=0)
@@ -155,6 +155,21 @@ def test_round_decisions_missing_after_an_accepted_round():
 
 def test_round_decisions_need_three_turns():
     assert round_decision_problems([{"reply": _round(1), "concept": ""}]) == ["only 1 turns"]
+
+
+def test_finished_turn_is_the_first_restatement_after_turn_0():
+    asking = {"state": _state("2026-11-22T09:00:00Z", grill="in-progress", stage="grill", status="blocked")}
+    restated = {"state": _state("2026-11-22T09:00:00Z", grill="done", stage="grill", status="blocked")}
+    assert finished_turn([asking, asking, asking, restated]) is None
+    assert finished_turn([asking, asking, restated, restated]) == 2
+    assert finished_turn([asking, restated, restated]) == 1
+    assert finished_turn([restated, restated]) is None   # turn 0 must ask: rounds reports it
+
+
+def test_round_decisions_skip_the_restated_turn():
+    turns = [{"reply": _round(3), "concept": _concept(0)}, {"reply": "Concept restated.", "concept": _concept(3)},
+             {"reply": "Stopped.", "concept": _concept(3)}]
+    assert round_decision_problems(turns) == []
 
 
 def test_state_fields():
