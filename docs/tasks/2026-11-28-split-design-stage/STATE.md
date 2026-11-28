@@ -2,7 +2,7 @@
 task: 2026-11-28-split-design-stage
 title: Split the design stage
 stage: gates
-status: in-progress
+status: blocked
 stages:
   grill: done
   requirements: done   # pending | in-progress | done
@@ -11,7 +11,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-28T01:26:43Z
-updated: 2026-11-28T10:47:13Z
+updated: 2026-11-28T10:47:19Z
 ---
 
 # Log
@@ -36,3 +36,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T10:36:11Z [build] Resumed after a block.
 - 2026-11-28T10:36:11Z [build] Build started.
 - 2026-11-28T10:47:13Z [build] All 2 tasks green. Cost $1.33. Next: gates.
+- 2026-11-28T10:47:19Z [build] Blocked: gh pr create failed: failed: GraphQL: Head sha can't be blank, Base sha can't be blank, No commits between jisundr/split-design-stage and kairyn/2026-11-28-split-design-stage, Base ref must be a branch (createPullRequest)
