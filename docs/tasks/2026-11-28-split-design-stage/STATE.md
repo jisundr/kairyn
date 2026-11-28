@@ -11,7 +11,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-28T01:26:43Z
-updated: 2026-11-28T02:22:34Z
+updated: 2026-11-28T02:23:15Z
 ---
 
 # Log
@@ -28,3 +28,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T01:40:41Z [design] Design approved by Jayson De los Reyes ("Approve", option A, relayed by the Steward). Evals approved: design, init, upgrade at 10 runs. Next: build.
 - 2026-11-28T01:43:53Z [build] Build started.
 - 2026-11-28T02:22:34Z [build] Blocked: the reviewer still objects after the fix round: The fix round did not fix the earlier finding. `tests/test_dev_harness.py` still has the new test `test_this_repo_takes_the_design_split_at_0_21_3_or_later`, and `DESIGN.md` T2 still does not list that file. `DESIGN.md` is not in the diff, and its T2 Files line names only `plugin.json`, `release-hashes.json`, `.kairyn/manifest.json` and the `.kairyn/stages` and `.kairyn/.base` copies. So this test file is still a change outside `DESIGN.md`.; The AC5 test checks less than the criterion asks. `grep -q _slices.md evals/promptfoo/design.yaml .harness/workflows/change-a-stage.md` exits 0 when either file matches, so it passes when only one of the two names `_slices.md`. AC5 needs both files to name it. Both files do name it in this diff, so the criterion holds, but the test cannot show it.
+- 2026-11-28T02:23:15Z [build] Fix round approved by the Steward: DESIGN.md amended (T2 Files name tests/test_dev_harness.py; AC5 is two greps joined by &&). Approach unchanged. Resume.

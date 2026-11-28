@@ -18,7 +18,7 @@ Option A. Steps 6 and 7 of `plugin/stages/DESIGN.md` move word for word to a new
 
 ## Tasks
 - T1: tracer bullet: the move. New tests in `tests/test_static.py` fail first: `DESIGN.md` is at most 350 tokens by `estimate_tokens` and its Steps name `_slices.md`; `_slices.md` holds each moved rule word. Then move the rules. `test_design_cuts_vertical_slices` (`tests/test_static.py`) and `test_slice4_design_marks_approval_slices` (`tests/test_afk.py`) read `_slices.md`. Add `_slices.md` to `# depends:` in `evals/promptfoo/design.yaml`. Name `_slices.md` among the shared files in `.harness/workflows/change-a-stage.md`. Files: `plugin/stages/DESIGN.md`, `plugin/stages/_slices.md` (new), `tests/test_static.py`, `tests/test_afk.py`, `evals/promptfoo/design.yaml`, `.harness/workflows/change-a-stage.md`. Done: `uv run pytest` exits 0.
-- T2: release and this repo's copy. Bump `plugin/.claude-plugin/plugin.json` to 0.21.3. Run `uv run python scripts/release_hashes.py --write`. Run `python3 plugin/scripts/upgrade.py --root .` in this repo: `.kairyn/stages/DESIGN.md` is `REPLACED`, `.kairyn/stages/_slices.md` is `ADDED`. Files: `plugin/.claude-plugin/plugin.json`, `plugin/release-hashes.json`, `.kairyn/stages/DESIGN.md`, `.kairyn/stages/_slices.md` (new), `.kairyn/.base/.kairyn/stages/DESIGN.md`, `.kairyn/.base/.kairyn/stages/_slices.md` (new), `.kairyn/manifest.json`. after: T1. Done: `uv run pytest && claude plugin validate plugin` exits 0.
+- T2: release and this repo's copy. Bump `plugin/.claude-plugin/plugin.json` to 0.21.3. Run `uv run python scripts/release_hashes.py --write`. Run `python3 plugin/scripts/upgrade.py --root .` in this repo: `.kairyn/stages/DESIGN.md` is `REPLACED`, `.kairyn/stages/_slices.md` is `ADDED`. Files: `plugin/.claude-plugin/plugin.json`, `plugin/release-hashes.json`, `.kairyn/stages/DESIGN.md`, `.kairyn/stages/_slices.md` (new), `.kairyn/.base/.kairyn/stages/DESIGN.md`, `.kairyn/.base/.kairyn/stages/_slices.md` (new), `.kairyn/manifest.json`, `tests/test_dev_harness.py`. after: T1. Done: `uv run pytest && claude plugin validate plugin` exits 0.
 
 ## Test plan
 | Criterion | Task | Test |
@@ -27,7 +27,7 @@ Option A. Steps 6 and 7 of `plugin/stages/DESIGN.md` move word for word to a new
 | AC2 `_slices.md` holds the moved rule words | T1 | New test in `tests/test_static.py`, red before the move |
 | AC3 no change to the 4 protected files | T1, T2 | `git diff --quiet main -- plugin/templates/STATE.md plugin/templates/DESIGN.md plugin/scripts/afk.py evals/checks.py` |
 | AC4 3 design scenarios meet `min_pass_rate` at 10 runs | T1 | The evals review gate: `python3 scripts/evals_gate.py` after `/run-evals design` |
-| AC5 `design.yaml` depends and `change-a-stage.md` name `_slices.md` | T1 | `grep -q _slices.md evals/promptfoo/design.yaml .harness/workflows/change-a-stage.md` |
+| AC5 `design.yaml` depends and `change-a-stage.md` name `_slices.md` | T1 | `grep -q _slices.md evals/promptfoo/design.yaml && grep -q _slices.md .harness/workflows/change-a-stage.md` |
 | AC6 newer version, pytest and plugin validate pass | T2 | `uv run pytest && claude plugin validate plugin` |
 | AC7 after close, idea gone and an ADR names the rejected split | T2 | Manual: after `/kairyn:close`, check `docs/backlog/` and `docs/adr/` |
 
