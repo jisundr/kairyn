@@ -10,7 +10,7 @@ summary: "Grill of the backlog-stage idea: what part of the idea backlog playboo
 Not confirmed yet.
 
 ## Decisions
-- None yet.
+- D1: The problem: in a kairyn repo, ideas are captured, triaged, committed and pruned by hand from rules only this repo has (`TRIAGE.md`). Users of the plugin get no backlog rules, and requirements does not start from a committed idea. We know it improved when a user repo can capture an idea and carry it to requirements with shipped steps, and each decision is logged with who made it. (user accepted)
 
 ## Terms
 | Term | Meaning |
@@ -19,7 +19,6 @@ Not confirmed yet.
 | playbook | `03 Playbooks/SDLC/00 Managing the Idea Backlog.md` in the private knowledge base. |
 
 ## Open branches
-- Q1: Is the AI-draft problem right?
 - Which playbook steps does kairyn lack: capture, dedupe, problem draft, triage, shape, pitch, commit, prune?
 - Stage, command, or both? Shipped to user repos or only this repo?
 - How does requirements start from a committed idea?

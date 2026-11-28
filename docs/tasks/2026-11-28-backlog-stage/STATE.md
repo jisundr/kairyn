@@ -12,7 +12,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-28T01:26:30Z
-updated: 2026-11-28T01:26:30Z
+updated: 2026-11-28T01:27:55Z
 ---
 
 # Log
@@ -20,3 +20,4 @@ updated: 2026-11-28T01:26:30Z
 Newest entry last. One entry per stage run or notable event.
 
 - 2026-11-28T01:26:30Z [grill] Task created from docs/backlog/20261122080759-backlog-stage.md. Q1 asked: confirm or reword the AI-draft problem. Waiting for the owner.
+- 2026-11-28T01:27:55Z [grill] D1: owner chose the reworded problem. Idea file problem updated. Q2 asked: which playbook steps ship first.
