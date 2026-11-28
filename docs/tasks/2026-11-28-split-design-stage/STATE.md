@@ -2,16 +2,16 @@
 task: 2026-11-28-split-design-stage
 title: Split the design stage
 stage: review
-status: in-progress
+status: blocked
 stages:
   grill: done
   requirements: done   # pending | in-progress | done
   design: done
   build: done
   gates: done
-  review: pending
+  review: in-progress
 created: 2026-11-28T01:26:43Z
-updated: 2026-11-28T11:10:29Z
+updated: 2026-11-28T11:13:52Z
 ---
 
 # Log
@@ -44,3 +44,5 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T11:07:26Z [gates] Steward approved: DESIGN.md AC7 test row amended to "Checked by /kairyn:close after merge" (no Manual: prefix); close cannot run before merge. AC7 stays in REQUIREMENTS.md and is checked at close. Resume.
 - 2026-11-28T11:07:34Z [gates] Resumed after a block.
 - 2026-11-28T11:10:29Z [gates] 2 pass, 4 not set: accessibility, performance, observability, security. Cost $0.00. Next: review.
+- 2026-11-28T11:10:33Z [review] Review started.
+- 2026-11-28T11:13:52Z [review] Cost $0.60. Waiting for the merge decision: /kairyn:review 2026-11-28-split-design-stage approve or reject.
