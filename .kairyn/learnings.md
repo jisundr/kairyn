@@ -13,3 +13,6 @@ Stages append here.
 - 2026-11-28 [close] Close deletes only an idea with `status: committed`. Set it when the owner approves the task's work, or the idea stays after close.
 - 2026-11-28 [close] A clone without `scripts/merge_learnings.py --install` gets a conflict on `learnings.md`: keep both sides' new lines, and drop the lines a retro removed.
 - 2026-11-28 [review] Ban changes to a released entry of `plugin/release-hashes.json` with a contract gate check, because a regenerate after a rebase put back extra 0.21.3 hashes that review 1 removed, and no review saw it.
+- 2026-11-28 [close] afk.py diffs the task branch from its merge base with the home checkout's HEAD. Keep the home checkout on the current main, or the review reads merged work as the task's.
+- 2026-11-28 [close] A skill's `allowed-tools` cover only its own turn. A command on the user's next turn needs a permission prompt; its eval allows it with `user_allows`.
+- 2026-11-28 [close] Name in DESIGN.md each non-code file the earlier stages change, such as the idea file grill edits, or a fix round reverts it as unplanned.

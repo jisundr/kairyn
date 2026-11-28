@@ -8,4 +8,3 @@ Closed ideas are in `CHANGELOG.md`. Inbox: `grep -lx 'status: inbox' docs/backlo
 
 | Idea | Effort | Impact | Notes |
 |---|---|---|---|
-| [Backlog stage](20261122080759-backlog-stage.md) | high | high | |
