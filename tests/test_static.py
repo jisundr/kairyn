@@ -231,11 +231,8 @@ def test_triage_keeps_next_and_parked():
 
 
 def test_docs_name_the_backlog_stage():
-    """T5: the docs name the backlog stage and its skills."""
-    workflow = PLUGIN / "harness" / ".harness" / "workflows" / "running-stages.md"
-    for doc in (ROOT / "README.md", workflow):
-        text = doc.read_text()
-        for name in ("BACKLOG", "/kairyn:idea", "/kairyn:triage"):
-            assert name in text, (doc, name)
-    assert "BACKLOG.md" in workflow.read_text()
+    """T5: the docs name the backlog stage and its skills. The shipped running-stages.md is left as is (owner, 2026-11-28)."""
+    text = (ROOT / "README.md").read_text()
+    for name in ("BACKLOG", "/kairyn:idea", "/kairyn:triage"):
+        assert name in text, name
     assert "BACKLOG" in (ROOT / ".harness" / "README.md").read_text()
