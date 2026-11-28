@@ -2,7 +2,7 @@
 task: 2026-11-28-backlog-stage
 title: Backlog stage
 stage: gates
-status: in-progress
+status: blocked
 grill: done
 stages:
   grill: done
@@ -12,7 +12,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-28T01:26:30Z
-updated: 2026-11-28T11:33:32Z
+updated: 2026-11-28T11:33:39Z
 ---
 
 # Log
@@ -37,3 +37,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T11:21:23Z [build] Resumed after a block.
 - 2026-11-28T11:21:23Z [build] Build started.
 - 2026-11-28T11:33:32Z [build] All 5 tasks green. Cost $1.95. Next: gates.
+- 2026-11-28T11:33:39Z [build] Blocked: gh pr create failed: st create failed: GraphQL: Head sha can't be blank, Base sha can't be blank, No commits between jisundr/backlog-stage and kairyn/2026-11-28-backlog-stage, Base ref must be a branch (createPullRequest)
