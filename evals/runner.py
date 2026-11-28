@@ -177,9 +177,11 @@ def run_requirements(repo: Path) -> dict:
 
 
 def claude_session(prompts: list, cwd: Path, *, plugin: bool = False, model: str | None = None,
-                   on_turn=None, timeout: int = 600) -> list[str]:
+                   on_turn=None, timeout: int = 600, user_allows: tuple = ()) -> list[str]:
     """One conversation, one prompt per turn (a scripted user). on_turn(i, reply) runs after each turn.
-    A prompt can be a callable: it gets the replies so far and returns the prompt."""
+    A prompt can be a callable: it gets the replies so far and returns the prompt.
+    user_allows: tools allowed from turn 2 on. A skill's allowed-tools cover only its own turn, so a later
+    turn's command needs the user's approval of a permission prompt, which headless claude cannot give."""
     replies, session = [], None
     for i, prompt in enumerate(prompts):
         if callable(prompt):
@@ -187,6 +189,8 @@ def claude_session(prompts: list, cwd: Path, *, plugin: bool = False, model: str
         cmd = ["claude", "-p", prompt, "--permission-mode", "acceptEdits", "--output-format", "json"]
         if session:
             cmd += ["--resume", session]
+        if i and user_allows:
+            cmd += ["--allowedTools", *user_allows]
         if plugin:
             cmd += ["--plugin-dir", str(PLUGIN)]
         if model:
@@ -800,7 +804,9 @@ def run_triage(repo: Path, *, apply: bool) -> dict:
     def snapshot(i, reply):
         turns.append({"reply": reply, "changed": changed_paths(repo)})
 
-    claude_session(["/kairyn:triage", *([TRIAGE_ANSWER] if apply else [])], repo, plugin=True, model=MODEL, on_turn=snapshot)
+    # The owner's answer turn runs `backlog.py decide` outside the skill: allowing it stands for the owner approving the prompt.
+    claude_session(["/kairyn:triage", *([TRIAGE_ANSWER] if apply else [])], repo, plugin=True, model=MODEL, on_turn=snapshot,
+                   user_allows=("Bash(python3:*)",) if apply else ())
     backlog = repo / "docs" / "backlog"
     return {"turns": turns, "owner": APPROVER, "due": list(TRIAGE_DUE), "fresh": "20261103000000-dark-mode.md",
             "ideas": {name: _read(backlog / name) for name in TRIAGE_IDEAS}, "readme": _read(backlog / "README.md")}
