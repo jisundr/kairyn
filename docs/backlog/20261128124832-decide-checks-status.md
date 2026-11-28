@@ -1,6 +1,6 @@
 ---
 title: "backlog.py decide does not check the current status"
-status: inbox
+status: triaged
 requester: "Jayson De los Reyes"
 date: 2026-11-28
 effort: low
@@ -17,3 +17,4 @@ review_by:
 # Log
 
 2026-11-28T12:48:32Z [capture] Captured for Jayson De los Reyes. Status inbox. Effort low, impact medium proposed by the AI.
+2026-11-28T13:26:46Z [triage] Kept: decide reopens dropped or committed ideas; a script check and tests fix it. Status triaged. Effort low, impact medium confirmed by Jayson De los Reyes. Decided by Jayson De los Reyes.
