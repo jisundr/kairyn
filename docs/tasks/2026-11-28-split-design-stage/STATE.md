@@ -11,7 +11,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-28T01:26:43Z
-updated: 2026-11-28T02:24:07Z
+updated: 2026-11-28T10:34:59Z
 ---
 
 # Log
@@ -32,3 +32,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T02:23:26Z [build] Resumed after a block.
 - 2026-11-28T02:23:26Z [build] Build started.
 - 2026-11-28T02:24:07Z [build] On hold by the owner: afk.py run stopped during the resumed review. No evals, no PR. Resume with afk.py run.
+- 2026-11-28T10:34:59Z [build] Resumed by the owner. Rebased on main d1cb468: PR #76 took 0.21.3, so this task ships 0.21.4 (plugin.json, release hashes, this repo's upgrade; DESIGN.md T2 says 0.21.4). Approach unchanged.
