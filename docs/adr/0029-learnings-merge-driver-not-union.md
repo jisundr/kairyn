@@ -1,4 +1,4 @@
-# 28. learnings.md merges with a driver that keeps a retro's removals
+# 29. learnings.md merges with a driver that keeps a retro's removals
 
 Date: 2026-11-28
 
