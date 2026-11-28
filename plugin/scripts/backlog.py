@@ -7,6 +7,7 @@
     python3 backlog.py digest
     python3 backlog.py decide <idea file> keep|park|renew|drop --reason <why> \\
         [--by <YYYY-MM-DD>] [--effort <level> --impact <level>]
+    python3 backlog.py commit <idea file>
 
 All take --root (default: the current directory). capture writes
 docs/backlog/<UTC YYYYMMDDHHMMSS>-<slug>.md with status inbox, and creates the folder and its
@@ -18,6 +19,10 @@ before today (UTC).
 decide records the owner's decision (git config user.name): status, review_by (park, renew), a
 [triage] log line and the README.md row, which only a kept idea has. keep needs --effort and
 --impact; park and renew need --by. A refused decision prints one FAIL: line and changes nothing.
+
+commit starts a task from a triaged idea: docs/tasks/<UTC date>-<slug>/STATE.md from
+.kairyn/templates/STATE.md, status committed, a [commit] log line, and no README.md row. It prints
+the grill and requirements commands. A refused commit prints one FAIL: line and changes nothing.
 
 Standard library only: consumers run this with a plain python3 (3.9 on macOS).
 """
@@ -112,6 +117,21 @@ def git_user(root: Path) -> str:
     return result.stdout.strip()
 
 
+def fail(why: str) -> int:
+    print(f"FAIL: {why}; nothing changed")
+    return 1
+
+
+def is_idea(root: Path, path: Path) -> bool:
+    return path.parent == root / BACKLOG and path.name != "README.md" and path.is_file()
+
+
+def add_log(body: str, line: str) -> str:
+    if "\n# Log\n" not in body:
+        body = body.rstrip("\n") + "\n\n# Log\n\n"
+    return body.rstrip("\n") + f"\n{line}\n"
+
+
 def capture(root: Path, a: argparse.Namespace) -> int:
     requester = a.requester or git_user(root)
     if not requester:
@@ -178,16 +198,12 @@ def digest(root: Path) -> int:
 
 
 def decide(root: Path, a: argparse.Namespace) -> int:
-    def fail(why: str) -> int:
-        print(f"FAIL: {why}; nothing changed")
-        return 1
-
     owner = git_user(root)
     path = (root / a.file).resolve()
     reason = " ".join(a.reason.split()).rstrip(".")
     if not owner:
         return fail("no owner: set git config user.name")
-    if path.parent != root / BACKLOG or path.name == "README.md" or not path.is_file():
+    if not is_idea(root, path):
         return fail(f"{a.file} is not an idea file in {BACKLOG}/")
     if not reason:
         return fail("--reason is empty")
@@ -210,9 +226,7 @@ def decide(root: Path, a: argparse.Namespace) -> int:
         set_field(meta, "impact", a.impact)
         note += f" Effort {a.effort}, impact {a.impact} confirmed by {owner}."
     now = datetime.now(timezone.utc)
-    if "\n# Log\n" not in body:
-        body = body.rstrip("\n") + "\n\n# Log\n\n"
-    body = body.rstrip("\n") + f"\n{now:%Y-%m-%dT%H:%M:%SZ} [triage] {note} Decided by {owner}.\n"
+    body = add_log(body, f"{now:%Y-%m-%dT%H:%M:%SZ} [triage] {note} Decided by {owner}.")
 
     readme = root / BACKLOG / "README.md"
     keep = status == "triaged"
@@ -225,6 +239,53 @@ def decide(root: Path, a: argparse.Namespace) -> int:
     if after != before and (keep or before is not None):
         atomic_write.write_text(readme, after)
     print(f"{path.relative_to(root).as_posix()}: {status}")
+    return 0
+
+
+def commit(root: Path, file: str) -> int:
+    owner = git_user(root)
+    path = (root / file).resolve()
+    if not owner:
+        return fail("no owner: set git config user.name")
+    if not is_idea(root, path):
+        return fail(f"{file} is not an idea file in {BACKLOG}/")
+    parts = split_idea(path.read_text(encoding="utf-8"))
+    if not parts:
+        return fail(f"{file} has no front matter")
+    meta, body = parts
+    status = field(meta, "status")
+    if status != "triaged":
+        return fail(f"{file} has status '{status}'; only a triaged idea can be committed")
+    template = root / ".kairyn" / "templates" / "STATE.md"
+    summary = "<one-line summary of the request>"
+    state = template.read_text(encoding="utf-8") if template.is_file() else ""
+    if summary not in state:  # without it STATE.md could not name the idea
+        return fail(f".kairyn/templates/STATE.md is missing or has no '{summary}'")
+
+    now = datetime.now(timezone.utc)
+    stamp = f"{now:%Y-%m-%dT%H:%M:%SZ}"
+    task = f"{now:%Y-%m-%d}-{re.sub(r'^[0-9]{14}-', '', path.stem)}"
+    folder = f"docs/tasks/{task}"
+    name = path.relative_to(root).as_posix()
+    for placeholder, value in (("<YYYY-MM-DD>-<slug>", task), ("<YYYY-MM-DDTHH:MM:SSZ>", stamp),
+                               ("<task title>", json.dumps(field(meta, "title") or path.stem, ensure_ascii=False)),
+                               (summary, f"Idea: {name}.")):
+        state = state.replace(placeholder, value)
+    set_field(meta, "status", "committed")
+    body = add_log(body, f"{stamp} [commit] Committed by {owner}. Task {folder}/. Status committed.")
+    readme = root / BACKLOG / "README.md"
+    before = readme.read_text(encoding="utf-8") if readme.is_file() else ""
+    after = index_text(before, path.name, "", "", "", keep=False)
+
+    try:
+        (root / folder).mkdir(parents=True)
+    except FileExistsError:
+        return fail(f"{folder}/ exists")
+    atomic_write.write_text(root / folder / "STATE.md", state)
+    atomic_write.write_text(path, "\n".join(["---", *meta, "---", body]))
+    if after != before:
+        atomic_write.write_text(readme, after)
+    print(f"{name}: committed\n/kairyn:grill {folder}\n/kairyn:requirements {folder}")
     return 0
 
 
@@ -248,10 +309,15 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--by", type=date_arg)
     for name in ("--effort", "--impact"):
         d.add_argument(name, choices=LEVELS)
+    m = sub.add_parser("commit")
+    m.add_argument("--root", type=Path, default=Path("."))
+    m.add_argument("file")
     a = ap.parse_args(argv)
     root = a.root.resolve()
     if a.cmd == "digest":
         return digest(root)
+    if a.cmd == "commit":
+        return commit(root, a.file)
     return capture(root, a) if a.cmd == "capture" else decide(root, a)
 
 
