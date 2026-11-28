@@ -1,17 +1,17 @@
 ---
 task: 2026-11-28-split-design-stage
 title: Split the design stage
-stage: gates
+stage: review
 status: in-progress
 stages:
   grill: done
   requirements: done   # pending | in-progress | done
   design: done
   build: done
-  gates: pending
+  gates: done
   review: pending
 created: 2026-11-28T01:26:43Z
-updated: 2026-11-28T11:07:34Z
+updated: 2026-11-28T11:10:29Z
 ---
 
 # Log
@@ -43,3 +43,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T11:06:52Z [gates] Blocked: gate sessions failed: AC7 needs a person to run `| AC7 after close, idea gone and an ADR names the rejected split | T2 | Manual: after `/kairyn:close`, check `docs/backlog/` and `docs/adr/` |`; run each, add `Run AC<n>: <who>, <time>, "<what it showed>"` (time from `date -u +%Y-%m-%dT%H:%M:%SZ`) to docs/tasks/2026-11-28-split-design-stage/BUILD.md on kairyn/2026-11-28-split-design-stage, commit, then run /kairyn:build 2026-11-28-split-design-stage
 - 2026-11-28T11:07:26Z [gates] Steward approved: DESIGN.md AC7 test row amended to "Checked by /kairyn:close after merge" (no Manual: prefix); close cannot run before merge. AC7 stays in REQUIREMENTS.md and is checked at close. Resume.
 - 2026-11-28T11:07:34Z [gates] Resumed after a block.
+- 2026-11-28T11:10:29Z [gates] 2 pass, 4 not set: accessibility, performance, observability, security. Cost $0.00. Next: review.

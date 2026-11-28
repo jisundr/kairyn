@@ -12,4 +12,11 @@ summary: "One row per gate, written by afk.py: the review gates, then .kairyn/af
 |---|---|---|---|
 | design | pass | 0 | built in |
 | commits | pass | 0 | built in |
-| sessions | fail | 1 | built in |
+| sessions | pass | 0 | built in |
+| evals | pass | 0 | built in |
+| testing | pass | 0 | - |
+| contract | pass | 0 | - |
+| accessibility | not set | - | - |
+| performance | not set | - | - |
+| observability | not set | - | - |
+| security | not set | - | - |
