@@ -33,4 +33,4 @@ summary: "Each criterion has evidence. One finding: release-hashes.json changes 
 ## Findings
 - F1: `plugin/release-hashes.json` changes the released `0.21.3` entry. At HEAD it adds `.kairyn/stages/BACKLOG.md` (3 hashes), `.kairyn/stages/_slices.md` (1 hash) and a second `.kairyn/stages/DESIGN.md` hash (`79ea380…`). `BACKLOG.md` did not ship in 0.21.3. Fix 5619f4a removed this change for review 1, but commit 09b2493 ("as evaluated, after the rebase onto main") put it back, after review 2. Two of the `BACKLOG.md` hashes (`37eb4f9…`, `92f7cc7…`) match no file at HEAD. The `0.21.5` entry also keeps `GRILL.md` `7546bd6…` and `running-stages.md` `a761158…` and `12a3365…`, which match no file at HEAD. DESIGN.md T4 and T5 say only "refresh `plugin/release-hashes.json`" for 0.21.5. This change is outside DESIGN.md.
 
-Decision: pending
+Decision: Jayson De los Reyes, 2026-11-28T12:42:23Z, "Approve; keep the prompt, log a follow-up idea"

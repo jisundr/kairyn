@@ -2,7 +2,7 @@
 task: 2026-11-28-backlog-stage
 title: Backlog stage
 stage: review
-status: blocked
+status: done
 grill: done
 stages:
   grill: done
@@ -10,9 +10,9 @@ stages:
   design: done
   build: done
   gates: done
-  review: in-progress
+  review: done
 created: 2026-11-28T01:26:30Z
-updated: 2026-11-28T12:31:50Z
+updated: 2026-11-28T12:42:23Z
 ---
 
 # Log
@@ -49,3 +49,5 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T12:27:32Z [review] Review started.
 - 2026-11-28T12:31:50Z [review] Cost $0.99. Waiting for the merge decision: /kairyn:review 2026-11-28-backlog-stage approve or reject.
 - 2026-11-28T12:35:07Z [review] F1 fixed after review in 20c2ed0: release-hashes.json keeps main's released entries, 0.21.5 has only shipped hashes. uv run pytest 917 passed. The upgrade eval depends on release-hashes.json and needs a new pass at this hash.
+- 2026-11-28T12:42:23Z [review] Upgrade eval rerun 20261128T124120Z: 10/10, $0.05. Evals for this task: $35.88 in total.
+- 2026-11-28T12:42:23Z [review] Approved by Jayson De los Reyes: "Approve; keep the prompt, log a follow-up idea". The coordinator merges PR #82 with a merge commit. At close: two inbox ideas, the triage permission prompt (print the exact /kairyn:triage command) and decide not checking an idea's current status.
