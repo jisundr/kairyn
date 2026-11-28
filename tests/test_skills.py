@@ -7,7 +7,7 @@ import yaml
 from helpers import PLUGIN, split_front_matter
 
 STAGE_SKILLS = {"requirements": "REQUIREMENTS", "design": "DESIGN", "grill": "GRILL", "model-routing": "MODEL-ROUTING", "close": "CLOSE",
-                "retro": "RETRO", "idea": "BACKLOG"}
+                "retro": "RETRO", "idea": "BACKLOG", "triage": "BACKLOG"}
 MODELS = {"haiku", "sonnet", "opus", "inherit"}
 SCRIPT_COMMANDS = ("init", "check", "upgrade", "release")
 
@@ -68,7 +68,7 @@ def test_design_skill_runs_on_opus():
 # Task 2026-11-26-split-build-routing: a step that makes a critical decision runs on Opus;
 # a step that only carries decisions out runs cheaper.
 SKILL_MODELS = {"requirements": "opus", "design": "opus", "grill": "sonnet", "model-routing": "sonnet",
-                "close": "sonnet", "retro": "sonnet", "idea": "sonnet", "build": "haiku", "review": "haiku"}
+                "close": "sonnet", "retro": "sonnet", "idea": "sonnet", "triage": "sonnet", "build": "haiku", "review": "haiku"}
 
 
 @pytest.mark.parametrize("name,model", SKILL_MODELS.items())
@@ -120,3 +120,13 @@ def test_idea_skill_runs_the_capture_script():
     data, body = front(skill("idea"))
     assert "Bash(python3:*)" in data["allowed-tools"]
     assert "scripts/backlog.py capture" in body
+
+
+def test_triage_skill_runs_digest_and_decide_and_waits_for_the_owner():
+    """A7, R7: backlog.py writes; the skill proposes, and decides nothing before the owner answers."""
+    data, body = front(skill("triage"))
+    assert "Bash(python3:*)" in data["allowed-tools"]
+    assert "scripts/backlog.py digest" in body
+    assert "scripts/backlog.py decide" in body
+    assert "the owner decides. End your turn after the proposals." in body
+    assert "Change nothing before the owner answers" in body
