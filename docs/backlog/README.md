@@ -8,3 +8,5 @@ Closed ideas are in `CHANGELOG.md`. Inbox: `grep -lx 'status: inbox' docs/backlo
 
 | Idea | Effort | Impact | Notes |
 |---|---|---|---|
+| [backlog.py decide does not check the current status](20261128124832-decide-checks-status.md) | low | medium | |
+| [Triage asks a permission prompt for the owner's decisions](20261128124832-triage-permission-prompt.md) | low | medium | |

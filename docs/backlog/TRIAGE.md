@@ -13,3 +13,5 @@ The earlier batches shipped: the `_approval.md` slice of split-design-stage, ato
 ## Parked
 
 Reviewed by 2027-02-23: release-stage, parallel-slices, pir-stage (needs release-stage), hedge-words-in-backticks, shared-harness-docs, required-checks-app-id, grill-reads-private-notes, several-child-repos, ops-task-close (needs backlog-stage), rerecord-hook-fixtures, grill-reads-other-repo-sessions (with grill-reads-private-notes), headless-chrome-min-width, phone-width-browser-test, more-sessions-cost-more.
+
+Reviewed by 2027-02-26: consumer-learnings-merge-driver (owner, 2026-11-28).

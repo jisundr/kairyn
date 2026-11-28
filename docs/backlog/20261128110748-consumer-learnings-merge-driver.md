@@ -1,11 +1,11 @@
 ---
 title: A merge driver for learnings.md in consumer repos
-status: inbox
+status: parked
 requester: Jayson De los Reyes
 date: 2026-11-28
 effort: medium
 impact: low
-review_by:
+review_by: 2027-02-26
 ---
 
 # A merge driver for learnings.md in consumer repos
@@ -19,3 +19,4 @@ review_by:
 # Log
 
 - 2026-11-28T11:07:48Z [capture] From task 2026-11-28-union-merge-restores-learnings (D5), approved by Jayson De los Reyes. Status inbox, waiting for triage. Effort medium, impact low proposed by the AI.
+2026-11-28T13:26:46Z [triage] Parked: needs plugin and init changes, evals and a per-clone step, and no consumer has reported the conflict. Status parked. Review by 2027-02-26. Decided by Jayson De los Reyes.
