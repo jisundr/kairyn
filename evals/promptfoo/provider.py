@@ -14,7 +14,7 @@ HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
 from helpers import PLUGIN, ROOT, make_good_repo, run_verify
-from runner import (run_idea, RETRO_ENTRIES, make_retro_repo, run_retro, run_retro_approval, DESIGN_REQUEST, DESIGN_REQUIREMENTS, make_design_repo, run_design, run_design_approval, DESIGN_CHILD_REQUIREMENTS, make_design_child_repo, run_design_child, CLOSE_DECISION_TASK, CLOSE_HAND_TASK, CLOSE_PLAIN_TASK, make_close_repo, make_hand_merged_close_repo, run_close, APPROVAL_WORDS, APPROVER, CONCEPT_DECISIONS, CONCEPT_TASK, CONCEPT_VALUE, GRILL_APP, GRILL_README, GRILL_REQUEST, MODEL, REQUEST, RESULTS, ROUTING_REQUEST,
+from runner import (make_triage_repo, run_triage, run_idea, RETRO_ENTRIES, make_retro_repo, run_retro, run_retro_approval, DESIGN_REQUEST, DESIGN_REQUIREMENTS, make_design_repo, run_design, run_design_approval, DESIGN_CHILD_REQUIREMENTS, make_design_child_repo, run_design_child, CLOSE_DECISION_TASK, CLOSE_HAND_TASK, CLOSE_PLAIN_TASK, make_close_repo, make_hand_merged_close_repo, run_close, APPROVAL_WORDS, APPROVER, CONCEPT_DECISIONS, CONCEPT_TASK, CONCEPT_VALUE, GRILL_APP, GRILL_README, GRILL_REQUEST, MODEL, REQUEST, RESULTS, ROUTING_REQUEST,
                     claude, make_concept_repo, make_grill_repo, make_routing_repo, new_repo, run_grill, run_model_routing,
                     run_requirements, run_requirements_approval, run_requirements_with_concept, set_cost_dir, tree_hash)
 
@@ -238,6 +238,20 @@ def idea_capture(work: Path, scenario: str, run_id: str) -> dict:
     return out
 
 
+def _triage(work: Path, scenario: str, run_id: str, apply: bool) -> dict:
+    out = run_triage(make_triage_repo(make_good_repo(new_repo(work, "repo"))), apply=apply)
+    _save(scenario, run_id, "evidence.json", json.dumps(out, indent=2))
+    return out
+
+
+def triage_digest(work: Path, scenario: str, run_id: str) -> dict:
+    return _triage(work, scenario, run_id, apply=False)
+
+
+def triage_apply(work: Path, scenario: str, run_id: str) -> dict:
+    return _triage(work, scenario, run_id, apply=True)
+
+
 def _times(d: dict) -> dict:
     return {**d, "start": d["start"].strftime(TS), "end": d["end"].strftime(TS)}
 
@@ -384,7 +398,8 @@ SCENARIOS = {f.__name__: f for f in (afk_build, afk_gates_pass, afk_gates_fail, 
                                      model_routing, grill, requirements_with_concept, requirements_approval,
                                      upgrade_conflict, close_decision, close_plain, close_hand_merged, design, design_approval, design_child_repo,
                                      retro, retro_approval, close_retro, milestones_catchup,
-                                     idea_capture)}
+                                     idea_capture,
+                                     triage_digest, triage_apply)}
 
 
 def call_api(prompt, options, context):

@@ -876,3 +876,37 @@ def idea_problems(d: dict) -> list[str]:
     if name not in d["reply"]:
         problems.append("reply did not name the idea file")
     return problems
+
+
+def triage_digest_problems(d: dict) -> list[str]:
+    """Each due idea named with a proposal; the fresh park not proposed; no file changed."""
+    first = d["turns"][0]
+    problems = [f"changed before the owner answered: {p}" for p in first["changed"]]
+    reply = first["reply"].lower()
+    for name in d["due"]:
+        slug = name.split("-", 1)[1][:-3]
+        if slug not in reply and slug.replace("-", " ") not in reply:
+            problems.append(f"reply does not name {name}")
+    if not re.search(r"\b(keep|park|drop)", reply):
+        problems.append("reply proposes no keep, park or drop")
+    if d["fresh"] in reply:
+        problems.append("reply lists a park that is not due")
+    return problems
+
+
+def triage_apply_problems(d: dict) -> list[str]:
+    """The first turn waits; the second records exactly the owner's two decisions."""
+    kept, dropped = d["due"]
+    problems = [f"changed before the owner answered: {p}" for p in d["turns"][0]["changed"]]
+    for name, status in ((kept, "triaged"), (dropped, "dropped"), (d["fresh"], "parked")):
+        got = state_fields(d["ideas"][name]).get("status")
+        if got != status:
+            problems.append(f"{name} status {got!r}, expected {status}")
+    for name in d["due"]:
+        if not re.search(rf"\[triage\].*{re.escape(d['owner'])}", d["ideas"][name]):
+            problems.append(f"{name} has no [triage] line with the owner")
+    if f"]({kept}) | low | high |" not in d["readme"]:
+        problems.append("no README row for the kept idea")
+    if dropped in d["readme"]:
+        problems.append("README row for the dropped idea")
+    return problems

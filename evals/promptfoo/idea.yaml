@@ -1,4 +1,4 @@
-# depends: plugin/skills/idea/SKILL.md, plugin/stages/BACKLOG.md, plugin/scripts/backlog.py, plugin/scripts/init.sh, plugin/harness/**/*
+# depends: plugin/skills/idea/SKILL.md, plugin/stages/BACKLOG.md, plugin/scripts/backlog.py, plugin/scripts/atomic_write.py, plugin/scripts/init.sh, plugin/harness/**/*
 description: idea capture (backlog stage)
 prompts: ["{{scenario}}"]
 providers:

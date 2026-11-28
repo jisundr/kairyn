@@ -4,9 +4,20 @@
     python3 backlog.py capture --slug <slug> --title <t> --effort <level> --impact <level> \\
         --request <the user's words> --problem <draft> [--requester <name>]
 
+    python3 backlog.py digest
+    python3 backlog.py decide <idea file> keep|park|renew|drop --reason <why> \\
+        [--by <YYYY-MM-DD>] [--effort <level> --impact <level>]
+
 All take --root (default: the current directory). capture writes
 docs/backlog/<UTC YYYYMMDDHHMMSS>-<slug>.md with status inbox, and creates the folder and its
 README.md if missing. It never overwrites a file: it prints one FAIL: line and exits 1.
+
+digest changes nothing. It prints one line per inbox idea and per parked idea whose review_by is
+before today (UTC).
+
+decide records the owner's decision (git config user.name): status, review_by (park, renew), a
+[triage] log line and the README.md row, which only a kept idea has. keep needs --effort and
+--impact; park and renew need --by. A refused decision prints one FAIL: line and changes nothing.
 
 Standard library only: consumers run this with a plain python3 (3.9 on macOS).
 """
@@ -17,11 +28,16 @@ import json
 import re
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
+
+import atomic_write
 
 BACKLOG = "docs/backlog"
 LEVELS = ("low", "medium", "high")
+DECISIONS = {"keep": ("triaged", "Kept"), "park": ("parked", "Parked"),
+             "renew": ("parked", "Park renewed"), "drop": ("dropped", "Dropped")}
+TABLE = "| Idea | Effort | Impact | Notes |"
 README = """# Backlog
 
 Triaged ideas.
@@ -35,6 +51,60 @@ def slug_arg(value: str) -> str:
     if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", value):
         raise argparse.ArgumentTypeError(f"{value!r} is not lower-case words joined by hyphens")
     return value
+
+
+def date_arg(value: str) -> str:
+    try:
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+            return date.fromisoformat(value).isoformat()
+    except ValueError:
+        pass
+    raise argparse.ArgumentTypeError(f"{value!r} is not a YYYY-MM-DD date")
+
+
+def split_idea(text: str) -> tuple[list[str], str] | None:
+    """The front matter lines and the rest of an idea file, or None if it has no front matter."""
+    match = re.match(r"---\n(.*?)\n---\n(.*)", text, re.DOTALL)
+    return (match[1].split("\n"), match[2]) if match else None
+
+
+def field(lines: list[str], key: str) -> str:
+    value = next((line[len(key) + 1:].strip() for line in lines if line.startswith(f"{key}:")), "")
+    if value.startswith('"'):
+        try:
+            return json.loads(value)
+        except ValueError:
+            return value.strip('"')
+    return value
+
+
+def set_field(lines: list[str], key: str, value: str) -> None:
+    for i, line in enumerate(lines):
+        if line.startswith(f"{key}:"):
+            lines[i] = f"{key}: {value}"
+            return
+    lines.append(f"{key}: {value}")
+
+
+def index_text(text: str, name: str, title: str, effort: str, impact: str, keep: bool) -> str | None:
+    """README.md with the idea's row added, updated or removed. None: a row to add has no table."""
+    lines = text.split("\n")
+    mine = [i for i, line in enumerate(lines) if line.startswith("| [") and f"]({name})" in line]
+    if not keep:
+        return "\n".join(line for i, line in enumerate(lines) if i not in mine)
+    if mine:  # the owner's link text and notes stay
+        cells = re.split(r"(?<!\\)\|", lines[mine[0]])
+        cells[2:4] = [f" {effort} ", f" {impact} "]
+        lines[mine[0]] = "|".join(cells)
+        return "\n".join(lines)
+    if TABLE not in lines:
+        return None
+    end = lines.index(TABLE)
+    while end < len(lines) and lines[end].startswith("|"):
+        end += 1
+    cell = title.replace("|", "\\|")
+    lines.insert(end, f"| [{cell}]({name}) | {effort} | {impact} | |")
+    return "\n".join(lines)
 
 
 def git_user(root: Path) -> str:
@@ -88,6 +158,76 @@ review_by:
     return 0
 
 
+def digest(root: Path) -> int:
+    today = datetime.now(timezone.utc).date().isoformat()
+    found = []
+    for path in sorted((root / BACKLOG).glob("*.md")):
+        parts = split_idea(path.read_text(encoding="utf-8"))
+        if path.name == "README.md" or not parts:
+            continue
+        meta = parts[0]
+        status, by = field(meta, "status"), field(meta, "review_by")
+        if status == "parked" and by and by < today:
+            status = f"parked, review_by {by}"
+        elif status != "inbox":
+            continue
+        found.append(f"{BACKLOG}/{path.name} | {status} | effort {field(meta, 'effort')} | "
+                     f"impact {field(meta, 'impact')} | {field(meta, 'title')}")
+    print("\n".join(found) if found else "Nothing to triage.")
+    return 0
+
+
+def decide(root: Path, a: argparse.Namespace) -> int:
+    def fail(why: str) -> int:
+        print(f"FAIL: {why}; nothing changed")
+        return 1
+
+    owner = git_user(root)
+    path = (root / a.file).resolve()
+    reason = " ".join(a.reason.split()).rstrip(".")
+    if not owner:
+        return fail("no owner: set git config user.name")
+    if path.parent != root / BACKLOG or path.name == "README.md" or not path.is_file():
+        return fail(f"{a.file} is not an idea file in {BACKLOG}/")
+    if not reason:
+        return fail("--reason is empty")
+    if a.decision in ("park", "renew") and not a.by:
+        return fail(f"{a.decision} needs --by, the owner's review date")
+    if a.decision == "keep" and not (a.effort and a.impact):
+        return fail("keep needs --effort and --impact, as the owner confirms them")
+    parts = split_idea(path.read_text(encoding="utf-8"))
+    if not parts:
+        return fail(f"{a.file} has no front matter")
+    meta, body = parts
+    status, verb = DECISIONS[a.decision]
+    set_field(meta, "status", status)
+    note = f"{verb}: {reason}. Status {status}."
+    if status == "parked":
+        set_field(meta, "review_by", a.by)
+        note += f" Review by {a.by}."
+    if a.decision == "keep":
+        set_field(meta, "effort", a.effort)
+        set_field(meta, "impact", a.impact)
+        note += f" Effort {a.effort}, impact {a.impact} confirmed by {owner}."
+    now = datetime.now(timezone.utc)
+    if "\n# Log\n" not in body:
+        body = body.rstrip("\n") + "\n\n# Log\n\n"
+    body = body.rstrip("\n") + f"\n{now:%Y-%m-%dT%H:%M:%SZ} [triage] {note} Decided by {owner}.\n"
+
+    readme = root / BACKLOG / "README.md"
+    keep = status == "triaged"
+    before = readme.read_text(encoding="utf-8") if readme.is_file() else None
+    after = index_text(before if before is not None else README, path.name, field(meta, "title") or path.stem,
+                       field(meta, "effort"), field(meta, "impact"), keep)
+    if after is None:
+        return fail(f"{BACKLOG}/README.md has no '{TABLE}' table")
+    atomic_write.write_text(path, "\n".join(["---", *meta, "---", body]))
+    if after != before and (keep or before is not None):
+        atomic_write.write_text(readme, after)
+    print(f"{path.relative_to(root).as_posix()}: {status}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -99,8 +239,20 @@ def main(argv: list[str] | None = None) -> int:
     for name in ("--effort", "--impact"):
         c.add_argument(name, choices=LEVELS, required=True)
     c.add_argument("--requester")
+    sub.add_parser("digest").add_argument("--root", type=Path, default=Path("."))
+    d = sub.add_parser("decide")
+    d.add_argument("--root", type=Path, default=Path("."))
+    d.add_argument("file")
+    d.add_argument("decision", choices=DECISIONS)
+    d.add_argument("--reason", required=True)
+    d.add_argument("--by", type=date_arg)
+    for name in ("--effort", "--impact"):
+        d.add_argument(name, choices=LEVELS)
     a = ap.parse_args(argv)
-    return capture(a.root.resolve(), a)
+    root = a.root.resolve()
+    if a.cmd == "digest":
+        return digest(root)
+    return capture(root, a) if a.cmd == "capture" else decide(root, a)
 
 
 if __name__ == "__main__":

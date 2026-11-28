@@ -1,0 +1,19 @@
+# depends: plugin/skills/triage/SKILL.md, plugin/stages/BACKLOG.md, plugin/scripts/backlog.py, plugin/scripts/atomic_write.py, plugin/scripts/init.sh, plugin/harness/**/*
+description: idea triage (backlog stage)
+prompts: ["{{scenario}}"]
+providers:
+  - id: file://provider.py
+    config: {timeout: 900000}
+tests:
+  - description: triage lists the inbox idea and the stale park with proposals and changes nothing
+    vars: {scenario: triage_digest}
+    metadata:
+      min_pass_rate: {triage_listed: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:triage_listed", metric: triage_listed}
+  - description: triage records exactly the owner's decisions after they answer
+    vars: {scenario: triage_apply}
+    metadata:
+      min_pass_rate: {triage_applied: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:triage_applied", metric: triage_applied}

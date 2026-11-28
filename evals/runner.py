@@ -716,3 +716,38 @@ def run_idea(repo: Path) -> dict:
     return {"reply": reply, "request": IDEA_REQUEST, "requester": APPROVER, "changed": changed_paths(repo),
             "ideas": {p.name: p.read_text() for p in backlog.glob("*.md") if p.name != "README.md"},
             "readme": _read(backlog / "README.md")}
+
+
+TRIAGE_IDEAS = {"20261101000000-column-picker.md": ("inbox", "", "CSV export column picker"),
+                "20261102000000-slow-search.md": ("parked", "2026-01-01", "Search is slow"),
+                "20261103000000-dark-mode.md": ("parked", "2099-01-01", "Dark mode")}
+TRIAGE_DUE = ("20261101000000-column-picker.md", "20261102000000-slow-search.md")
+TRIAGE_ANSWER = ("Keep the column picker, effort low, impact high: users asked for it. "
+                 "Drop the slow search idea: it is fixed.")
+
+
+def make_triage_repo(repo: Path) -> Path:
+    """An inbox idea, a stale park and a fresh park."""
+    backlog = repo / "docs" / "backlog"
+    backlog.mkdir(parents=True, exist_ok=True)
+    for name, (status, review_by, title) in TRIAGE_IDEAS.items():
+        (backlog / name).write_text(f"---\ntitle: {title}\nstatus: {status}\nrequester: {APPROVER}\ndate: 2026-11-01\n"
+                                    f"effort: medium\nimpact: medium\nreview_by: {review_by}\n---\n\n# {title}\n\n"
+                                    f"**Raw request:** {title}\n\n# Log\n\n2026-11-01T00:00:00Z [capture] Captured.\n")
+    (backlog / "README.md").write_text("# Backlog\n\n| Idea | Effort | Impact | Notes |\n|---|---|---|---|\n")
+    return repo
+
+
+def run_triage(repo: Path, *, apply: bool) -> dict:
+    """/kairyn:triage lists and waits; with apply, a second turn gives the owner's decisions."""
+    subprocess.run(["git", "config", "user.name", APPROVER], cwd=repo, check=True)
+    commit_all(repo)
+    turns = []
+
+    def snapshot(i, reply):
+        turns.append({"reply": reply, "changed": changed_paths(repo)})
+
+    claude_session(["/kairyn:triage", *([TRIAGE_ANSWER] if apply else [])], repo, plugin=True, model=MODEL, on_turn=snapshot)
+    backlog = repo / "docs" / "backlog"
+    return {"turns": turns, "owner": APPROVER, "due": list(TRIAGE_DUE), "fresh": "20261103000000-dark-mode.md",
+            "ideas": {name: _read(backlog / name) for name in TRIAGE_IDEAS}, "readme": _read(backlog / "README.md")}
