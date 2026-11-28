@@ -2114,11 +2114,6 @@
   ".harness/workflows/task-lifecycle.md": [
    "ab9c15d2542e283ac2c7c50d9da44c004bdba865368b7b50aa00af107008c780"
   ],
-  ".kairyn/stages/BACKLOG.md": [
-   "0913db011b86ec556fd66b2a1a14bebfbf373b7244ac1835bc30af8e8f5cf62d",
-   "37eb4f970ebf3e1805cbd542bb465f77be1ee4190ecd4a9314abf565b1ef586f",
-   "92f7cc7b92dc010099ba9bc80612900f2b62ef75cba53b360d637890a37788c4"
-  ],
   ".kairyn/stages/BUILD.md": [
    "0cf08b9f62f3c6302fa5ae48f05803b5f1162e1e635069c11b8200fb23a68a2d"
   ],
@@ -2200,9 +2195,7 @@
    "2181d24c27c3e721eb199b8d8f5c5ef5653da12cb07c1cb8c806874c9f41caab"
   ],
   ".harness/workflows/running-stages.md": [
-   "079eae0fb23418d02579fb4396c14d1b2b2fdedd4bb521e127ade10f554e6def",
-   "12a3365477d84c6678c06d01f3acfe0d075bdd2ede750bbb0bead454c469ab65",
-   "a761158114c3c601c56650ad96a404b5de6d5e9ab197455a23fcaa1b044b4253"
+   "12a3365477d84c6678c06d01f3acfe0d075bdd2ede750bbb0bead454c469ab65"
   ],
   ".harness/workflows/task-lifecycle.md": [
    "ab9c15d2542e283ac2c7c50d9da44c004bdba865368b7b50aa00af107008c780"
@@ -2223,8 +2216,7 @@
    "683224ed2ef73f475a6b9c28e47ea4774dd61c92b466b9b16d7977499f554c0d"
   ],
   ".kairyn/stages/GRILL.md": [
-   "5c3aa2f4f5bb6c079ff97a840684f4880d9c2796ce378252e80a6a5079c772a9",
-   "7546bd66af835533bcdd2758fbd2a3c500708c2e1d224663a84cabb26cade73d"
+   "5c3aa2f4f5bb6c079ff97a840684f4880d9c2796ce378252e80a6a5079c772a9"
   ],
   ".kairyn/stages/MODEL-ROUTING.md": [
    "97d2fb57693d76e0769f0b03c23d9cdd6b764856a5e9597f549809e2882fd0fb"

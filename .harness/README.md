@@ -30,7 +30,7 @@ The workflows for developing kairyn itself, not for using it (see the README). R
 2. **Tests before code, evals before instructions.** Write the failing test or eval first, then make it pass.
 3. **Evidence over claims.** A passing eval leaves its outputs and scores in `evals/results/`. Report no pass you can't point to.
 4. **Never trust the model with the clock or with overwriting user files.** Timestamps come from `date`. Init never overwrites.
-5. **Playbooks guide kairyn's own work.** The private SDLC playbooks (`../knowledge-base/03 Playbooks/`, not shipped) drive this repo; read them only if `../knowledge-base` exists. A stage kairyn lacks is done by hand from its playbook. `BACKLOG.md` runs the backlog one.
+5. **Playbooks guide kairyn's own work.** The private SDLC playbooks (`../knowledge-base/03 Playbooks/`) drive this repo; read them only if `../knowledge-base` exists. Not shipped. A stage kairyn lacks is done by hand from its playbook. `BACKLOG.md` runs the backlog one.
 6. **Lean files.** What an AI reads has a size budget (`budgets.yml`, estimated tokens). Tests fail when a file is over or has no budget. `budgets_html.py` builds a report for people (`.harness/budgets.html`, git-ignored).
 
 ## Doc format
