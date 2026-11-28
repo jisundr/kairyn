@@ -34,3 +34,4 @@
 - Retro emptied learnings.md again: the merge of #66 had restored eight removed lines; one idea went to the backlog inbox. (2026-11-26-retro-2)
 - upgrade.py and budgets_html.py: --help prints the usage and exits 0; a bad flag exits 2; neither changes a file (ADR 0025). (2026-11-26-upgrade-help-runs-upgrade; closes upgrade-help-runs-upgrade)
 - close deletes a committed backlog idea whose file slug is the task slug, and prints UNLINKED for one that names the task in plain text. (2026-11-26-close-matches-plain-task-name)
+- Grill asks rounds of at most 3 numbered questions, each with a recommended answer; a reply with no numbers accepts them all. (2026-11-28-grill-rounds)
