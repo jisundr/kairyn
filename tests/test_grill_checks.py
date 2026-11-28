@@ -1,7 +1,10 @@
 """Pure checks for the grill stage (evals/checks.py)."""
 from datetime import datetime, timedelta, timezone
 
-from checks import (TS_FORMAT, concept_use_problems, decision_labels, finished_turn, grill_problems, grill_round_problems, handoff_problems, round_decision_problems, section_items, state_fields)
+from helpers import PLUGIN
+
+from checks import (TS_FORMAT, concept_use_problems, decision_labels, finished_turn, grill_idea_problems, grill_problems,
+                    grill_round_problems, handoff_problems, round_decision_problems, section_items, section_text, state_fields)
 
 TASK = "2026-11-22-report-cache"
 NOW = datetime.now(timezone.utc).replace(microsecond=0)
@@ -201,3 +204,44 @@ def test_handoff_fails_when_the_stage_ran_the_next_one(tmp_path):
     reply = f"Type `/kairyn:requirements docs/tasks/{TASK}/`."
     assert handoff_problems(reply, task, "requirements") == [
         "REQUIREMENTS.md written: the stage ran requirements instead of handing off"]
+
+
+# --- T4: grill starts from the idea that a committed task's STATE.md names ----------
+IDEA = "docs/backlog/20261128013000-report-cache.md"
+
+
+def _idea_run(**over):
+    d = {"task": TASK, "tasks": [TASK], "idea_changed": False, "terms": ["nightly CSV", "repeat runs"],
+         "reply": ("The idea asks to make repeat runs of the report fast; it reparses the nightly CSV each run.\n\n"
+                   "**Q1:** What is slow: the parse, or the print?\n"
+                   "**Recommended:** The parse, because the idea says the CSV is large.")}
+    return {**d, **over}
+
+
+def test_grill_stage_reads_the_linked_idea():
+    inputs = section_text((PLUGIN / "stages" / "GRILL.md").read_text(), "inputs")
+    assert "idea" in inputs and "STATE.md" in inputs, "GRILL.md Inputs does not name the idea file STATE.md names"
+
+
+def test_grill_from_idea_good_run():
+    assert grill_idea_problems(_idea_run()) == []
+
+
+def test_grill_from_idea_made_a_new_task():
+    problems = grill_idea_problems(_idea_run(tasks=[TASK, "2026-11-28-other"]))
+    assert any("task folder" in p for p in problems)
+
+
+def test_grill_from_idea_changed_the_idea():
+    assert any("idea file changed" in p for p in grill_idea_problems(_idea_run(idea_changed=True)))
+
+
+def test_grill_from_idea_ignores_the_idea():
+    reply = "**Q1:** What do you want to change?\n**Recommended:** A cache, because it is common."
+    assert any("idea" in p for p in grill_idea_problems(_idea_run(reply=reply)))
+
+
+def test_grill_from_idea_still_follows_the_round_rules():
+    reply = "Repeat runs reparse the nightly CSV.\n**Q1:** What is slow?\n**Q2:** Who runs it?"
+    problems = grill_idea_problems(_idea_run(reply=reply))
+    assert any("recommended" in p for p in problems)
