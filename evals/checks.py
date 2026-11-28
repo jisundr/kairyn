@@ -388,9 +388,18 @@ def round_decision_problems(turns: list[dict]) -> list[str]:
     problems = []
     for n in (1, 2):
         asked, added = round_questions(turns[n - 1]["reply"]), counts[n] - counts[n - 1]
-        if added < max(asked, 1):
+        if asked and added < asked:
             problems.append(f"answer {n}: {added} new decisions for {asked} questions")
     return problems
+
+
+def finished_turn(turns: list[dict], last: int = 2) -> int | None:
+    """First turn after turn 0, up to `last`, where the stage restated the concept (grill done): rounds can cover
+    every open branch before the scripted stop. None when each of those turns still asked."""
+    for i in range(1, min(last + 1, len(turns))):
+        if state_fields(turns[i]["state"]).get("stages", {}).get(GRILL_STAGE) == "done":
+            return i
+    return None
 
 
 def state_fields(state_text: str) -> dict:
