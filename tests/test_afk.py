@@ -508,8 +508,8 @@ def test_slice4_path_patterns():
 
 
 def test_slice4_design_marks_approval_slices():
-    steps = (PLUGIN / "stages" / "DESIGN.md").read_text().split("## Steps", 1)[1].split("\n## ", 1)[0]
-    assert "(approval)" in steps and "approval:" in steps
+    slices = (PLUGIN / "stages" / "_slices.md").read_text()
+    assert "(approval)" in slices and "approval:" in slices
 
 
 # --- slice 5: the full gate chain ---------------------------------------------------------------
