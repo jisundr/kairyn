@@ -850,3 +850,29 @@ def review_gap_problems(review: str) -> list[str]:
 def new_constraint_lines(before: str, after: str) -> list[str]:
     old = set(before.splitlines())
     return [line for line in after.splitlines() if line.startswith("- ") and line not in old]
+
+
+# --- backlog stage -------------------------------------------------------------------
+def idea_problems(d: dict) -> list[str]:
+    """One inbox idea with the request word for word and a marked problem; no change outside docs/backlog/."""
+    problems = [f"changed outside docs/backlog/: {p}" for p in d["changed"] if not p.startswith("docs/backlog/")]
+    if len(d["ideas"]) != 1:
+        return problems + [f"idea files {sorted(d['ideas'])}, expected one"]
+    [(name, text)] = d["ideas"].items()
+    if not re.fullmatch(r"\d{14}-[a-z0-9-]+\.md", name):
+        problems.append(f"idea file name {name}")
+    if state_fields(text).get("status") != "inbox":
+        problems.append(f"status {state_fields(text).get('status')!r}, expected inbox")
+    if d["requester"] not in text:
+        problems.append("requester is not git config user.name")
+    if d["request"] not in text:
+        problems.append("request is not word for word")
+    if "**Problem (AI draft):**" not in text:
+        problems.append("no problem marked as an AI draft")
+    if not re.search(r"\[capture\].*proposed by the AI", text):
+        problems.append("no [capture] log line")
+    if "| Idea | Effort | Impact | Notes |" not in d["readme"]:
+        problems.append("no README.md table")
+    if name not in d["reply"]:
+        problems.append("reply did not name the idea file")
+    return problems

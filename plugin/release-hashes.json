@@ -2028,6 +2028,9 @@
   ".harness/workflows/task-lifecycle.md": [
    "ab9c15d2542e283ac2c7c50d9da44c004bdba865368b7b50aa00af107008c780"
   ],
+  ".kairyn/stages/BACKLOG.md": [
+   "37eb4f970ebf3e1805cbd542bb465f77be1ee4190ecd4a9314abf565b1ef586f"
+  ],
   ".kairyn/stages/BUILD.md": [
    "0cf08b9f62f3c6302fa5ae48f05803b5f1162e1e635069c11b8200fb23a68a2d"
   ],

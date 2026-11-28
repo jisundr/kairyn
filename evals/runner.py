@@ -700,3 +700,19 @@ def run_retro_approval(repo: Path) -> dict:
             "homes_before": {h: before.get(h, "") for h in homes}, "homes_after": {h: _read(repo / h) for h in homes},
             "budgets_before": budgets_before, "budgets_after": _read(repo / ".harness" / "budgets.yml"),
             "turns": turns, "approver": APPROVER, "words": APPROVAL_WORDS, "start": start, "end": utcnow()}
+
+
+# --- backlog stage -------------------------------------------------------------------
+# Quotes and an apostrophe: the request must reach the file word for word through the shell.
+IDEA_REQUEST = 'The CSV export should let me pick the columns, I don\'t need "all of them".'
+
+
+def run_idea(repo: Path) -> dict:
+    """One turn: /kairyn:idea captures the request into docs/backlog/."""
+    subprocess.run(["git", "config", "user.name", APPROVER], cwd=repo, check=True)
+    commit_all(repo)
+    reply = claude(f"/kairyn:idea {IDEA_REQUEST}", repo, plugin=True, model=MODEL)
+    backlog = repo / "docs" / "backlog"
+    return {"reply": reply, "request": IDEA_REQUEST, "requester": APPROVER, "changed": changed_paths(repo),
+            "ideas": {p.name: p.read_text() for p in backlog.glob("*.md") if p.name != "README.md"},
+            "readme": _read(backlog / "README.md")}

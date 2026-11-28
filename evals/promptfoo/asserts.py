@@ -9,7 +9,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE.parent), str(HERE.parent.parent / "tests")]
 
-from checks import (build_row_problems, flags_problems, gate_row, new_constraint_lines, output_header_problems, review_gap_problems, split_build_problems,
+from checks import (idea_problems, build_row_problems, flags_problems, gate_row, new_constraint_lines, output_header_problems, review_gap_problems, split_build_problems,
                     retro_applied_problems, retro_proposal_problems, retro_scope_problems, chosen_option, design_run_problems, design_test_plan_problems, grounded_problems, options_problems,
                     close_problems, TS_FORMAT, approval_problems, concept_use_problems, ears_problems, nfr_problems, owner_problems, decision_labels, grill_problems, grill_round_problems, round_decision_problems, finished_turn, handoff_problems, next_routing_stage,
                     open_decisions, routing_problems, state_fields, ste_problems, ste_rate, structural_problems,
@@ -570,6 +570,10 @@ def close_starts_retro(output, context):
         problems.append("RETRO.md does not wait for approval")
     problems += [f"learning removed before approval: {e[:50]}" for e in d["entries"] if e not in d["learnings"]]
     return _result(problems)
+
+
+def idea_captured(output, context):
+    return _result(idea_problems(json.loads(output)))
 
 
 # --- AFK stages ------------------------------------------------------------------------------------
