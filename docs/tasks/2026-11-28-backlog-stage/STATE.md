@@ -2,7 +2,7 @@
 task: 2026-11-28-backlog-stage
 title: Backlog stage
 stage: build
-status: blocked
+status: in-progress
 grill: done
 stages:
   grill: done
@@ -12,7 +12,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-28T01:26:30Z
-updated: 2026-11-28T11:16:04Z
+updated: 2026-11-28T11:21:23Z
 ---
 
 # Log
@@ -34,3 +34,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T10:44:58Z [build] Owner hold stopped the run in the T4 code part; work resumed. Branch rebased onto main (PR #76, grill rounds): T1-T3 SHAs in BUILD.md mapped to the rebased commits. T4 code finished by hand from the saved partial work: version 0.21.5, GRILL.md cuts named in 3080de0. Red check at 378c5db exited 2; `uv run pytest` at 3080de0 exited 0 (896 passed).
 - 2026-11-28T10:45:04Z [build] Build started.
 - 2026-11-28T11:16:04Z [build] Blocked: the reviewer still objects after the fix round: The `.harness/README.md` table under "`load` says when a file is read" has its cell padding removed (`| Class | Meaning |` becomes `|Class|Meaning|`, and the same for its three rows). DESIGN.md does not cover this. T5 only names the stage and skills in `.harness/README.md`, and DESIGN.md allows budget cuts only in T4, for GRILL.md and REQUIREMENTS.md.; The diff still has the grill-rounds (PR #76) changes and the init-ships-union-merge backlog edits. These are `docs/tasks/2026-11-28-grill-rounds/`, the rounds rewrite of GRILL.md, `grill_round_problems`, `round_decision_problems` and `finished_turn`, the learnings.md line, grill-rounds set to `committed`, init-ships-union-merge set to `dropped`, the union-merge-restores-learnings Evidence block, the removed README row and the TRIAGE.md "was dropped" sentence. Fix commit bbae4e9 changes none of them. If they are already on main, the review base is stale and the diff must be made again against a base that has them. If they are not on main, they are still outside DESIGN.md.
+- 2026-11-28T11:21:23Z [build] Resumed after a block.
