@@ -22,7 +22,7 @@
     },
     ".kairyn/stages/DESIGN.md": {
       "owner": "repo",
-      "sha256": "b3a7d043213201a7733d2e12959e82227d83768e3c54dea564fc6c2eca021dc7"
+      "sha256": "79ea380f8161b2eb98d4d157cd54d13197342722072bd4bab5a1f477761fd9ae"
     },
     ".kairyn/stages/GATES.md": {
       "owner": "repo",
@@ -51,6 +51,10 @@
     ".kairyn/stages/_approval.md": {
       "owner": "repo",
       "sha256": "c1a126fd942788eb1dedbda76aab83544e2dc3e9ddb5bfa4c7e9e595e6fcefa4"
+    },
+    ".kairyn/stages/_slices.md": {
+      "owner": "repo",
+      "sha256": "e1484f7b5da778b6b007dc8cdb6aff15861943702aa82cdb1a506663adbc6b26"
     },
     ".kairyn/stages/_template.md": {
       "owner": "repo",
@@ -97,5 +101,5 @@
       "sha256": "2aa85466ab480927f20427cef934ee7caaf467dece83bb0e86afc6ae42773d88"
     }
   },
-  "version": "0.21.3"
+  "version": "0.21.4"
 }

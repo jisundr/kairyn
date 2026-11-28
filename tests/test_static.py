@@ -91,9 +91,24 @@ def test_design_approval_hands_off_to_build():
 
 def test_design_cuts_vertical_slices():
     """D13: T1 is the tracer bullet; each T<n> has an end-to-end done command and after: blockers."""
-    steps = (PLUGIN / "stages" / "DESIGN.md").read_text().split("## Steps", 1)[1].split("\n## ", 1)[0]
+    slices = (PLUGIN / "stages" / "_slices.md").read_text()
     for word in ("tracer bullet", "after:", "Done: `"):
-        assert word in steps, word
+        assert word in slices, word
+
+
+def test_design_stage_fits_350_tokens_and_points_to_slices():
+    """R1, R3: the slice and test-plan rules live in _slices.md, so DESIGN.md has room under its budget."""
+    from budgets import estimate_tokens
+    text = (PLUGIN / "stages" / "DESIGN.md").read_text()
+    assert estimate_tokens(text) <= 350
+    assert "_slices.md" in text.split("## Steps", 1)[1].split("\n## ", 1)[0]
+
+
+def test_slices_holds_the_moved_rules():
+    """R2: each rule of the old design steps 6 and 7 is in _slices.md."""
+    slices = (PLUGIN / "stages" / "_slices.md").read_text()
+    for word in ("tracer bullet", "after:", "Done: `", "(approval)", "approval:", "AC<n>", "Test plan", "Manual:"):
+        assert word in slices, word
 
 
 def test_afk_stages_follow_design_in_order():

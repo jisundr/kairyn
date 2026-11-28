@@ -62,3 +62,19 @@ def test_this_repo_kairyn_is_upgraded_to_the_plugin_version():
     assert ".kairyn/stages/CLOSE.md" in manifest["files"]
     assert ".kairyn/stages/EXIT.md" not in manifest["files"]  # old-name
 
+
+
+def test_this_repo_takes_the_design_split_at_0_21_4_or_later():
+    """T2: the _slices.md move ships in a new version, and this repo's .kairyn/stages has it."""
+    import json
+
+    from helpers import PLUGIN
+    from kairyn_files import plugin_version
+
+    assert tuple(int(p) for p in plugin_version(PLUGIN).split(".")) >= (0, 21, 4)
+    manifest = json.loads((ROOT / ".kairyn" / "manifest.json").read_text())
+    for name in ("DESIGN.md", "_slices.md"):
+        local = ROOT / ".kairyn" / "stages" / name
+        assert local.is_file(), name
+        assert local.read_text() == (PLUGIN / "stages" / name).read_text(), name
+        assert f".kairyn/stages/{name}" in manifest["files"], name

@@ -1,4 +1,4 @@
-# depends: plugin/skills/design/SKILL.md, plugin/stages/DESIGN.md, plugin/stages/_template.md, plugin/stages/_approval.md, plugin/templates/STATE.md, plugin/templates/DESIGN.md, plugin/templates/afk.yml, plugin/scripts/init.sh, plugin/harness/**/*
+# depends: plugin/skills/design/SKILL.md, plugin/stages/DESIGN.md, plugin/stages/_template.md, plugin/stages/_approval.md, plugin/stages/_slices.md, plugin/templates/STATE.md, plugin/templates/DESIGN.md, plugin/templates/afk.yml, plugin/scripts/init.sh, plugin/harness/**/*
 description: design stage
 prompts: ["{{scenario}}"]
 providers:

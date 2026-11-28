@@ -34,7 +34,7 @@ Lessons already learned, so you do not repeat them:
 
 Copy `plugin/stages/_template.md`. Required front matter: `name` (the lowercase stage name, matching the filename case-insensitively), `order` (unique integer), `purpose`. Required sections: Inputs, Steps, Output, Exit criteria, State update, Learnings. `tests/test_static.py` enforces this.
 
-A file whose name starts with `_` holds shared rules, not a stage: `_template.md` (Time, Writing, State update) and `_approval.md` (the approval gate of grill, requirements and design, and the next command it names). A stage points to it ("Then follow `_approval.md`") and its evals list it in `# depends:`. Change a shared rule there, not in each stage.
+A file whose name starts with `_` holds shared rules, not a stage: `_template.md` (Time, Writing, State update), `_approval.md` (approval gate of grill, requirements, design) and `_slices.md` (design's Tasks and Test plan). A stage points to it ("Then follow `_approval.md`") and its evals list it in `# depends:`. Change a shared rule there, not in each stage.
 
 Stage files and their outputs are upper case (`REQUIREMENTS.md`). Stage names and `STATE.md` values are lower case (`requirements`).
 
