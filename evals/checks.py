@@ -326,13 +326,14 @@ def routing_problems(run: dict) -> list[str]:
 
 
 # --- grill stage ---------------------------------------------------------------
-# The stage interviews the user one question at a time and keeps the shared concept in CONCEPT.md.
+# The stage interviews the user in rounds of numbered questions and keeps the shared concept in CONCEPT.md.
 GRILL_STAGE = "grill"
 CONCEPT_SECTIONS = ("concept", "decisions", "terms", "open branches")
 _QUESTION = re.compile(r"^\W*(?:Q\d+|Question)\b[^:\n]*:", re.M | re.I)
 _RECOMMENDED = re.compile(r"^\W*Recommended\b[^:\n]*:", re.M | re.I)
 _NONE_ITEM = re.compile(r"^\W*(none|n/a|-)\W*$", re.I)
-MAX_QUESTION_MARKS = 2   # the question, plus at most one inside the recommendation
+MAX_ROUND = 3            # questions per round (D1)
+MARKS_PER_QUESTION = 2   # the question, plus at most one inside its recommendation
 
 
 def section_text(text: str, name: str) -> str:
@@ -358,18 +359,47 @@ def decision_labels(text: str) -> set[str]:
     return set(re.findall(r"\bD\d+\b", section_text(text, "decisions")))
 
 
-def grill_reply_problems(reply: str) -> list[str]:
-    """One question per message, with a recommended answer."""
+def round_questions(reply: str) -> int:
+    return len(_QUESTION.findall(reply))
+
+
+def grill_round_problems(reply: str, min_questions: int = 1) -> list[str]:
+    """One round: 1 to 3 numbered questions, each with its own recommended answer."""
     problems = []
-    questions = len(_QUESTION.findall(reply))
-    if questions != 1:
-        problems.append(f"{questions} question markers, expected 1")
-    if not _RECOMMENDED.search(reply):
-        problems.append("no recommended answer")
+    questions = round_questions(reply)
+    if not 1 <= questions <= MAX_ROUND:
+        problems.append(f"{questions} questions, expected 1 to {MAX_ROUND}")
+    elif questions < min_questions:
+        problems.append(f"{questions} questions, expected at least {min_questions}")
+    recommended = len(_RECOMMENDED.findall(reply))
+    if recommended < questions or not recommended:
+        problems.append(f"{recommended} recommended answers for {questions} questions")
     marks = reply.count("?")
-    if marks > MAX_QUESTION_MARKS:
-        problems.append(f"{marks} question marks, more than one question")
+    if marks > MARKS_PER_QUESTION * max(questions, 1):
+        problems.append(f"{marks} question marks, more questions than numbers")
     return problems
+
+
+def round_decision_problems(turns: list[dict]) -> list[str]:
+    """Turns 0-2 are rounds the user accepted with no numbers: each adds one D<n> per question it asked (D5)."""
+    if len(turns) < 3:
+        return [f"only {len(turns)} turns"]
+    counts = [len(decision_labels(t["concept"])) for t in turns[:3]]
+    problems = []
+    for n in (1, 2):
+        asked, added = round_questions(turns[n - 1]["reply"]), counts[n] - counts[n - 1]
+        if asked and added < asked:
+            problems.append(f"answer {n}: {added} new decisions for {asked} questions")
+    return problems
+
+
+def finished_turn(turns: list[dict], last: int = 2) -> int | None:
+    """First turn after turn 0, up to `last`, where the stage restated the concept (grill done): rounds can cover
+    every open branch before the scripted stop. None when each of those turns still asked."""
+    for i in range(1, min(last + 1, len(turns))):
+        if state_fields(turns[i]["state"]).get("stages", {}).get(GRILL_STAGE) == "done":
+            return i
+    return None
 
 
 def state_fields(state_text: str) -> dict:
