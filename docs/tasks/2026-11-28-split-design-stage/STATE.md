@@ -2,7 +2,7 @@
 task: 2026-11-28-split-design-stage
 title: Split the design stage
 stage: gates
-status: blocked
+status: in-progress
 stages:
   grill: done
   requirements: done   # pending | in-progress | done
@@ -11,7 +11,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-28T01:26:43Z
-updated: 2026-11-28T11:02:31Z
+updated: 2026-11-28T11:06:52Z
 ---
 
 # Log
@@ -39,3 +39,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T10:47:19Z [build] Blocked: gh pr create failed: failed: GraphQL: Head sha can't be blank, Base sha can't be blank, No commits between jisundr/split-design-stage and kairyn/2026-11-28-split-design-stage, Base ref must be a branch (createPullRequest)
 - 2026-11-28T11:02:30Z [gates] Resumed after a block.
 - 2026-11-28T11:02:31Z [gates] Blocked: gate commits failed: 4095181 fix edits the test file `tests/test_dev_harness.py` in the fix round: edit it in a test commit that is red
+- 2026-11-28T11:06:52Z [gates] Resumed after a block.
