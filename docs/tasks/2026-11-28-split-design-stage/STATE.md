@@ -1,17 +1,17 @@
 ---
 task: 2026-11-28-split-design-stage
 title: Split the design stage
-stage: build
+stage: gates
 status: in-progress
 stages:
   grill: done
   requirements: done   # pending | in-progress | done
   design: done
-  build: in-progress
+  build: done
   gates: pending
   review: pending
 created: 2026-11-28T01:26:43Z
-updated: 2026-11-28T10:36:11Z
+updated: 2026-11-28T10:47:13Z
 ---
 
 # Log
@@ -35,3 +35,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T10:34:59Z [build] Resumed by the owner. Rebased on main d1cb468: PR #76 took 0.21.3, so this task ships 0.21.4 (plugin.json, release hashes, this repo's upgrade; DESIGN.md T2 says 0.21.4). Approach unchanged.
 - 2026-11-28T10:36:11Z [build] Resumed after a block.
 - 2026-11-28T10:36:11Z [build] Build started.
+- 2026-11-28T10:47:13Z [build] All 2 tasks green. Cost $1.33. Next: gates.
