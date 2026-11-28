@@ -12,7 +12,7 @@ stages:
   gates: pending
   review: pending
 created: 2026-11-28T01:26:30Z
-updated: 2026-11-28T01:47:02Z
+updated: 2026-11-28T10:44:58Z
 ---
 
 # Log
@@ -31,3 +31,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T01:39:57Z [design] DESIGN.md written: option A (backlog.py, BACKLOG.md, skills idea and triage), slices T1-T5. Waiting for owner approval.
 - 2026-11-28T01:40:52Z [design] Owner approved: "Approve". Next stage: build.
 - 2026-11-28T01:47:02Z [build] Build started.
+- 2026-11-28T10:44:58Z [build] Owner hold stopped the run in the T4 code part; work resumed. Branch rebased onto main (PR #76, grill rounds): T1-T3 SHAs in BUILD.md mapped to the rebased commits. T4 code finished by hand from the saved partial work: version 0.21.5, GRILL.md cuts named in 3080de0. Red check at 378c5db exited 2; `uv run pytest` at 3080de0 exited 0 (896 passed).
