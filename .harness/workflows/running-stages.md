@@ -20,7 +20,7 @@ A stage:
 2. writes its output to `docs/tasks/<date>-<slug>/<STAGE>.md`
 3. updates `STATE.md` and appends to `.kairyn/learnings.md`
 
-An optional stage (`optional: true` in its front matter) is not in the default stage list. Run it on a task only when it fits: `GRILL.md` before `requirements` when a request is vague, `MODEL-ROUTING.md` after it to cut model cost, `CLOSE.md` (`/kairyn:close`) after a task merges, `RETRO.md` (`/kairyn:retro`) when `learnings.md` is past half its budget, `BACKLOG.md` (`/kairyn:idea`, `/kairyn:triage`) to save, triage or commit ideas in `docs/backlog/`. One run on a task adds itself to the task's `stages`.
+An optional stage (`optional: true` in its front matter) is not in the default stage list. Run it on a task only when it fits: `GRILL.md` before `requirements` when a request is vague, `MODEL-ROUTING.md` after it to cut model cost, `CLOSE.md` (`/kairyn:close`) after a task merges, `RETRO.md` (`/kairyn:retro`) when `learnings.md` is past half its budget, `BACKLOG.md` (`/kairyn:idea`, `/kairyn:triage`) to save, triage or commit ideas in `docs/backlog/`. It adds itself to the task's `stages`.
 
 ## Approve a concept, requirements or design
 
