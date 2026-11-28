@@ -1,4 +1,4 @@
-# depends: plugin/stages/GRILL.md, plugin/skills/grill/SKILL.md, plugin/stages/_template.md, plugin/stages/_approval.md, plugin/templates/STATE.md, plugin/templates/CONCEPT.md, plugin/scripts/init.sh
+# depends: plugin/stages/GRILL.md, plugin/skills/grill/SKILL.md, plugin/stages/_template.md, plugin/stages/_approval.md, plugin/templates/STATE.md, plugin/templates/CONCEPT.md, plugin/scripts/init.sh, plugin/scripts/backlog.py, plugin/scripts/atomic_write.py
 description: grill stage
 prompts: ["{{scenario}}"]
 providers:
@@ -20,3 +20,9 @@ tests:
       - {type: python, value: "file://asserts.py:grill_records_approval", metric: grill_records_approval}
       - {type: python, value: "file://asserts.py:plain_language", metric: plain_language}
       - {type: python, value: "file://asserts.py:grill_quality", metric: quality}
+  - description: grill on a committed task folder asks about the linked idea
+    vars: {scenario: grill_from_idea}
+    metadata:
+      min_pass_rate: {grill_from_idea: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:grill_from_idea", metric: grill_from_idea}

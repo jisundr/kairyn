@@ -8,6 +8,6 @@ allowed-tools: Bash(date:*), Bash(mkdir:*), Bash(git config:*), Read, Write, Edi
 
 Follow `.kairyn/stages/GRILL.md` exactly for: $ARGUMENTS
 
-- If the argument is a folder in `docs/tasks/`, continue that task from its `CONCEPT.md`.
+- If the argument is a folder in `docs/tasks/`, continue that task from its `CONCEPT.md`, or from the idea its `STATE.md` names.
 - Else it is a topic: start a new task.
 - If `.kairyn/stages/GRILL.md` is missing, tell the user to run `/kairyn:upgrade`, and stop.

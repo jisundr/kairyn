@@ -471,6 +471,30 @@ def concept_use_problems(task: Path, decisions: tuple[str, ...], must_mention: s
     return problems
 
 
+def _committed_idea_problems(run: dict) -> list[str]:
+    """A run on a task that `backlog.py commit` made keeps to that folder and leaves the idea file alone."""
+    problems = [] if run["tasks"] == [run["task"]] else [f"task folders {run['tasks']}, expected only the committed task folder"]
+    return problems + (["idea file changed"] if run["idea_changed"] else [])
+
+
+def grill_idea_problems(run: dict) -> list[str]:
+    """First grill turn on a committed task: it speaks of the idea (any of `terms`) and asks one round."""
+    reply = run["reply"].lower()
+    problems = _committed_idea_problems(run) + grill_round_problems(run["reply"])
+    if not any(term.lower() in reply for term in run["terms"]):
+        problems.append(f"reply takes nothing from the idea: none of {run['terms']}")
+    return problems
+
+
+def requirements_idea_problems(run: dict) -> list[str]:
+    """requirements on a committed task: the problem statement takes each of `terms` from the idea."""
+    if run["requirements"] is None:
+        return ["REQUIREMENTS.md missing in the committed task folder"]
+    problem = " ".join(section_text(run["requirements"], "problem statement").lower().split())
+    return _committed_idea_problems(run) + [f"problem statement does not take {term!r} from the idea"
+                                            for term in run["terms"] if term.lower() not in problem]
+
+
 # --- close stage -------------------------------------------------------------------
 
 ADR_SECTIONS = ("## Status", "## Context", "## Decision", "## Consequences")

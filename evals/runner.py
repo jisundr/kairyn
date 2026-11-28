@@ -324,6 +324,59 @@ def run_requirements_with_concept(repo: Path) -> dict:
     return {"tasks": task_dirs(repo)}
 
 
+# grill and requirements on a task that `backlog.py commit` made: only the idea file says what is asked.
+# The terms are in no other fixture file, so a run that names them has read the idea.
+IDEA_FILE = "docs/backlog/20260106090000-faster-report.md"
+IDEA_TERMS = ("finance team", "month end")
+IDEA_TEXT = f"""---
+title: Faster report
+status: triaged
+requester: Eval User
+date: 2026-01-06
+effort: medium
+impact: high
+review_by:
+---
+
+# Faster report
+
+**Raw request:** The finance team runs the report many times at month end and each run is too slow.
+
+**Problem (AI draft):** At month end, the finance team waits on each repeat run of the report.
+
+# Log
+
+- 2026-01-06T09:00:00Z [capture] Captured.
+"""
+
+
+def make_committed_idea_repo(repo: Path) -> Path:
+    """The grill fixture, plus a triaged idea committed by the shipped script."""
+    idea = make_grill_repo(repo) / IDEA_FILE
+    idea.parent.mkdir(parents=True, exist_ok=True)
+    idea.write_text(IDEA_TEXT)
+    subprocess.run(["git", "config", "user.name", "Eval User"], cwd=repo, check=True)
+    subprocess.run(["python3", str(PLUGIN / "scripts" / "backlog.py"), "commit", IDEA_FILE],
+                   cwd=repo, check=True, capture_output=True)
+    return repo
+
+
+def run_from_idea(repo: Path, stage: str) -> dict:
+    """One turn of `stage` on the committed task folder."""
+    task = task_dirs(repo)[0]
+    before = (repo / IDEA_FILE).read_text()
+    if stage == "grill":
+        prompt = f"/kairyn:grill docs/tasks/{task.name}/"
+    else:
+        prompt = ("Follow the stage definition in .kairyn/stages/REQUIREMENTS.md exactly "
+                  f"for the task docs/tasks/{task.name}/. {NO_QUESTIONS}")
+    reply = claude(prompt, repo, plugin=stage == "grill", model=MODEL)
+    req = task / "REQUIREMENTS.md"
+    return {"task": task.name, "tasks": [t.name for t in task_dirs(repo)], "terms": list(IDEA_TERMS), "reply": reply,
+            "idea_changed": _read(repo / IDEA_FILE) != before,
+            "requirements": req.read_text() if req.is_file() else None}
+
+
 # requirements, then approval in the same conversation: a reply that does not approve, then one that does.
 APPROVER = "Eval User"
 APPROVAL_WORDS = "Approved"
