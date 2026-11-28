@@ -10,7 +10,7 @@
     },
     ".harness/workflows/running-stages.md": {
       "owner": "plugin",
-      "sha256": "12a3365477d84c6678c06d01f3acfe0d075bdd2ede750bbb0bead454c469ab65"
+      "sha256": "079eae0fb23418d02579fb4396c14d1b2b2fdedd4bb521e127ade10f554e6def"
     },
     ".kairyn/stages/BACKLOG.md": {
       "owner": "repo",
