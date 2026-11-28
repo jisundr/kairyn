@@ -1,10 +1,6 @@
 # Triage
 
-Each file is one idea, named `<YYYYMMDDHHMMSS>-<slug>.md` from its capture time (UTC). Status: `inbox` → `triaged` → `shaping` → `shaped` → `committed`, or `parked` / `dropped`. Agents capture and draft, and propose `effort` (the work, eval runs included) and `impact` (the value to kairyn users), each `low`, `medium` or `high`. A human triages, confirms both and commits.
-
-At capture, log `[capture] ... Effort <e>, impact <i> proposed by the AI.` At triage, log `[triage] Effort <e>, impact <i> confirmed by <owner>.` `/kairyn:backlog` lists ideas by impact, then effort.
-
-The index of triaged ideas is [README.md](README.md). Next and Parked were decided by Jayson De los Reyes, 2026-11-25 and 2026-11-26.
+The idea rules and triage steps are in [BACKLOG.md](../../.kairyn/stages/BACKLOG.md). The index of triaged ideas is [README.md](README.md). Next and Parked were decided by Jayson De los Reyes, 2026-11-25 and 2026-11-26.
 
 ## Next
 

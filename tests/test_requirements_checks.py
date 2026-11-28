@@ -1,8 +1,10 @@
 """Playbook gaps in REQUIREMENTS.md: EARS requirements, non-functional needs, owners, approval."""
 from datetime import datetime, timezone
 
-from checks import (approval_problems, ears_problems, nfr_problems, owner_problems, structural_problems,
-                    traceability_problems)
+from helpers import PLUGIN
+
+from checks import (approval_problems, ears_problems, nfr_problems, owner_problems, requirements_idea_problems,
+                    section_text, structural_problems, traceability_problems)
 
 GOOD = """## Requirements
 - R1: When the user passes `--dry-run`, the CLI shall print each file it would change. (request)
@@ -171,3 +173,53 @@ def test_approved_run_marked_done_is_flagged(tmp_path):
     """Design follows requirements (D4), so an approved task is not done."""
     assert "stage 'requirements' status 'done', expected design in-progress" in structural_problems(
         _task(tmp_path, "done", APPROVED), approved=True)
+
+
+# --- T4: requirements takes the idea that a committed task's STATE.md names as the request ---
+IDEA_TASK = "2026-11-28-report-cache"
+IDEA_DOC = """## Problem statement
+The report reparses the nightly CSV on each run, so repeat runs are slow. (request)
+
+## Requirements
+- R1: When the CSV did not change, the report shall reuse the last parse. (request)
+"""
+
+
+def _idea_req(**over):
+    d = {"task": IDEA_TASK, "tasks": [IDEA_TASK], "idea_changed": False, "requirements": IDEA_DOC,
+         "terms": ["nightly CSV", "repeat runs"]}
+    return {**d, **over}
+
+
+def test_requirements_stage_reads_the_linked_idea():
+    inputs = section_text((PLUGIN / "stages" / "REQUIREMENTS.md").read_text(), "inputs")
+    assert "idea" in inputs and "STATE.md" in inputs, "REQUIREMENTS.md Inputs does not name the idea file STATE.md names"
+
+
+def test_requirements_from_idea_good_run():
+    assert requirements_idea_problems(_idea_req()) == []
+
+
+def test_requirements_from_idea_missing_output():
+    assert requirements_idea_problems(_idea_req(requirements=None)) == ["REQUIREMENTS.md missing in the committed task folder"]
+
+
+def test_requirements_from_idea_made_a_new_task():
+    problems = requirements_idea_problems(_idea_req(tasks=[IDEA_TASK, "2026-11-28-cache"]))
+    assert any("task folder" in p for p in problems)
+
+
+def test_requirements_from_idea_changed_the_idea():
+    assert any("idea file changed" in p for p in requirements_idea_problems(_idea_req(idea_changed=True)))
+
+
+def test_requirements_from_idea_problem_statement_drops_the_idea():
+    doc = IDEA_DOC.replace("nightly CSV", "input file")
+    assert requirements_idea_problems(_idea_req(requirements=doc)) == [
+        "problem statement does not take 'nightly CSV' from the idea"]
+
+
+def test_requirements_from_idea_term_only_outside_problem_statement():
+    doc = IDEA_DOC.replace("so repeat runs are slow", "so it is slow") + "- R2: Repeat runs take under 1 second. (request)\n"
+    assert requirements_idea_problems(_idea_req(requirements=doc)) == [
+        "problem statement does not take 'repeat runs' from the idea"]

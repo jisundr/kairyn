@@ -471,6 +471,30 @@ def concept_use_problems(task: Path, decisions: tuple[str, ...], must_mention: s
     return problems
 
 
+def _committed_idea_problems(run: dict) -> list[str]:
+    """A run on a task that `backlog.py commit` made keeps to that folder and leaves the idea file alone."""
+    problems = [] if run["tasks"] == [run["task"]] else [f"task folders {run['tasks']}, expected only the committed task folder"]
+    return problems + (["idea file changed"] if run["idea_changed"] else [])
+
+
+def grill_idea_problems(run: dict) -> list[str]:
+    """First grill turn on a committed task: it speaks of the idea (any of `terms`) and asks one round."""
+    reply = run["reply"].lower()
+    problems = _committed_idea_problems(run) + grill_round_problems(run["reply"])
+    if not any(term.lower() in reply for term in run["terms"]):
+        problems.append(f"reply takes nothing from the idea: none of {run['terms']}")
+    return problems
+
+
+def requirements_idea_problems(run: dict) -> list[str]:
+    """requirements on a committed task: the problem statement takes each of `terms` from the idea."""
+    if run["requirements"] is None:
+        return ["REQUIREMENTS.md missing in the committed task folder"]
+    problem = " ".join(section_text(run["requirements"], "problem statement").lower().split())
+    return _committed_idea_problems(run) + [f"problem statement does not take {term!r} from the idea"
+                                            for term in run["terms"] if term.lower() not in problem]
+
+
 # --- close stage -------------------------------------------------------------------
 
 ADR_SECTIONS = ("## Status", "## Context", "## Decision", "## Consequences")
@@ -850,3 +874,99 @@ def review_gap_problems(review: str) -> list[str]:
 def new_constraint_lines(before: str, after: str) -> list[str]:
     old = set(before.splitlines())
     return [line for line in after.splitlines() if line.startswith("- ") and line not in old]
+
+
+# --- backlog stage -------------------------------------------------------------------
+def idea_problems(d: dict) -> list[str]:
+    """One inbox idea with the request word for word and a marked problem; no change outside docs/backlog/."""
+    problems = [f"changed outside docs/backlog/: {p}" for p in d["changed"] if not p.startswith("docs/backlog/")]
+    if len(d["ideas"]) != 1:
+        return problems + [f"idea files {sorted(d['ideas'])}, expected one"]
+    [(name, text)] = d["ideas"].items()
+    if not re.fullmatch(r"\d{14}-[a-z0-9-]+\.md", name):
+        problems.append(f"idea file name {name}")
+    if state_fields(text).get("status") != "inbox":
+        problems.append(f"status {state_fields(text).get('status')!r}, expected inbox")
+    if d["requester"] not in text:
+        problems.append("requester is not git config user.name")
+    if d["request"] not in text:
+        problems.append("request is not word for word")
+    if "**Problem (AI draft):**" not in text:
+        problems.append("no problem marked as an AI draft")
+    if not re.search(r"\[capture\].*proposed by the AI", text):
+        problems.append("no [capture] log line")
+    if "| Idea | Effort | Impact | Notes |" not in d["readme"]:
+        problems.append("no README.md table")
+    if name not in d["reply"]:
+        problems.append("reply did not name the idea file")
+    return problems
+
+
+TRIAGE_MENU = re.compile(r"keep\W+(?:or\W+)?park\W+(?:or\W+)?(?:renew\W+(?:or\W+)?)?drop")
+TRIAGE_LABELS = {"keep", "park", "drop", "proposal", "proposed", "propose", "reason", "effort", "impact", "low",
+                 "medium", "high", "inbox", "parked", "status", "idea", "until", "review_by", "md"}
+
+
+def _names(name: str) -> tuple[str, str]:
+    """An idea's slug as the file has it and with spaces."""
+    slug = name.split("-", 1)[1][:-3]
+    return slug, slug.replace("-", " ")
+
+
+def _idea_blocks(reply: str, due: list[str]) -> dict[str, list[str]]:
+    """The text about each idea: from a line that names it to the next line that names one. A table row stands alone."""
+    blocks: dict[str, list[list[str]]] = {name: [] for name in due}
+    current: list[str] = []
+    for line in reply.splitlines():
+        named = [name for name in due if any(n in line for n in _names(name))]
+        if named:
+            current = named
+            for name in named:
+                blocks[name].append([])
+        if TRIAGE_MENU.search(line):
+            continue   # "keep, park or drop?" asks the owner; it proposes nothing
+        for name in current:
+            blocks[name][-1].append(line)
+        if line.lstrip().startswith("|"):
+            current = []
+    return {name: ["\n".join(lines) for lines in found] for name, found in blocks.items()}
+
+
+def _proposes_with_reason(block: str, name: str) -> bool:
+    for text in (name, *_names(name)):
+        block = block.replace(text, " ")
+    words = re.findall(r"[a-z_']{2,}", block)
+    return bool(re.search(r"\b(keep|park|drop)\b", block)) and len([w for w in words if w not in TRIAGE_LABELS]) >= 3
+
+
+def triage_digest_problems(d: dict) -> list[str]:
+    """Each due idea named with a proposal and a reason; the fresh park left out; no file changed."""
+    first = d["turns"][0]
+    problems = [f"changed before the owner answered: {p}" for p in first["changed"]]
+    reply = first["reply"].lower()
+    for name, blocks in _idea_blocks(reply, d["due"]).items():
+        if not any(n in reply for n in _names(name)):
+            problems.append(f"reply does not name {name}")
+        elif not any(_proposes_with_reason(block, name) for block in blocks):
+            problems.append(f"no proposal with a reason for {name}")
+    if any(n in reply for n in _names(d["fresh"])):
+        problems.append("reply lists a park that is not due")
+    return problems
+
+
+def triage_apply_problems(d: dict) -> list[str]:
+    """The first turn waits; the second records exactly the owner's two decisions."""
+    kept, dropped = d["due"]
+    problems = [f"changed before the owner answered: {p}" for p in d["turns"][0]["changed"]]
+    for name, status in ((kept, "triaged"), (dropped, "dropped"), (d["fresh"], "parked")):
+        got = state_fields(d["ideas"][name]).get("status")
+        if got != status:
+            problems.append(f"{name} status {got!r}, expected {status}")
+    for name in d["due"]:
+        if not re.search(rf"\[triage\].*{re.escape(d['owner'])}", d["ideas"][name]):
+            problems.append(f"{name} has no [triage] line with the owner")
+    if f"]({kept}) | low | high |" not in d["readme"]:
+        problems.append("no README row for the kept idea")
+    if dropped in d["readme"]:
+        problems.append("README row for the dropped idea")
+    return problems

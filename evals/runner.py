@@ -177,9 +177,11 @@ def run_requirements(repo: Path) -> dict:
 
 
 def claude_session(prompts: list, cwd: Path, *, plugin: bool = False, model: str | None = None,
-                   on_turn=None, timeout: int = 600) -> list[str]:
+                   on_turn=None, timeout: int = 600, user_allows: tuple = ()) -> list[str]:
     """One conversation, one prompt per turn (a scripted user). on_turn(i, reply) runs after each turn.
-    A prompt can be a callable: it gets the replies so far and returns the prompt."""
+    A prompt can be a callable: it gets the replies so far and returns the prompt.
+    user_allows: tools allowed from turn 2 on. A skill's allowed-tools cover only its own turn, so a later
+    turn's command needs the user's approval of a permission prompt, which headless claude cannot give."""
     replies, session = [], None
     for i, prompt in enumerate(prompts):
         if callable(prompt):
@@ -187,6 +189,8 @@ def claude_session(prompts: list, cwd: Path, *, plugin: bool = False, model: str
         cmd = ["claude", "-p", prompt, "--permission-mode", "acceptEdits", "--output-format", "json"]
         if session:
             cmd += ["--resume", session]
+        if i and user_allows:
+            cmd += ["--allowedTools", *user_allows]
         if plugin:
             cmd += ["--plugin-dir", str(PLUGIN)]
         if model:
@@ -322,6 +326,59 @@ def run_requirements_with_concept(repo: Path) -> dict:
         repo, model=MODEL,
     )
     return {"tasks": task_dirs(repo)}
+
+
+# grill and requirements on a task that `backlog.py commit` made: only the idea file says what is asked.
+# The terms are in no other fixture file, so a run that names them has read the idea.
+IDEA_FILE = "docs/backlog/20260106090000-faster-report.md"
+IDEA_TERMS = ("finance team", "month end")
+IDEA_TEXT = f"""---
+title: Faster report
+status: triaged
+requester: Eval User
+date: 2026-01-06
+effort: medium
+impact: high
+review_by:
+---
+
+# Faster report
+
+**Raw request:** The finance team runs the report many times at month end and each run is too slow.
+
+**Problem (AI draft):** At month end, the finance team waits on each repeat run of the report.
+
+# Log
+
+- 2026-01-06T09:00:00Z [capture] Captured.
+"""
+
+
+def make_committed_idea_repo(repo: Path) -> Path:
+    """The grill fixture, plus a triaged idea committed by the shipped script."""
+    idea = make_grill_repo(repo) / IDEA_FILE
+    idea.parent.mkdir(parents=True, exist_ok=True)
+    idea.write_text(IDEA_TEXT)
+    subprocess.run(["git", "config", "user.name", "Eval User"], cwd=repo, check=True)
+    subprocess.run(["python3", str(PLUGIN / "scripts" / "backlog.py"), "commit", IDEA_FILE],
+                   cwd=repo, check=True, capture_output=True)
+    return repo
+
+
+def run_from_idea(repo: Path, stage: str) -> dict:
+    """One turn of `stage` on the committed task folder."""
+    task = task_dirs(repo)[0]
+    before = (repo / IDEA_FILE).read_text()
+    if stage == "grill":
+        prompt = f"/kairyn:grill docs/tasks/{task.name}/"
+    else:
+        prompt = ("Follow the stage definition in .kairyn/stages/REQUIREMENTS.md exactly "
+                  f"for the task docs/tasks/{task.name}/. {NO_QUESTIONS}")
+    reply = claude(prompt, repo, plugin=stage == "grill", model=MODEL)
+    req = task / "REQUIREMENTS.md"
+    return {"task": task.name, "tasks": [t.name for t in task_dirs(repo)], "terms": list(IDEA_TERMS), "reply": reply,
+            "idea_changed": _read(repo / IDEA_FILE) != before,
+            "requirements": req.read_text() if req.is_file() else None}
 
 
 # requirements, then approval in the same conversation: a reply that does not approve, then one that does.
@@ -700,3 +757,56 @@ def run_retro_approval(repo: Path) -> dict:
             "homes_before": {h: before.get(h, "") for h in homes}, "homes_after": {h: _read(repo / h) for h in homes},
             "budgets_before": budgets_before, "budgets_after": _read(repo / ".harness" / "budgets.yml"),
             "turns": turns, "approver": APPROVER, "words": APPROVAL_WORDS, "start": start, "end": utcnow()}
+
+
+# --- backlog stage -------------------------------------------------------------------
+# Quotes and an apostrophe: the request must reach the file word for word through the shell.
+IDEA_REQUEST = 'The CSV export should let me pick the columns, I don\'t need "all of them".'
+
+
+def run_idea(repo: Path) -> dict:
+    """One turn: /kairyn:idea captures the request into docs/backlog/."""
+    subprocess.run(["git", "config", "user.name", APPROVER], cwd=repo, check=True)
+    commit_all(repo)
+    reply = claude(f"/kairyn:idea {IDEA_REQUEST}", repo, plugin=True, model=MODEL)
+    backlog = repo / "docs" / "backlog"
+    return {"reply": reply, "request": IDEA_REQUEST, "requester": APPROVER, "changed": changed_paths(repo),
+            "ideas": {p.name: p.read_text() for p in backlog.glob("*.md") if p.name != "README.md"},
+            "readme": _read(backlog / "README.md")}
+
+
+TRIAGE_IDEAS = {"20261101000000-column-picker.md": ("inbox", "", "CSV export column picker"),
+                "20261102000000-slow-search.md": ("parked", "2026-01-01", "Search is slow"),
+                "20261103000000-dark-mode.md": ("parked", "2099-01-01", "Dark mode")}
+TRIAGE_DUE = ("20261101000000-column-picker.md", "20261102000000-slow-search.md")
+TRIAGE_ANSWER = ("Keep the column picker, effort low, impact high: users asked for it. "
+                 "Drop the slow search idea: it is fixed.")
+
+
+def make_triage_repo(repo: Path) -> Path:
+    """An inbox idea, a stale park and a fresh park."""
+    backlog = repo / "docs" / "backlog"
+    backlog.mkdir(parents=True, exist_ok=True)
+    for name, (status, review_by, title) in TRIAGE_IDEAS.items():
+        (backlog / name).write_text(f"---\ntitle: {title}\nstatus: {status}\nrequester: {APPROVER}\ndate: 2026-11-01\n"
+                                    f"effort: medium\nimpact: medium\nreview_by: {review_by}\n---\n\n# {title}\n\n"
+                                    f"**Raw request:** {title}\n\n# Log\n\n2026-11-01T00:00:00Z [capture] Captured.\n")
+    (backlog / "README.md").write_text("# Backlog\n\n| Idea | Effort | Impact | Notes |\n|---|---|---|---|\n")
+    return repo
+
+
+def run_triage(repo: Path, *, apply: bool) -> dict:
+    """/kairyn:triage lists and waits; with apply, a second turn gives the owner's decisions."""
+    subprocess.run(["git", "config", "user.name", APPROVER], cwd=repo, check=True)
+    commit_all(repo)
+    turns = []
+
+    def snapshot(i, reply):
+        turns.append({"reply": reply, "changed": changed_paths(repo)})
+
+    # The owner's answer turn runs `backlog.py decide` outside the skill: allowing it stands for the owner approving the prompt.
+    claude_session(["/kairyn:triage", *([TRIAGE_ANSWER] if apply else [])], repo, plugin=True, model=MODEL, on_turn=snapshot,
+                   user_allows=("Bash(python3:*)",) if apply else ())
+    backlog = repo / "docs" / "backlog"
+    return {"turns": turns, "owner": APPROVER, "due": list(TRIAGE_DUE), "fresh": "20261103000000-dark-mode.md",
+            "ideas": {name: _read(backlog / name) for name in TRIAGE_IDEAS}, "readme": _read(backlog / "README.md")}

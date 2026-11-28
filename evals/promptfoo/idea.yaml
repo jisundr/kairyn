@@ -1,0 +1,13 @@
+# depends: plugin/skills/idea/SKILL.md, plugin/stages/BACKLOG.md, plugin/scripts/backlog.py, plugin/scripts/atomic_write.py, plugin/scripts/init.sh, plugin/harness/**/*
+description: idea capture (backlog stage)
+prompts: ["{{scenario}}"]
+providers:
+  - id: file://provider.py
+    config: {timeout: 900000}
+tests:
+  - description: idea writes one inbox idea with the request word for word and does not start the work
+    vars: {scenario: idea_capture}
+    metadata:
+      min_pass_rate: {idea_captured: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:idea_captured", metric: idea_captured}

@@ -10,9 +10,10 @@ purpose: Interview the user in rounds of numbered questions until user and agent
 ## Inputs
 - A topic (new task) or a task folder (continue it).
 - The task's `STATE.md` and `CONCEPT.md`, if present.
+- Any idea `STATE.md` names: its raw request and problem.
 
 ## Steps
-1. Get timestamps from `date` (see `_template.md`, Time). For a topic, create the task folder and `STATE.md` as `requirements` step 1 does.
+1. Get timestamps from `date` (`_template.md`, Time). For a topic, create the task folder and `STATE.md` as `requirements` step 1 does.
 2. Read the repo before each question. Never ask what a file answers.
 3. Ask for the problem before any solution. A named solution ("a cache") is a guess: ask if it fits the problem better than other fixes. Challenge each vague term: "faster" asks how fast, for whom.
 4. Ask in rounds, then wait: `grill: in-progress`, `stage: grill`, `status: blocked`. A round asks the open questions whose prerequisites are settled: at most 3, those that unblock most first. Keep the rest under `## Open branches`. Numbers continue across rounds. End each message with, per question:
@@ -23,15 +24,13 @@ purpose: Interview the user in rounds of numbered questions until user and agent
 6. When no branch is open or the user says stop, restate the concept in at most 5 sentences and set `grill: done`. Ask the user to approve it. A stop is not approval.
 
 ## Output
-`CONCEPT.md` in the task folder: fill `.kairyn/templates/CONCEPT.md`. Keep its four `##` sections.
-
-Write it in ASD-STE100 (see `_template.md`, Writing).
+`CONCEPT.md` in the task folder: fill `.kairyn/templates/CONCEPT.md`, in ASD-STE100 (`_template.md`, Writing). Keep its four `##` sections.
 
 ## Exit criteria
 - [ ] The user approved the concept.
 
 ## State update
-As in `_template.md`. Add `grill` to `stages`. Log each answer. When you restate the concept: `grill: done`. Then follow `_approval.md`. Next stage: `stage: requirements`.
+As in `_template.md`. Add `grill` to `stages`; log each answer. When you restate the concept: `grill: done`. Then follow `_approval.md`. Next stage: `stage: requirements`.
 
 ## Learnings
 Append to `.kairyn/learnings.md`.

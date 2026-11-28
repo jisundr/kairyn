@@ -9,6 +9,7 @@ purpose: Turn a request into approved, testable requirements with acceptance cri
 ## Inputs
 - A request, or a task folder from `grill`.
 - `CONCEPT.md` and `.kairyn/learnings.md`, if present.
+- The idea file the folder's `STATE.md` names, if any: its raw request and problem are the request.
 
 ## Steps
 1. Get timestamps from `date` (see `_template.md`, Time). Read each `docs/tasks/*/STATE.md`. If one has `requirements: pending` and matches the request, use its folder. Else create `docs/tasks/<YYYY-MM-DD>-<slug>/` and a `STATE.md` from `.kairyn/templates/STATE.md`.

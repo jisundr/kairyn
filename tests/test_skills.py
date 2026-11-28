@@ -7,7 +7,7 @@ import yaml
 from helpers import PLUGIN, split_front_matter
 
 STAGE_SKILLS = {"requirements": "REQUIREMENTS", "design": "DESIGN", "grill": "GRILL", "model-routing": "MODEL-ROUTING", "close": "CLOSE",
-                "retro": "RETRO"}
+                "retro": "RETRO", "idea": "BACKLOG", "triage": "BACKLOG"}
 MODELS = {"haiku", "sonnet", "opus", "inherit"}
 SCRIPT_COMMANDS = ("init", "check", "upgrade", "release")
 
@@ -68,7 +68,7 @@ def test_design_skill_runs_on_opus():
 # Task 2026-11-26-split-build-routing: a step that makes a critical decision runs on Opus;
 # a step that only carries decisions out runs cheaper.
 SKILL_MODELS = {"requirements": "opus", "design": "opus", "grill": "sonnet", "model-routing": "sonnet",
-                "close": "sonnet", "retro": "sonnet", "build": "haiku", "review": "haiku"}
+                "close": "sonnet", "retro": "sonnet", "idea": "sonnet", "triage": "sonnet", "build": "haiku", "review": "haiku"}
 
 
 @pytest.mark.parametrize("name,model", SKILL_MODELS.items())
@@ -113,3 +113,20 @@ def test_afk_skills_run_the_script(name, command):
 def test_build_skill_approves_a_slice():
     """D10: `/kairyn:build <task> approve T<n>` records the approval, then resumes."""
     assert "afk.py approve <task> --slice T<n>" in front(skill("build"))[1]
+
+
+def test_idea_skill_runs_the_capture_script():
+    """A7: backlog.py does the file writes; the skill only drafts and calls it."""
+    data, body = front(skill("idea"))
+    assert "Bash(python3:*)" in data["allowed-tools"]
+    assert "scripts/backlog.py capture" in body
+
+
+def test_triage_skill_runs_digest_and_decide_and_waits_for_the_owner():
+    """A7, R7: backlog.py writes; the skill proposes, and decides nothing before the owner answers."""
+    data, body = front(skill("triage"))
+    assert "Bash(python3:*)" in data["allowed-tools"]
+    assert "scripts/backlog.py digest" in body
+    assert "scripts/backlog.py decide" in body
+    assert "the owner decides. End your turn after the proposals." in body
+    assert "Change nothing before the owner answers" in body

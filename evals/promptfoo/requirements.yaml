@@ -1,4 +1,4 @@
-# depends: plugin/skills/requirements/SKILL.md, plugin/stages/REQUIREMENTS.md, plugin/stages/_template.md, plugin/stages/_approval.md, plugin/templates/STATE.md, plugin/templates/REQUIREMENTS.md, plugin/scripts/init.sh, plugin/harness/**/*
+# depends: plugin/skills/requirements/SKILL.md, plugin/stages/REQUIREMENTS.md, plugin/stages/_template.md, plugin/stages/_approval.md, plugin/templates/STATE.md, plugin/templates/REQUIREMENTS.md, plugin/scripts/init.sh, plugin/scripts/backlog.py, plugin/scripts/atomic_write.py, plugin/harness/**/*
 description: requirements stage
 prompts: ["{{scenario}}"]
 providers:
@@ -33,3 +33,9 @@ tests:
       - {type: python, value: "file://asserts.py:approval_gate", metric: approval_gate}
       - {type: python, value: "file://asserts.py:records_approval", metric: records_approval}
       - {type: python, value: "file://asserts.py:hands_off_design", metric: hands_off_design}
+  - description: requirements on a committed task folder takes the linked idea as the request
+    vars: {scenario: requirements_from_idea}
+    metadata:
+      min_pass_rate: {requirements_from_idea: 0.9}
+    assert:
+      - {type: python, value: "file://asserts.py:requirements_from_idea", metric: requirements_from_idea}
