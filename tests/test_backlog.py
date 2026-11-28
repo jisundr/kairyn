@@ -1,4 +1,4 @@
-"""backlog.py and BACKLOG.md: the scripted file writes of the backlog stage (T1 capture, T2 digest and decide)."""
+"""backlog.py and BACKLOG.md: the scripted file writes of the backlog stage (T1 capture, T2 digest and decide, T3 commit)."""
 import re
 import subprocess
 import sys
@@ -319,3 +319,105 @@ def test_decide_refuses_a_missing_idea(repo):
     result = run(repo, "decide", "docs/backlog/20261101000000-nope.md", "drop", "--reason", "x")
     assert result.returncode == 1
     assert result.stdout.startswith("FAIL:")
+
+
+# --- commit (T3; AC5, R12-R14) ---------------------------------------------------
+
+TEMPLATE = PLUGIN / "templates" / "STATE.md"
+
+
+@pytest.fixture
+def kairyn_repo(repo):
+    templates = repo / ".kairyn" / "templates"
+    templates.mkdir(parents=True)
+    (templates / "STATE.md").write_text(TEMPLATE.read_text())
+    return repo
+
+
+def commit(root, path):
+    return run(root, "commit", rel(root, path))
+
+
+def task_folder(root, slug):
+    return root / "docs" / "tasks" / f"{today().isoformat()}-{slug}"
+
+
+def test_stage_names_the_commit_steps():
+    body = split_front_matter(STAGE.read_text())[1]
+    for word in ("scripts/backlog.py commit", "[commit]", "triaged"):
+        assert word in body, word
+
+
+def test_commit_sets_committed_and_logs_the_task_folder(kairyn_repo):
+    idea = write_idea(kairyn_repo, "ship-it", "triaged", title="Ship it")
+    result = commit(kairyn_repo, idea)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert meta(idea)["status"] == "committed"
+    log = idea.read_text().split("\n# Log\n", 1)[1]
+    [line] = [line for line in log.splitlines() if "[commit]" in line]
+    assert re.match(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z \[commit\] ", line), line
+    assert OWNER in line
+    assert f"docs/tasks/{today().isoformat()}-ship-it/" in line, "close links the idea through this line (ADR 0026)"
+    assert len([line for line in log.splitlines() if "[capture]" in line]) == 1
+
+
+def test_commit_writes_state_from_the_template_naming_the_idea(kairyn_repo):
+    idea = write_idea(kairyn_repo, "ship-it", "triaged", title="Ship it")
+    before = utc_now()
+    assert commit(kairyn_repo, idea).returncode == 0
+    after = utc_now()
+    state = task_folder(kairyn_repo, "ship-it") / "STATE.md"
+    assert state.is_file()
+    text = state.read_text()
+    assert "<YYYY" not in text and "<slug>" not in text and "<task title>" not in text, "no placeholder is left"
+    data = yaml.safe_load(split_front_matter(text)[0])
+    assert data["task"] == f"{today().isoformat()}-ship-it"
+    assert data["title"] == "Ship it"
+    assert data["stage"] == "requirements" and data["status"] == "in-progress"
+    for key in ("created", "updated"):
+        stamp = datetime.strptime(str(data[key]).replace("+00:00", "Z").replace(" ", "T"), "%Y-%m-%dT%H:%M:%SZ")
+        assert before <= stamp.replace(tzinfo=timezone.utc) <= after, key
+    log = text.split("\n# Log\n", 1)[1]
+    [line] = [line for line in log.splitlines() if line.startswith("- ") and "[requirements]" in line]
+    assert rel(kairyn_repo, idea) in line, "STATE.md names the idea file (R12)"
+
+
+def test_commit_prints_the_two_next_commands(kairyn_repo):
+    idea = write_idea(kairyn_repo, "ship-it", "triaged")
+    result = commit(kairyn_repo, idea)
+    folder = f"docs/tasks/{today().isoformat()}-ship-it"
+    assert f"/kairyn:grill {folder}" in result.stdout
+    assert f"/kairyn:requirements {folder}" in result.stdout
+
+
+@pytest.mark.parametrize("status", ["inbox", "parked", "dropped", "committed"])
+def test_commit_refuses_an_idea_that_is_not_triaged(kairyn_repo, status):
+    idea = write_idea(kairyn_repo, "not-ready", status)
+    before = idea.read_text()
+    result = commit(kairyn_repo, idea)
+    assert result.returncode == 1
+    assert result.stdout.startswith("FAIL:")
+    assert len(result.stdout.strip().splitlines()) == 1, "one FAIL: line"
+    assert idea.read_text() == before
+    assert not (kairyn_repo / "docs" / "tasks").exists()
+
+
+def test_commit_refuses_an_existing_task_folder(kairyn_repo):
+    idea = write_idea(kairyn_repo, "ship-it", "triaged")
+    folder = task_folder(kairyn_repo, "ship-it")
+    folder.mkdir(parents=True)
+    (folder / "STATE.md").write_text("mine\n")
+    before = idea.read_text()
+    result = commit(kairyn_repo, idea)
+    assert result.returncode == 1
+    assert result.stdout.startswith("FAIL:")
+    assert idea.read_text() == before
+    assert (folder / "STATE.md").read_text() == "mine\n"
+    assert [p.name for p in folder.iterdir()] == ["STATE.md"]
+
+
+def test_commit_refuses_a_missing_idea(kairyn_repo):
+    result = run(kairyn_repo, "commit", "docs/backlog/20261101000000-nope.md")
+    assert result.returncode == 1
+    assert result.stdout.startswith("FAIL:")
+    assert not (kairyn_repo / "docs" / "tasks").exists()
