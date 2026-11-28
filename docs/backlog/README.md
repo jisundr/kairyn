@@ -9,4 +9,3 @@ Closed ideas are in `CHANGELOG.md`. Inbox: `grep -lx 'status: inbox' docs/backlo
 | Idea | Effort | Impact | Notes |
 |---|---|---|---|
 | [Backlog stage](20261122080759-backlog-stage.md) | high | high | |
-| [Union merge restores learnings](20261126075249-union-merge-restores-learnings.md) | low | medium | Committed: task 2026-11-28-union-merge-restores-learnings |

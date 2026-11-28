@@ -36,3 +36,4 @@
 - close deletes a committed backlog idea whose file slug is the task slug, and prints UNLINKED for one that names the task in plain text. (2026-11-26-close-matches-plain-task-name)
 - Grill asks rounds of at most 3 numbered questions, each with a recommended answer; a reply with no numbers accepts them all. (2026-11-28-grill-rounds)
 - The design stage's slice and test-plan rules moved to _slices.md; DESIGN.md is 346 tokens, with room for new rules. (2026-11-28-split-design-stage; closes split-design-stage)
+- This repo merges learnings.md with scripts/merge_learnings.py, not union, so a retro's removals hold; run it with --install once per clone (ADR 0028). (2026-11-28-union-merge-restores-learnings)

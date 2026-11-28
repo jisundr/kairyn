@@ -11,3 +11,4 @@ Stages append here.
 - 2026-11-28 [close] `afk.py` opens the pull request against the branch of the checkout it runs from. Run it from a checkout on `main`, or open the pull request with `gh pr create --base main`.
 - 2026-11-28 [close] A fix-round test edit fails the commits gate. Fold it into the red `test(T<n>)` commit with a scripted rebase.
 - 2026-11-28 [close] Close deletes only an idea with `status: committed`. Set it when the owner approves the task's work, or the idea stays after close.
+- 2026-11-28 [close] A clone without `scripts/merge_learnings.py --install` gets a conflict on `learnings.md`: keep both sides' new lines, and drop the lines a retro removed.
