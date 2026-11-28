@@ -65,6 +65,6 @@ Out: changes to init and to the `/kairyn:backlog` page. (D3, D4)
 - [ ] `TRIAGE.md` has only Next, Parked and a `BACKLOG.md` pointer. (R16)
 
 ## Open questions and answers
-- Q1: Confirm A1, A3, A4, A6? A: pending (owner)
+- Q1: Confirm A1, A3, A4, A6? A: yes, as written (owner)
 
-Approval: pending
+Approval: Jayson De los Reyes, 2026-11-28T01:38:38Z, "Approve as written"

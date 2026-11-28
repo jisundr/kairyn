@@ -1,18 +1,18 @@
 ---
 task: 2026-11-28-backlog-stage
 title: Backlog stage
-stage: requirements
-status: blocked
+stage: design
+status: in-progress
 grill: done
 stages:
   grill: done
   requirements: done
-  design: pending
+  design: in-progress
   build: pending
   gates: pending
   review: pending
 created: 2026-11-28T01:26:30Z
-updated: 2026-11-28T01:37:21Z
+updated: 2026-11-28T01:38:38Z
 ---
 
 # Log
@@ -27,3 +27,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T01:35:26Z [grill] D5: commit in triage creates the task folder. No branch open. Concept restated; grill: done. Waiting for owner approval.
 - 2026-11-28T01:36:07Z [grill] Owner approved the concept: "Approve". Next stage: requirements.
 - 2026-11-28T01:37:21Z [requirements] REQUIREMENTS.md written: R1-R16, A1-A7, K1-K2. Waiting for owner approval.
+- 2026-11-28T01:38:38Z [requirements] Owner approved: "Approve as written". Next stage: design.
