@@ -1,7 +1,7 @@
 """Pure checks for the grill stage (evals/checks.py)."""
 from datetime import datetime, timedelta, timezone
 
-from checks import (TS_FORMAT, concept_use_problems, decision_labels, grill_problems, grill_reply_problems, handoff_problems, section_items, state_fields)
+from checks import (TS_FORMAT, concept_use_problems, decision_labels, grill_problems, grill_round_problems, handoff_problems, round_decision_problems, section_items, state_fields)
 
 TASK = "2026-11-22-report-cache"
 NOW = datetime.now(timezone.utc).replace(microsecond=0)
@@ -97,24 +97,64 @@ def test_section_items_skip_table_header_and_none():
     assert section_items(GOOD_DOC, "open branches") == ["Where stored results live."]
 
 
-def test_reply_with_one_question_and_recommendation():
-    reply = ("The README says the CSV is exported nightly.\n\n**Q1:** What is slow: the first run, or repeat runs?\n"
-             "**Recommended:** Repeat runs on the same file, because the export changes only once a day.")
-    assert grill_reply_problems(reply) == []
+def _round(n, first=1, recommend=True):
+    return "The README says the CSV is exported nightly.\n\n" + "".join(
+        f"**Q{i}:** Question {i}?\n" + (f"**Recommended:** Answer {i}, because the repo says so.\n" if recommend else "")
+        for i in range(first, first + n))
 
 
-def test_reply_with_two_questions():
-    reply = "**Q1:** What is slow?\n**Q2:** Who runs it?\n**Recommended:** Repeat runs."
-    assert any("2 question markers" in p for p in grill_reply_problems(reply))
+def test_round_with_one_to_three_questions():
+    for n in (1, 2, 3):
+        assert grill_round_problems(_round(n)) == []
 
 
-def test_reply_without_recommendation():
-    assert grill_reply_problems("**Question:** What is slow?") == ["no recommended answer"]
+def test_round_numbers_continue():
+    assert grill_round_problems(_round(2, first=4)) == []
 
 
-def test_reply_with_question_batch_in_prose():
+def test_round_with_no_question():
+    assert any("0 questions" in p for p in grill_round_problems("I have no question."))
+
+
+def test_round_with_four_questions():
+    assert any("4 questions" in p for p in grill_round_problems(_round(4)))
+
+
+def test_round_needs_a_recommendation_per_question():
+    reply = _round(2) + "**Q3:** Question 3?\n"
+    assert grill_round_problems(reply) == ["2 recommended answers for 3 questions"]
+    assert "0 recommended answers for 1 questions" in grill_round_problems(_round(1, recommend=False))
+
+
+def test_first_round_needs_two_questions():
+    assert grill_round_problems(_round(1), min_questions=2) == ["1 questions, expected at least 2"]
+    assert grill_round_problems(_round(2), min_questions=2) == []
+
+
+def test_round_with_question_batch_in_prose():
     reply = "**Q1:** What is slow? Is it the parse? Or the print?\n**Recommended:** The parse."
-    assert any("question marks" in p for p in grill_reply_problems(reply))
+    assert any("question marks" in p for p in grill_round_problems(reply))
+
+
+def _concept(n):
+    return "## Decisions\n" + "".join(f"- D{i}: decided. (user accepted)\n" for i in range(1, n + 1))
+
+
+def test_round_decisions_one_per_accepted_question():
+    turns = [{"reply": _round(3), "concept": _concept(0)}, {"reply": _round(2, first=4), "concept": _concept(3)},
+             {"reply": _round(1, first=6), "concept": _concept(5)}]
+    assert round_decision_problems(turns) == []
+
+
+def test_round_decisions_missing_after_an_accepted_round():
+    turns = [{"reply": _round(3), "concept": _concept(0)}, {"reply": _round(2, first=4), "concept": _concept(1)},
+             {"reply": _round(1, first=6), "concept": _concept(2)}]
+    assert round_decision_problems(turns) == ["answer 1: 1 new decisions for 3 questions",
+                                              "answer 2: 1 new decisions for 2 questions"]
+
+
+def test_round_decisions_need_three_turns():
+    assert round_decision_problems([{"reply": _round(1), "concept": ""}]) == ["only 1 turns"]
 
 
 def test_state_fields():
