@@ -53,7 +53,7 @@ Out: changes to init and to the `/kairyn:backlog` page. (D3, D4)
 | A6 | assumption | Only a `triaged` idea can be committed. | owner |
 | A7 | assumption | Scripts in `plugin/scripts/` do the file writes; stage text only decides. | design |
 | K1 | risk | GRILL.md and REQUIREMENTS.md are near their budget; R15 needs cuts. | design |
-| K2 | risk | Stage text changes need new and re-run evals (backlog, grill, requirements), which cost tokens. | owner |
+| K2 | risk | New and re-run evals cost tokens. | owner |
 
 ## Acceptance criteria
 - [ ] `plugin/stages/BACKLOG.md` exists, passes `tests/test_static.py` as an optional stage and holds the rules. (R1)

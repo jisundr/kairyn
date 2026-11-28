@@ -2,17 +2,17 @@
 task: 2026-11-28-backlog-stage
 title: Backlog stage
 stage: design
-status: in-progress
+status: blocked
 grill: done
 stages:
   grill: done
   requirements: done
-  design: in-progress
+  design: done
   build: pending
   gates: pending
   review: pending
 created: 2026-11-28T01:26:30Z
-updated: 2026-11-28T01:38:38Z
+updated: 2026-11-28T01:39:57Z
 ---
 
 # Log
@@ -28,3 +28,4 @@ Newest entry last. One entry per stage run or notable event.
 - 2026-11-28T01:36:07Z [grill] Owner approved the concept: "Approve". Next stage: requirements.
 - 2026-11-28T01:37:21Z [requirements] REQUIREMENTS.md written: R1-R16, A1-A7, K1-K2. Waiting for owner approval.
 - 2026-11-28T01:38:38Z [requirements] Owner approved: "Approve as written". Next stage: design.
+- 2026-11-28T01:39:57Z [design] DESIGN.md written: option A (backlog.py, BACKLOG.md, skills idea and triage), slices T1-T5. Waiting for owner approval.
